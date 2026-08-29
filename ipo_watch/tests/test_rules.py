@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from ipo_watch.models import IPO, Board, Status, parse_price_band, to_decimal
 from ipo_watch.merge import build_dataset, norm_key
 from ipo_watch.parse import parse_page, detect_board
-from ipo_watch.report import build_report, build_caption
+from ipo_watch.report import build_report
 from ipo_watch.verify import check, expected_map
 
 TODAY = date(2026, 8, 29)
@@ -160,8 +160,9 @@ def test_name_matching_across_pages():
     assert norm_key("Vidya Wires IPO") == norm_key("Vidya Wires Limited")
 
 
-def test_caption_reports_leaders():
+def test_report_names_the_leaders():
     ds = build_dataset([mk("Acme", retail=Decimal("3.25"))],
                        [mk("Acme", Decimal("325"), Decimal("429"))], TODAY)
-    cap = build_caption(ds)
-    assert "75.76%" in cap and "3.25x" in cap
+    out = build_report(ds)
+    assert "Highest GMP: Acme — 75.76%" in out
+    assert "Highest Retail Subscription: Acme — 3.25x" in out

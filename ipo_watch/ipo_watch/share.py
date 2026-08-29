@@ -18,11 +18,11 @@ import json
 import os
 
 from .merge import Dataset
-from .report import build_caption
+from .report import build_report
 
 
 def build_share_page(ds: Dataset, image_filename: str, out_path: str) -> str:
-    caption = build_caption(ds)
+    caption = build_report(ds)
     date_txt = ds.run_date.strftime("%d %b %Y") if ds.run_date else ""
     cap_js = json.dumps(caption)
     img_js = json.dumps(image_filename)

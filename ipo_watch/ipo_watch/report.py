@@ -5,7 +5,7 @@ from typing import Optional
 
 from .config import NOT_UPDATED, SOURCE_NAME
 from .merge import Dataset, leader, rank_by_gmp
-from .models import IPO, _num
+from .models import IPO
 
 HOT = "🔥"
 
@@ -113,24 +113,3 @@ def _footer(ds: Dataset) -> str:
         L += [f"• {c.ipo} {c.field_name}: kept {c.kept}, dropped {c.discarded} — {c.reason}"
               for c in ds.conflicts]
     return "\n".join(L)
-
-
-def build_caption(ds: Dataset) -> str:
-    """Short forwarding caption that sits under the image (section 8)."""
-    d = ds.run_date.strftime("%d %b %Y") if ds.run_date else ""
-    ranked = rank_by_gmp(ds)
-    top_gmp = next((i for i in ranked if i.gmp_pct is not None), None)
-    top_ret = leader(ds, "retail_sub")
-
-    gmp_line = (f"🔥 Highest GMP: {top_gmp.name} — {top_gmp.gmp_pct_text}"
-                if top_gmp else f"🔥 Highest GMP: {NOT_UPDATED}")
-    ret_line = (f"📈 Highest Retail Subscription: {top_ret.name} — {_num(top_ret.retail_sub)}x"
-                if top_ret else f"📈 Highest Retail Subscription: {NOT_UPDATED}")
-
-    return (
-        f"📊 Daily Mainboard IPO Watch — {d}\n\n"
-        f"{gmp_line}\n"
-        f"{ret_line}\n\n"
-        "Full details in the attached creative.\n\n"
-        "⚠️ GMP is unofficial and subject to change."
-    )

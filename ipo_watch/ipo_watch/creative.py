@@ -92,22 +92,6 @@ h1{{font-size:33px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1
 .empty{{background:#0A1424;border:1px dashed #1E3050;border-radius:12px;
        padding:20px;text-align:center;color:#6E86A8;font-size:16px;font-weight:500}}
 
-/* ---------- ranking strip ---------- */
-.rankstrip{{background:#0A1322;border:1px solid #17263F;border-radius:13px;
-      padding:12px 20px}}
-.rrow{{display:flex;align-items:center;gap:14px;padding:6px 0}}
-.rrow+.rrow{{border-top:1px solid #12203A}}
-.rn{{font-size:12px;font-weight:900;color:#5D74A0;width:20px;flex-shrink:0}}
-.rnm{{font-size:17px;font-weight:700;color:#DCE7F6;flex:0 1 300px;min-width:130px;
-     overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
-.rbarwrap{{flex:1;height:6px;background:#122039;border-radius:3px;overflow:hidden}}
-.rbar{{height:100%;border-radius:3px;background:linear-gradient(90deg,#0B9B57,#16E07E)}}
-.rbar.flat{{background:#26385A}}
-.rpct{{font-size:18px;font-weight:900;color:#16E07E;width:98px;text-align:right;flex-shrink:0}}
-.rpct.flat{{color:#7E93B2}}
-.rtag{{font-size:9px;font-weight:900;letter-spacing:1px;width:36px;flex-shrink:0;text-align:right}}
-.rtag.o{{color:#16E07E}} .rtag.u{{color:#3D8BFF}}
-
 /* ---------- leaders + footer ---------- */
 .leaders{{display:flex;gap:9px;margin-top:9px}}
 .lead{{flex:1;background:#0A1322;border:1px solid #17263F;border-radius:12px;
@@ -203,30 +187,6 @@ def _row(ipo: IPO, idx: int, show_sub: bool) -> str:
     </div>"""
 
 
-def _ranking_strip(ds: Dataset, peak: Optional[Decimal]) -> str:
-    ranked = rank_by_gmp(ds)
-    if not ranked:
-        return ""
-    rows = []
-    for n, ipo in enumerate(ranked, 1):
-        positive = ipo.gmp_pct is not None and ipo.gmp_pct > 0
-        tag = ("o", "OPEN") if ipo.status.value == "Open" else ("u", "SOON")
-        rows.append(f"""
-      <div class="rrow">
-        <div class="rn">{n:02d}</div>
-        <div class="rnm" data-verify="rank{n}.name">{_e(ipo.name)}</div>
-        <div class="rbarwrap"><div class="rbar{'' if positive else ' flat'}"
-             style="width:{_bar_pct(ipo, peak):.1f}%"></div></div>
-        <div class="rpct{'' if positive else ' flat'}"
-             data-verify="rank{n}.pct">{_e(ipo.gmp_pct_text)}</div>
-        <div class="rtag {tag[0]}">{tag[1]}</div>
-      </div>""")
-    return f"""
-  <div class="sect"><span class="dot open"></span><h2>CURRENT GMP RANKING</h2>
-       <span class="rule"></span></div>
-  <div class="rankstrip">{''.join(rows)}</div>"""
-
-
 def _leaders(ds: Dataset) -> str:
     from .merge import leader
     ranked = rank_by_gmp(ds)
@@ -293,7 +253,6 @@ def build_html(ds: Dataset) -> str:
        <span class="n">{len(ds.upcoming_ipos)}</span><span class="rule"></span></div>
   {up_html}
 
-  {_ranking_strip(ds, peak)}
   {_leaders(ds)}
 
   <div class="ftr">

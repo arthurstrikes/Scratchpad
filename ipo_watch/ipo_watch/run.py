@@ -22,7 +22,7 @@ from .fetch import FetchError, extract_page_timestamp, fetch_pages, load_fixture
 from .merge import Dataset, build_dataset
 from .models import Board, IPO, Provenance, Status, parse_date
 from .parse import parse_page
-from .report import build_caption, build_report
+from .report import build_report
 from .share import build_share_page
 from .verify import check
 
@@ -133,16 +133,12 @@ def publish(ds: Dataset, outdir: str) -> dict[str, str]:
 
     paths = {
         "report":  os.path.join(outdir, f"ipo-watch-{stamp}.txt"),
-        "caption": os.path.join(outdir, f"ipo-watch-{stamp}-caption.txt"),
         "dataset": os.path.join(outdir, f"ipo-watch-{stamp}-dataset.json"),
         "image":   os.path.join(outdir, f"ipo-watch-{stamp}.png"),
     }
 
-    report, caption = build_report(ds), build_caption(ds)
     with open(paths["report"], "w", encoding="utf-8") as fh:
-        fh.write(report)
-    with open(paths["caption"], "w", encoding="utf-8") as fh:
-        fh.write(caption + "\n")
+        fh.write(build_report(ds))
     with open(paths["dataset"], "w", encoding="utf-8") as fh:
         json.dump(dataset_to_json(ds), fh, indent=2, ensure_ascii=False)
 
@@ -188,7 +184,6 @@ def main(argv: list[str] | None = None) -> int:
 
     paths = publish(ds, args.outdir)
     print("\n" + "=" * 62 + "\n" + build_report(ds) + "=" * 62)
-    print("\nWHATSAPP CAPTION\n" + "-" * 62 + "\n" + build_caption(ds) + "\n")
     for k, v in paths.items():
         _log(f"{k:8s} -> {v}")
     return 0

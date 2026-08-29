@@ -42,12 +42,6 @@ def expected_map(ds: Dataset) -> dict[str, str]:
         out[f"{k}.dates"] = ipo.date_range_text
         out[f"{k}.price"] = f"₹{ipo.price_band_text}"
 
-    # The ranking strip restates every GMP %, so it is verified too - a strip
-    # that disagreed with the cards above it would be worse than no strip.
-    for n, ipo in enumerate(rank_by_gmp(ds), 1):
-        out[f"rank{n}.name"] = ipo.name
-        out[f"rank{n}.pct"] = ipo.gmp_pct_text
-
     ranked = rank_by_gmp(ds)
     top_gmp = next((i for i in ranked if i.gmp_pct is not None), None)
     top_ret, top_tot = leader(ds, "retail_sub"), leader(ds, "total_sub")
