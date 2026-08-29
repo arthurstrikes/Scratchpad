@@ -1,0 +1,61 @@
+{
+  "run_date": "2026-08-29",
+  "generated_at": "2026-08-29T16:08:55.743612+05:30",
+  "source": "IPOWatch",
+  "source_mode": "fixture",
+  "subscription_timestamp": "29 Aug 2026, 07:45 PM",
+  "gmp_timestamp": "29 Aug 2026, 08:10 PM",
+  "open": [
+    {
+      "name": "Vidya Wires",
+      "board": "Mainboard",
+      "status": "Open",
+      "open_date": "2026-08-27",
+      "close_date": "2026-08-29",
+      "price_min": "402",
+      "price_max": "429",
+      "gmp": "325",
+      "gmp_pct": "75.76",
+      "retail_sub": "3.25",
+      "total_sub": "7.80",
+      "unverified": []
+    },
+    {
+      "name": "Anlon Healthcare",
+      "board": "Mainboard",
+      "status": "Open",
+      "open_date": "2026-08-28",
+      "close_date": "2026-09-01",
+      "price_min": "86",
+      "price_max": "91",
+      "gmp": "0",
+      "gmp_pct": "0.00",
+      "retail_sub": "2.05",
+      "total_sub": "1.42",
+      "unverified": []
+    }
+  ],
+  "upcoming": [
+    {
+      "name": "Amanta Healthcare",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-09-02",
+      "close_date": "2026-09-04",
+      "price_min": "120",
+      "price_max": "126",
+      "gmp": "18",
+      "gmp_pct": "14.29",
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": []
+    }
+  ],
+  "recently_closed_internal": [],
+  "excluded_sme": [
+    "Shreeji Global",
+    "Mangal Electrical"
+  ],
+  "warnings": [],
+  "conflicts": []
+}
