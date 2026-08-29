@@ -1,5 +1,8 @@
 __pycache__/
 *.pyc
 .pytest_cache/
-ipo_watch/output/snapshots/
+
+# Generated each run. Tracking these meant every 8 PM run dirtied the tree.
+# A 1x reference creative lives in docs/samples/ instead.
+ipo_watch/output/
 ipo_watch/logs/

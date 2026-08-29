@@ -32,115 +32,101 @@ body{{width:{CARD_W}px;background:#05090F;font-family:{FONT_STACK};
      font-variant-numeric:tabular-nums lining-nums;
      font-feature-settings:"tnum" 1,"lnum" 1}}
 .sheet{{background:
-   radial-gradient(1200px 520px at 78% -8%,rgba(45,110,255,.16),transparent 60%),
+   radial-gradient(1100px 420px at 78% -10%,rgba(45,110,255,.15),transparent 60%),
    linear-gradient(172deg,#0A1526 0%,#08111F 48%,#060C16 100%);
-   padding:48px 44px 36px}}
+   padding:30px 32px 24px}}
 
 /* ---------- masthead ---------- */
-.hdr{{display:flex;justify-content:space-between;align-items:flex-end;
-     padding-bottom:26px;border-bottom:1px solid #17263F;position:relative}}
-.hdr:after{{content:"";position:absolute;left:0;bottom:-1px;width:132px;height:3px;
+.hdr{{display:flex;justify-content:space-between;align-items:center;
+     padding-bottom:16px;border-bottom:1px solid #17263F;position:relative}}
+.hdr:after{{content:"";position:absolute;left:0;bottom:-1px;width:110px;height:3px;
      background:linear-gradient(90deg,#16E07E,#3D8BFF);border-radius:2px}}
-.brand{{display:flex;align-items:center;gap:16px}}
-.mark{{width:56px;height:56px;border-radius:15px;flex-shrink:0;
+.brand{{display:flex;align-items:center;gap:13px}}
+.mark{{width:44px;height:44px;border-radius:12px;flex-shrink:0;
       background:linear-gradient(140deg,#2D6EFF,#12C8F0);
-      display:flex;align-items:center;justify-content:center;
-      box-shadow:0 8px 22px rgba(45,110,255,.32)}}
-h1{{font-size:41px;font-weight:900;color:#fff;letter-spacing:-.6px;line-height:1}}
-.tag{{font-size:13px;font-weight:500;color:#6E86A8;margin-top:9px;letter-spacing:2.6px}}
+      display:flex;align-items:center;justify-content:center}}
+h1{{font-size:33px;font-weight:900;color:#fff;letter-spacing:-.5px;line-height:1}}
+.tag{{font-size:12px;font-weight:500;color:#6E86A8;margin-top:6px;letter-spacing:2.2px}}
 .datebox{{text-align:right;flex-shrink:0}}
-.datebox .d{{font-size:26px;font-weight:900;color:#fff;letter-spacing:-.3px}}
-.datebox .t{{font-size:13px;font-weight:500;color:#6E86A8;margin-top:6px;letter-spacing:1.6px}}
+.datebox .d{{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.2px}}
+.datebox .t{{font-size:12px;font-weight:500;color:#6E86A8;margin-top:4px;letter-spacing:1.4px}}
 
 /* ---------- section headers ---------- */
-.sect{{display:flex;align-items:center;gap:13px;margin:28px 0 14px}}
-.dot{{width:11px;height:11px;border-radius:50%;flex-shrink:0}}
-.dot.open{{background:#16E07E;box-shadow:0 0 14px rgba(22,224,126,.75)}}
-.dot.up{{background:#3D8BFF;box-shadow:0 0 14px rgba(61,139,255,.75)}}
-.sect h2{{font-size:21px;font-weight:900;color:#EAF2FF;letter-spacing:2.8px}}
-.sect .n{{font-size:14px;font-weight:700;color:#5D74A0}}
+.sect{{display:flex;align-items:center;gap:11px;margin:20px 0 10px}}
+.dot{{width:10px;height:10px;border-radius:50%;flex-shrink:0}}
+.dot.open{{background:#16E07E;box-shadow:0 0 12px rgba(22,224,126,.7)}}
+.dot.up{{background:#3D8BFF;box-shadow:0 0 12px rgba(61,139,255,.7)}}
+.sect h2{{font-size:18px;font-weight:900;color:#EAF2FF;letter-spacing:2.4px}}
+.sect .n{{font-size:13px;font-weight:700;color:#5D74A0}}
 .sect .rule{{flex:1;height:1px;background:linear-gradient(90deg,#1B2B47,transparent)}}
 
-/* ---------- IPO card ---------- */
-.card{{background:linear-gradient(180deg,#0E1A2E,#0B1524);border:1px solid #1A2A44;
-      border-radius:16px;padding:20px 26px 18px;margin-bottom:11px;position:relative}}
-.card.hot{{border-color:#1C6B48;
-      background:linear-gradient(115deg,#0F2A24 0%,#0D1D30 38%,#0B1524 100%)}}
-.card.hot:before{{content:"";position:absolute;left:-1px;top:16px;bottom:16px;width:3px;
-      background:linear-gradient(180deg,#16E07E,#0B9B57);border-radius:3px}}
+/* ---------- IPO row ----------
+   Two lines per IPO rather than a card. A card carries ~130px of height for
+   six numbers; this carries the same six in ~84px, which is what keeps a
+   full day legible on a phone instead of scrolling past the fold. */
+.row{{display:flex;align-items:center;justify-content:space-between;gap:18px;
+     background:linear-gradient(180deg,#0E1A2E,#0B1524);border:1px solid #1A2A44;
+     border-radius:13px;padding:14px 20px;margin-bottom:8px;position:relative}}
+.row.hot{{border-color:#1C6B48;
+     background:linear-gradient(110deg,#0F2A24 0%,#0D1D30 42%,#0B1524 100%)}}
+.row.hot:before{{content:"";position:absolute;left:-1px;top:12px;bottom:12px;width:3px;
+     background:linear-gradient(180deg,#16E07E,#0B9B57);border-radius:3px}}
+.main{{min-width:0;flex:1}}
+.nmrow{{display:flex;align-items:center;gap:11px;flex-wrap:wrap}}
+.nm{{font-size:26px;font-weight:700;color:#fff;letter-spacing:-.4px;line-height:1.1}}
+.pill{{padding:3px 9px;border-radius:5px;background:rgba(22,224,126,.14);
+      border:1px solid rgba(22,224,126,.42);color:#16E07E;
+      font-size:10px;font-weight:900;letter-spacing:1.3px}}
+.sub{{display:flex;align-items:center;gap:11px;margin-top:9px;flex-wrap:wrap}}
+.f{{display:flex;align-items:center;gap:7px}}
+.fl{{font-size:12px;font-weight:700;color:#63799A;letter-spacing:1.1px}}
+.fv{{font-size:18px;font-weight:700;color:#DDE8F7;letter-spacing:-.1px}}
+.fv.na{{color:#6A7E9E;font-weight:400;font-style:italic;font-size:16px}}
+.sep{{width:3px;height:3px;border-radius:50%;background:#2A4165;flex-shrink:0}}
 
-.top{{display:flex;justify-content:space-between;align-items:center;gap:20px}}
-.left{{display:flex;gap:15px;align-items:flex-start;min-width:0}}
-.nm{{font-size:32px;font-weight:700;color:#fff;line-height:1.14;letter-spacing:-.5px}}
-.nmrow{{display:flex;align-items:center;gap:13px;flex-wrap:wrap}}
-.pill{{display:inline-block;padding:5px 12px;border-radius:6px;
-      background:rgba(22,224,126,.13);border:1px solid rgba(22,224,126,.4);
-      color:#16E07E;font-size:11px;font-weight:900;letter-spacing:1.6px}}
+.gmp{{text-align:right;flex-shrink:0;display:flex;align-items:baseline;gap:10px}}
+.pct{{font-size:30px;font-weight:900;color:#16E07E;letter-spacing:-.8px;white-space:nowrap}}
+.pct.flat{{color:#7E93B2}}
+.rs{{font-size:17px;font-weight:500;color:#8CA1C0;white-space:nowrap}}
 
-.gmpbox{{text-align:right;flex-shrink:0}}
-.gmplbl{{font-size:12px;font-weight:700;color:#5D74A0;letter-spacing:2.4px;margin-bottom:7px}}
-.gmppct{{font-size:39px;font-weight:900;color:#16E07E;line-height:1;letter-spacing:-1px;
-     white-space:nowrap}}
-.gmppct.flat{{color:#7E93B2}}
-.gmpval{{display:flex;align-items:baseline;justify-content:flex-end;gap:12px}}
-.gmprs{{font-size:20px;font-weight:500;color:#93A7C4;white-space:nowrap}}
-
-
-/* data row: hairline dividers instead of boxed chips - reads faster */
-.data{{display:flex;margin-top:16px;padding-top:15px;border-top:1px solid #16243C}}
-.cell{{flex:1;padding-left:18px;border-left:1px solid #16243C;min-width:0}}
-.cell:first-child{{padding-left:0;border-left:0}}
-.k{{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;
-   color:#6580AC;letter-spacing:1.2px;margin-bottom:8px}}
-.v{{font-size:24px;font-weight:700;color:#E9F1FC;white-space:nowrap;letter-spacing:-.2px}}
-.v.na{{color:#6A7E9E;font-weight:400;font-size:18px;font-style:italic}}
-
-/* Upcoming IPOs carry no subscription data, so their dates and price band sit
-   inline beside the name instead of in a full data row. That roughly halves
-   the card height, which matters: at 8 live IPOs a full-height layout runs
-   past 5000px and WhatsApp shrinks it below readability. */
-.inline{{display:flex;align-items:center;gap:20px;margin-top:13px;flex-wrap:wrap}}
-.inline .it{{display:flex;align-items:center;gap:8px}}
-.inline .il{{font-size:12px;font-weight:700;color:#6580AC;letter-spacing:1.2px}}
-.inline .iv{{font-size:22px;font-weight:700;color:#E9F1FC;letter-spacing:-.2px}}
-.inline .sep{{width:4px;height:4px;border-radius:50%;background:#28405f}}
-.empty{{background:#0A1424;border:1px dashed #1E3050;border-radius:14px;
-       padding:30px;text-align:center;color:#6E86A8;font-size:17px;font-weight:500}}
+.empty{{background:#0A1424;border:1px dashed #1E3050;border-radius:12px;
+       padding:20px;text-align:center;color:#6E86A8;font-size:16px;font-weight:500}}
 
 /* ---------- ranking strip ---------- */
-.rankstrip{{margin-top:16px;background:#0A1322;border:1px solid #17263F;
-      border-radius:16px;padding:22px 26px}}
-.rrow{{display:flex;align-items:center;gap:16px;padding:11px 0}}
+.rankstrip{{background:#0A1322;border:1px solid #17263F;border-radius:13px;
+      padding:12px 20px}}
+.rrow{{display:flex;align-items:center;gap:14px;padding:6px 0}}
 .rrow+.rrow{{border-top:1px solid #12203A}}
-.rn{{font-size:14px;font-weight:900;color:#5D74A0;width:22px;flex-shrink:0}}
-.rnm{{font-size:19px;font-weight:700;color:#DCE7F6;flex:0 1 330px;min-width:150px;
+.rn{{font-size:12px;font-weight:900;color:#5D74A0;width:20px;flex-shrink:0}}
+.rnm{{font-size:17px;font-weight:700;color:#DCE7F6;flex:0 1 300px;min-width:130px;
      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
-.rbarwrap{{flex:1;height:7px;background:#122039;border-radius:4px;overflow:hidden}}
-.rbar{{height:100%;border-radius:4px;background:linear-gradient(90deg,#0B9B57,#16E07E)}}
+.rbarwrap{{flex:1;height:6px;background:#122039;border-radius:3px;overflow:hidden}}
+.rbar{{height:100%;border-radius:3px;background:linear-gradient(90deg,#0B9B57,#16E07E)}}
 .rbar.flat{{background:#26385A}}
-.rpct{{font-size:20px;font-weight:900;color:#16E07E;width:116px;text-align:right;flex-shrink:0}}
+.rpct{{font-size:18px;font-weight:900;color:#16E07E;width:98px;text-align:right;flex-shrink:0}}
 .rpct.flat{{color:#7E93B2}}
-.rtag{{font-size:10px;font-weight:900;letter-spacing:1.2px;width:40px;flex-shrink:0;
-      text-align:right}}
+.rtag{{font-size:9px;font-weight:900;letter-spacing:1px;width:36px;flex-shrink:0;text-align:right}}
 .rtag.o{{color:#16E07E}} .rtag.u{{color:#3D8BFF}}
 
 /* ---------- leaders + footer ---------- */
-.leaders{{display:flex;gap:12px;margin-top:16px}}
-.lead{{flex:1;background:#0A1322;border:1px solid #17263F;border-radius:14px;padding:17px 19px}}
-.lead .k{{margin-bottom:9px}}
-.lead .lv{{font-size:19px;font-weight:700;color:#EAF2FF;line-height:1.3;
+.leaders{{display:flex;gap:9px;margin-top:9px}}
+.lead{{flex:1;background:#0A1322;border:1px solid #17263F;border-radius:12px;
+      padding:12px 15px;min-width:0}}
+.lead .k{{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+      color:#63799A;letter-spacing:1.1px;margin-bottom:7px}}
+.lead .lv{{font-size:17px;font-weight:700;color:#EAF2FF;
       overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
-.lead .lx{{font-size:18px;font-weight:900;color:#16E07E;margin-top:5px}}
+.lead .lx{{font-size:16px;font-weight:900;color:#16E07E;margin-top:3px}}
 
-.ftr{{margin-top:26px;padding-top:19px;border-top:1px solid #17263F}}
+.ftr{{margin-top:16px;padding-top:13px;border-top:1px solid #17263F}}
 .warn{{background:rgba(224,178,58,.06);border:1px solid rgba(224,178,58,.24);
-      border-radius:10px;padding:13px 16px;font-size:13.5px;font-weight:500;
-      color:#D2B45E;margin-bottom:14px;line-height:1.65}}
-.legend{{display:flex;flex-wrap:wrap;gap:9px 26px;margin-bottom:13px}}
-.legend div{{display:flex;align-items:center;gap:7px;font-size:13.5px;
+      border-radius:9px;padding:10px 13px;font-size:12.5px;font-weight:500;
+      color:#D2B45E;margin-bottom:11px;line-height:1.6}}
+.legend{{display:flex;flex-wrap:wrap;gap:6px 22px;margin-bottom:9px}}
+.legend div{{display:flex;align-items:center;gap:6px;font-size:12.5px;
       font-weight:500;color:#7E93B2}}
 .src{{display:flex;justify-content:space-between;align-items:center;
-     font-size:13px;font-weight:500;color:#5D74A0;letter-spacing:.2px}}
+     font-size:12px;font-weight:500;color:#5D74A0}}
 .src b{{color:#93A7C4;font-weight:900}}
 """
 
@@ -176,60 +162,44 @@ def _bar_pct(ipo: IPO, peak: Optional[Decimal]) -> float:
     return max(1.5, min(100.0, float(pct / peak * 100)))
 
 
-def _cell(icon: str, label: str, value: str, key: str, na: bool) -> str:
-    cls = "v na" if na else "v"
-    return (f'<div class="cell"><div class="k">{ICONS[icon]}{_e(label)}</div>'
-            f'<div class="{cls}" data-verify="{_e(key)}">{_e(value)}</div></div>')
+def _field(icon: str, label: str, value: str, key: str, na: bool) -> str:
+    cls = "fv na" if na else "fv"
+    lab = f'<span class="fl">{_e(label)}</span>' if label else ""
+    return (f'<div class="f">{ICONS[icon]}{lab}'
+            f'<span class="{cls}" data-verify="{_e(key)}">{_e(value)}</span></div>')
 
 
-def _card(ipo: IPO, idx: int, show_sub: bool) -> str:
+SEP = '<div class="sep"></div>'
+
+
+def _row(ipo: IPO, idx: int, show_sub: bool) -> str:
+    """One IPO as a two-line row: name above, its figures inline below."""
     kid = f"ipo{idx}"
     hot = " hot" if ipo.is_hot else ""
-    pill = '<div class="pill">HIGH GMP</div>' if ipo.is_hot else ""
+    pill = '<span class="pill">HIGH GMP</span>' if ipo.is_hot else ""
     positive = ipo.gmp_pct is not None and ipo.gmp_pct > 0
-    pct_cls = "gmppct" if positive else "gmppct flat"
+    pct_cls = "pct" if positive else "pct flat"
 
-    cells = []
+    fields = [
+        _field("cal", "", ipo.date_range_text, f"{kid}.dates", False),
+        _field("price", "", f"₹{ipo.price_band_text}", f"{kid}.price", False),
+    ]
     if show_sub:
-        cells = [
-            _cell("cal", "OPEN – CLOSE", ipo.date_range_text, f"{kid}.dates", False),
-            _cell("price", "PRICE BAND", f"₹{ipo.price_band_text}", f"{kid}.price", False),
-            _cell("retail", "RETAIL", ipo.retail_text, f"{kid}.retail",
-                  ipo.retail_sub is None),
-            _cell("total", "TOTAL", ipo.total_text, f"{kid}.total",
-                  ipo.total_sub is None),
-        ]
-
-    gmp_block = f"""<div class="gmpbox">
-          <div class="gmplbl">GMP</div>
-          <div class="gmpval">
-            <div class="{pct_cls}" data-verify="{kid}.gmppct">{_e(ipo.gmp_pct_text)}</div>
-            <div class="gmprs" data-verify="{kid}.gmp">{_e(ipo.gmp_text)}</div>
-          </div>
-        </div>"""
-
-    if show_sub:
-        body = f'<div class="data">{"".join(cells)}</div>'
-        inline = ""
-    else:
-        body = ""
-        inline = f"""<div class="inline">
-            <div class="it">{ICONS['cal']}<span class="iv"
-                 data-verify="{kid}.dates">{_e(ipo.date_range_text)}</span></div>
-            <div class="sep"></div>
-            <div class="it">{ICONS['price']}<span class="iv"
-                 data-verify="{kid}.price">₹{_e(ipo.price_band_text)}</span></div>
-          </div>"""
+        fields.append(_field("retail", "RETAIL", ipo.retail_text, f"{kid}.retail",
+                             ipo.retail_sub is None))
+        fields.append(_field("total", "TOTAL", ipo.total_text, f"{kid}.total",
+                             ipo.total_sub is None))
 
     return f"""
-    <div class="card{hot}">
-      <div class="top">
-        <div class="left">
-          <div><div class="nmrow"><div class="nm" data-verify="{kid}.name">{_e(ipo.name)}</div>{pill}</div>{inline}</div>
-        </div>
-        {gmp_block}
+    <div class="row{hot}">
+      <div class="main">
+        <div class="nmrow"><span class="nm" data-verify="{kid}.name">{_e(ipo.name)}</span>{pill}</div>
+        <div class="sub">{SEP.join(fields)}</div>
       </div>
-      {body}
+      <div class="gmp">
+        <span class="{pct_cls}" data-verify="{kid}.gmppct">{_e(ipo.gmp_pct_text)}</span>
+        <span class="rs" data-verify="{kid}.gmp">{_e(ipo.gmp_text)}</span>
+      </div>
     </div>"""
 
 
@@ -284,11 +254,11 @@ def build_html(ds: Dataset) -> str:
     ranked = rank_by_gmp(ds)
     peak = next((i.gmp_pct for i in ranked if i.gmp_pct is not None), None)
 
-    open_html = ("".join(_card(i, n, True)
+    open_html = ("".join(_row(i, n, True)
                          for n, i in enumerate(ds.open_ipos))
                  or '<div class="empty">No Mainboard IPOs are open today.</div>')
     off = len(ds.open_ipos)
-    up_html = ("".join(_card(i, off + n, False)
+    up_html = ("".join(_row(i, off + n, False)
                        for n, i in enumerate(ds.upcoming_ipos))
                or '<div class="empty">No Mainboard IPOs are scheduled yet.</div>')
 
