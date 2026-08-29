@@ -13,12 +13,15 @@ from typing import Iterable, Optional
 
 from bs4 import BeautifulSoup
 
-from .models import (Board, IPO, Provenance, Status, classify_status,
+from .models import (Board, IPO, Provenance, Status, _MONTHS, classify_status,
                      parse_date, parse_price_band, to_decimal)
 
 # --- header alias sets. Matching is on normalised, punctuation-free text. ---
 ALIASES: dict[str, tuple[str, ...]] = {
     "name":   ("ipo", "ipo name", "company", "company name", "name", "issue", "ipo details"),
+    "board":  ("type", "ipo type", "board", "category", "segment"),
+    "status": ("status", "ipo status"),
+    "updated": ("last updated", "updated", "update time", "updated at"),
     "retail": ("retail", "rii", "retail x", "retail individual", "retail investor",
                "rii x", "retail subscription", "individual"),
     "total":  ("total", "total x", "overall", "total subscription", "subscription",
@@ -31,7 +34,9 @@ ALIASES: dict[str, tuple[str, ...]] = {
 }
 
 # Columns we must never surface (section 3).
-BANNED = ("qib", "nii", "hni", "snii", "bnii", "anchor", "employee", "shareholder")
+BANNED = ("qib", "nii", "hni", "snii", "bnii", "anchor", "employee", "shareholder",
+          "est listing", "estimated listing", "listing price", "listing gain",
+          "expected listing", "trend")
 
 
 def _norm(s: str) -> str:
@@ -63,6 +68,34 @@ def _is_banned(header: str) -> bool:
 # ---------- SME detection (section 2: SME must be excluded) ----------
 
 _SME_TOKENS = ("sme", "nse sme", "bse sme", "emerge", "nse emerge", "bse smee")
+
+
+def board_from_cell(text: Optional[str]) -> Optional[Board]:
+    """Read IPOWatch's own Type column. Authoritative when present."""
+    if not text:
+        return None
+    t = _norm(text)
+    if not t:
+        return None
+    if "sme" in t.split() or "emerge" in t:
+        return Board.SME
+    if "mainboard" in t or "main board" in t or "mainline" in t:
+        return Board.MAINBOARD
+    return None
+
+
+def status_from_cell(text: Optional[str]) -> Optional[Status]:
+    """Read IPOWatch's own Status column. Authoritative when present."""
+    if not text:
+        return None
+    t = _norm(text)
+    if t.startswith("open") or t == "live":
+        return Status.OPEN
+    if t.startswith("upcoming") or t.startswith("soon"):
+        return Status.UPCOMING
+    if t.startswith("closed") or t.startswith("listed"):
+        return Status.CLOSED
+    return None
 
 
 def detect_board(name: str, href: str = "", section_heading: str = "") -> Board:
@@ -134,6 +167,13 @@ def parse_table(table, source_url: str, today: date) -> list[IPO]:
     if not colmap:
         return []
 
+    # A table with no date and no status column cannot be placed in time -
+    # IPOWatch's "Mainboard IPO GMP Performance" table of already-listed IPOs
+    # is one of these. Parsing it would inject rows with no status that could
+    # collide by name with live ones.
+    if not ({"dates", "open", "close", "status"} & set(colmap)):
+        return []
+
     heading = _nearest_heading(table)
     out: list[IPO] = []
 
@@ -159,16 +199,21 @@ def parse_table(table, source_url: str, today: date) -> list[IPO]:
         open_d = parse_date(col("open"), today.year)
         close_d = parse_date(col("close"), today.year)
         if not (open_d and close_d):
-            o, c = _split_date_range(col("dates"), today.year)
+            o, c = parse_compact_range(col("dates"), today)
+            if not (o or c):
+                o, c = _split_date_range(col("dates"), today.year)
             open_d = open_d or o
             close_d = close_d or c
 
         pmin, pmax = parse_price_band(col("price"))
 
+        board = board_from_cell(col("board")) or detect_board(name, href, heading)
+        page_status = status_from_cell(col("status"))
+
         ipo = IPO(
             name=_clean_name(name),
-            board=detect_board(name, href, heading),
-            status=classify_status(open_d, close_d, today),
+            board=board,
+            status=page_status or classify_status(open_d, close_d, today),
             open_date=open_d,
             close_date=close_d,
             price_min=pmin,
@@ -176,10 +221,52 @@ def parse_table(table, source_url: str, today: date) -> list[IPO]:
             gmp=to_decimal(col("gmp")),
             retail_sub=to_decimal(col("retail")),
             total_sub=to_decimal(col("total")),
+            row_updated=col("updated"),
+            status_from_page=page_status is not None,
             prov=Provenance(source_url=source_url),
         )
         out.append(ipo)
     return out
+
+
+# IPOWatch writes ranges as "27-31 August" or, across a month boundary,
+# "28-1 September" - the month belongs to the CLOSING day, and when the first
+# number is the larger one the opening day sits in the previous month.
+_COMPACT_RANGE = re.compile(
+    r"^\s*(\d{1,2})\s*(?:-|–|—|to)\s*(\d{1,2})\s+([A-Za-z]{3,9})\.?\s*(\d{4})?\s*$", re.I)
+
+
+def parse_compact_range(text: Optional[str], today: date):
+    """'28-1 September' -> (28 Aug, 1 Sep). Returns (None, None) if not this shape."""
+    if not text:
+        return (None, None)
+    m = _COMPACT_RANGE.match(str(text))
+    if not m:
+        return (None, None)
+    d1, d2, mon_txt, yr = int(m.group(1)), int(m.group(2)), m.group(3), m.group(4)
+    mon = mon_txt[:3].lower()
+    if mon not in _MONTHS:
+        return (None, None)
+    close_month = _MONTHS.index(mon) + 1
+    year = int(yr) if yr else today.year
+    # A range printed in Jan for a Dec opening belongs to the previous year.
+    if not yr and close_month == 1 and today.month == 12:
+        year = today.year + 1
+    try:
+        close_d = date(year, close_month, d2)
+    except ValueError:
+        return (None, None)
+    if d1 <= d2:
+        try:
+            return (date(year, close_month, d1), close_d)
+        except ValueError:
+            return (None, close_d)
+    # d1 > d2: the opening day is in the month before the closing month.
+    om, oy = (close_month - 1, year) if close_month > 1 else (12, year - 1)
+    try:
+        return (date(oy, om, d1), close_d)
+    except ValueError:
+        return (None, close_d)
 
 
 _RANGE_SPLIT = re.compile(r"\s*(?:-|–|—|to)\s*")

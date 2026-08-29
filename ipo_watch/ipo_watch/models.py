@@ -55,6 +55,13 @@ class IPO:
     retail_sub: Optional[Decimal] = None     # times (x)
     total_sub: Optional[Decimal] = None      # times (x)
 
+    # IPOWatch stamps each row with its own update time; kept per-row because
+    # the two pages refresh independently (rule 5.5).
+    row_updated: Optional[str] = None
+    # True when IPOWatch printed the status itself rather than us deriving it
+    # from dates. An explicit status always wins.
+    status_from_page: bool = False
+
     prov: Provenance = field(default_factory=Provenance)
     # Set when a value existed but failed verification (rule 5.10).
     unverified_fields: set[str] = field(default_factory=set)
@@ -237,4 +244,8 @@ def classify_status(ipo_open: Optional[date], ipo_close: Optional[date], today: 
         return Status.CLOSED
     if ipo_open and not ipo_close:
         return Status.OPEN if ipo_open <= today else Status.UPCOMING
+    if ipo_close and not ipo_open:
+        # The subscription table gives only a closing date. A row there already
+        # carries bid numbers, so it has opened; only the close date decides.
+        return Status.CLOSED if today > ipo_close else Status.OPEN
     return Status.UNKNOWN

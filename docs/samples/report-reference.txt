@@ -3,75 +3,59 @@
 
 🟢 OPEN MAINBOARD IPOs
 
-🔥 VIDYA WIRES
-📅 27 Aug – 29 Aug
-💰 Price: ₹402–429
-👥 Retail: 3.25x
-📊 Total: 7.8x
-🟢 GMP: ₹325 | 75.76%
-
-🔥 SUDEEP PHARMA
-📅 27 Aug – 29 Aug
-💰 Price: ₹563–593
-👥 Retail: 12.66x
-📊 Total: 28.4x
-🟢 GMP: ₹142 | 23.95%
-
-SHRINGAR HOUSE OF MANGALSUTRA
-📅 29 Aug – 02 Sep
-💰 Price: ₹155–165
-👥 Retail: Not updated
-📊 Total: Not updated
-🟢 GMP: ₹12 | 7.27%
-
-GK ENERGY
+🔥 ESDS SOFTWARE
 📅 28 Aug – 01 Sep
-💰 Price: ₹145–153
-👥 Retail: 1.08x
-📊 Total: 3.9x
-🟢 GMP: ₹9 | 5.88%
+💰 Price: ₹429
+👥 Retail: 2.84x
+📊 Total: 2.21x
+🟢 GMP: ₹360 | 83.92%
 
-ANLON HEALTHCARE
+🔥 LUMINO INDUSTRIES
+📅 27 Aug – 31 Aug
+💰 Price: ₹82
+👥 Retail: 6.87x
+📊 Total: 5.14x
+🟢 GMP: ₹60 | 73.17%
+
+🔥 PRIORITY JEWELS
 📅 28 Aug – 01 Sep
-💰 Price: ₹86–91
-👥 Retail: 2.05x
-📊 Total: 1.42x
-🟢 GMP: ₹0 | 0.00%
+💰 Price: ₹200
+👥 Retail: 3.07x
+📊 Total: 1.93x
+🟢 GMP: ₹45 | 22.50%
 
 🔵 UPCOMING MAINBOARD IPOs
 
-🔥 OM FREIGHT FORWARDERS
-📅 03 Sep – 05 Sep
-💰 Price: ₹128–135
-🟢 GMP: ₹31 | 22.96%
+🔥 DEEPA JEWELLERS
+📅 01 Sep – 03 Sep
+💰 Price: ₹177
+🟢 GMP: ₹47 | 26.55%
 
-🔥 AMANTA HEALTHCARE
-📅 02 Sep – 04 Sep
-💰 Price: ₹120–126
-🟢 GMP: ₹18 | 14.29%
+🔥 RAYS OF BELIEF
+📅 01 Sep – 03 Sep
+💰 Price: ₹239
+🟢 GMP: ₹25 | 10.46%
 
-RACHIT PRINTS
-📅 04 Sep – 08 Sep
-💰 Price: ₹91–96
-🟢 GMP: ₹0 | 0.00%
+PURPLE STYLE LABS
+📅 31 Aug – 02 Sep
+💰 Price: ₹575
+🟢 GMP: ₹30 | 5.22%
 
 🏆 CURRENT GMP RANKING
 
-1. Vidya Wires — 75.76% (₹325) 🟢
-2. Sudeep Pharma — 23.95% (₹142) 🟢
-3. Om Freight Forwarders — 22.96% (₹31) 🔵
-4. Amanta Healthcare — 14.29% (₹18) 🔵
-5. Shringar House of Mangalsutra — 7.27% (₹12) 🟢
-6. GK Energy — 5.88% (₹9) 🟢
-7. Anlon Healthcare — 0.00% (₹0) 🟢
-8. Rachit Prints — 0.00% (₹0) 🔵
+1. ESDS Software — 83.92% (₹360) 🟢
+2. Lumino Industries — 73.17% (₹60) 🟢
+3. Deepa Jewellers — 26.55% (₹47) 🔵
+4. Priority Jewels — 22.50% (₹45) 🟢
+5. Rays of Belief — 10.46% (₹25) 🔵
+6. Purple Style Labs — 5.22% (₹30) 🔵
 
-🔥 Highest GMP: Vidya Wires — 75.76%
-👥 Highest Retail Subscription: Sudeep Pharma — 12.66x
-📊 Highest Total Subscription: Sudeep Pharma — 28.4x
+🔥 Highest GMP: ESDS Software — 83.92%
+👥 Highest Retail Subscription: Lumino Industries — 6.87x
+📊 Highest Total Subscription: Lumino Industries — 5.14x
 
 📌 GMP = Grey Market Premium
 📈 GMP % calculated on upper price band
 ⚠️ GMP is unofficial and can change before listing.
 Source: IPOWatch
-🕒 Subscription data: 29 Aug 2026, 07:45 PM | GMP data: 29 Aug 2026, 08:10 PM
+🕒 Subscription data: 29 Aug, 17:45 | GMP data: 29 Aug, 16:50

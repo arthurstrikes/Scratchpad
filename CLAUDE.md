@@ -21,10 +21,11 @@ Do **not** run `playwright install` in a cloud session - use the existing binary
 
 ## Current status
 
-The pipeline is complete and tested. Whether it can run depends on one thing:
+Validated against live IPOWatch on 29 Aug 2026. It parses the real page and
+produces correct output.
 
-**`ipowatch.in` must be reachable.** In a cloud session that requires the
-environment's Network access to be **Custom** with `ipowatch.in` and
+**`ipowatch.in` must be reachable.** In a cloud session that needs the
+environment's Network access set to **Custom** with `ipowatch.in` and
 `*.ipowatch.in` allowed, *and* "Also include default list of common package
 managers" ticked. Check first:
 
@@ -32,21 +33,43 @@ managers" ticked. Check first:
 curl -sS -o /dev/null -w "%{http_code}\n" --max-time 20 https://ipowatch.in/
 ```
 
-`000` means still blocked - say so and stop. Do not substitute another site,
-do not fall back to web search, and do not write a report. The run aborts
-with exit 2 by design.
+`000` means blocked - say so and stop. Do not substitute another site, do not
+fall back to web search, and do not write a report. The run aborts with exit 2
+by design.
 
-## First live run
+## How IPOWatch is actually laid out
 
-Nothing has yet parsed IPOWatch's real markup - every sample so far came from
-the synthetic fixtures. On the first successful live run:
+Learned from the live page; `fixtures/live/` pins it and five tests assert it.
 
-1. Check the parsed row counts in the log look plausible.
-2. Read the saved HTML in `ipo_watch/output/snapshots/`.
-3. If a column was missed, add its header wording to `ALIASES` in
-   `ipo_watch/parse.py`. Columns are matched by header text, not position,
-   so that is normally the only change needed.
-4. Copy a snapshot into `ipo_watch/fixtures/` to pin the parser.
+**Subscription page** - one table:
+`IPO | Type | Closing Date | QIB (X) | NII (X) | Retail (X) | Total (X) | Last Updated`
+- `Type` says "Mainboard" or "SME" outright. Authoritative; do not re-derive.
+- Only a *closing* date. Open dates come from the GMP page.
+- `Last Updated` is a bare time per row, e.g. `17:45`.
+- ~190 rows going back months, mostly closed.
+
+**GMP page** - three tables:
+- Table 0, under "Mainboard IPO GMP", and table 1, under "SME IPO GMP":
+  `IPO Name | IPO GMP* | Trend | Price Band | Est. Listing | Date | Status | Last Updated`
+  - `Status` says "Open"/"Upcoming"/"Closed" outright. Authoritative.
+  - `Price Band` is a single cap price (`₹429`), not a range.
+  - `Date` is compact: `28-1 September` means 28 Aug to 1 Sep. When the first
+    number is larger it belongs to the previous month.
+  - `Est. Listing` is IPOWatch's own estimate - **banned**, section 4 requires
+    computing GMP % ourselves.
+- Table 2, "Mainboard IPO GMP Performance": already-listed history, no Status
+  or Date. Skipped, because a table with no date and no status cannot be
+  placed in time and its names could collide with live rows.
+
+Both pages are **server-rendered** - the tables are complete in the delivered
+HTML. `fetch.py` uses a plain HTTPS request, not a browser. Chromium in this
+sandbox does not trust the egress proxy's CA (a known-good host fails with
+`ERR_CERT_AUTHORITY_INVALID`), and disabling TLS verification is not
+acceptable. `fetch.render_pages()` keeps a browser path if a redesign ever
+needs JavaScript.
+
+If a column moves, add its header wording to `ALIASES` in `parse.py` - columns
+are matched by header text, never by position.
 
 ## Rules that must not be broken
 

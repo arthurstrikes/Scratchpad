@@ -9,11 +9,15 @@ from __future__ import annotations
 
 import os
 import re
+import ssl
+import urllib.request
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
+from urllib.parse import urlparse
 
-from .config import (CHROMIUM_PATH, IST, PAGE_TIMEOUT_MS, SETTLE_MS, USER_AGENT)
+from .config import (CA_BUNDLE, CHROMIUM_PATH, HTTP_TIMEOUT_S, IST,
+                     PAGE_TIMEOUT_MS, SETTLE_MS, USER_AGENT)
 
 
 class FetchError(RuntimeError):
@@ -34,43 +38,84 @@ class Page:
 
 
 def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None) -> dict[str, Page]:
-    """Render each URL in one browser session and return its final DOM HTML."""
+    """Fetch each page over HTTPS and return its HTML.
+
+    IPOWatch renders both tables server-side - the subscription table and the
+    GMP tables are complete in the delivered HTML, with no client-side
+    hydration - so a plain request gets the same DOM a browser would build.
+    This is the live page each time, never a cache or a search snippet.
+
+    A browser was the original approach, but Chromium in this sandbox does not
+    trust the egress proxy's CA (it fails a known-good host with
+    ERR_CERT_AUTHORITY_INVALID), and disabling TLS verification to work around
+    that is not acceptable. `render_pages` below keeps the browser path for
+    any future page that genuinely needs JavaScript.
+    """
+    pages: dict[str, Page] = {}
+    ctx = ssl.create_default_context(cafile=CA_BUNDLE) if os.path.exists(CA_BUNDLE) \
+        else ssl.create_default_context()
+
+    for url in urls:
+        req = urllib.request.Request(url, headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-IN,en;q=0.9",
+        })
+        try:
+            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT_S, context=ctx) as resp:
+                raw = resp.read()
+                status = resp.status
+        except Exception as exc:  # noqa: BLE001
+            raise FetchError(f"Could not fetch {url}: {exc}") from exc
+        if status != 200:
+            raise FetchError(f"{url} returned HTTP {status}")
+
+        html = raw.decode("utf-8", errors="replace")
+        if "<table" not in html.lower():
+            raise FetchError(
+                f"{url} returned no tables ({len(raw)} bytes). The page layout may "
+                "have changed - inspect the snapshot before publishing anything.")
+
+        pg = Page(url=url, html=html, fetched_at=datetime.now(IST))
+        pages[url] = pg
+        if snapshot_dir:
+            _snapshot(pg, snapshot_dir)
+    return pages
+
+
+def render_pages(urls: list[str], snapshot_dir: Optional[str] = None) -> dict[str, Page]:
+    """Browser-rendered fetch, for pages that need JavaScript.
+
+    Not used by the daily run - IPOWatch does not need it. Kept because a
+    future IPOWatch redesign might, and because it is the honest fallback if
+    the served HTML ever stops containing the tables.
+    """
     from playwright.sync_api import sync_playwright
 
     pages: dict[str, Page] = {}
-    launch_args = ["--no-sandbox", "--disable-dev-shm-usage"]
-    kwargs = {"args": launch_args}
+    kwargs = {"args": ["--no-sandbox", "--disable-dev-shm-usage"]}
     if CHROMIUM_PATH and os.path.exists(CHROMIUM_PATH):
         kwargs["executable_path"] = CHROMIUM_PATH
+    proxy_url = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+    if proxy_url:
+        kwargs["proxy"] = {"server": proxy_url}
 
     with sync_playwright() as p:
         browser = p.chromium.launch(**kwargs)
-        ctx = browser.new_context(
-            user_agent=USER_AGENT,
-            viewport={"width": 1440, "height": 2000},
-            locale="en-IN",
-            timezone_id="Asia/Kolkata",
-        )
+        ctx = browser.new_context(user_agent=USER_AGENT, locale="en-IN",
+                                  timezone_id="Asia/Kolkata")
+        ctx.route("**/*", _only_source)
         try:
             for url in urls:
                 page = ctx.new_page()
                 try:
                     page.goto(url, timeout=PAGE_TIMEOUT_MS, wait_until="domcontentloaded")
-                    try:
-                        page.wait_for_load_state("networkidle", timeout=SETTLE_MS * 2)
-                    except Exception:
-                        pass  # networkidle is best-effort; the DOM is what matters
-                    try:
-                        page.wait_for_selector("table", timeout=SETTLE_MS)
-                    except Exception:
-                        pass
                     page.wait_for_timeout(SETTLE_MS)
                     html = page.content()
                 except Exception as exc:  # noqa: BLE001
                     raise FetchError(f"Could not render {url}: {exc}") from exc
                 finally:
                     page.close()
-
                 pg = Page(url=url, html=html, fetched_at=datetime.now(IST))
                 pages[url] = pg
                 if snapshot_dir:
@@ -78,6 +123,29 @@ def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None) -> dict[str
         finally:
             browser.close()
     return pages
+
+
+_ALLOWED_HOST_SUFFIX = "ipowatch.in"
+# Subresource types that never carry table data; skipping them cuts load time.
+_SKIP_TYPES = {"image", "media", "font", "stylesheet"}
+
+
+def _only_source(route, request) -> None:
+    """Allow same-site requests, drop third-party and heavy subresources."""
+    try:
+        host = urlparse(request.url).hostname or ""
+        if not (host == _ALLOWED_HOST_SUFFIX or host.endswith("." + _ALLOWED_HOST_SUFFIX)):
+            route.abort()
+            return
+        if request.resource_type in _SKIP_TYPES:
+            route.abort()
+            return
+        route.continue_()
+    except Exception:
+        try:
+            route.abort()
+        except Exception:
+            pass
 
 
 def load_fixture(url: str, path: str) -> Page:

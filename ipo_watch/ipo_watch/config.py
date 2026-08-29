@@ -24,8 +24,12 @@ USER_AGENT = (
     "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 )
 
+HTTP_TIMEOUT_S = 45
+# The sandbox's egress proxy re-terminates TLS with its own CA.
+CA_BUNDLE = os.environ.get("IPOWATCH_CA_BUNDLE", "/root/.ccr/ca-bundle.crt")
+
 PAGE_TIMEOUT_MS = 45_000
-# IPOWatch hydrates subscription numbers client-side; wait for the network to settle.
+# Only used by the browser fallback in fetch.render_pages.
 SETTLE_MS = 2_500
 
 # Sentinels required by the accuracy rules (section 5).

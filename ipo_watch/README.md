@@ -6,11 +6,9 @@ a share-ready image creative, and a one-tap share page.
 
 ## Status
 
-The pipeline is complete and tested. **It has not yet run against live
-IPOWatch data**, because `ipowatch.in` is blocked by the network egress
-policy of the environment it was built in (see *Network access* below).
-Everything in `output/sample/` was produced from the fixture files in
-`fixtures/` and contains **illustrative sample numbers, not market data**.
+Validated against live IPOWatch on 29 Aug 2026: it parses the real page and
+produces correct output. `fixtures/live/` holds trimmed real markup, and five
+tests assert the figures parsed from it.
 
 ## Quick start
 
@@ -42,6 +40,11 @@ when it finishes. On a non-IST machine, convert the hour: 8:00 PM IST is
 14:30 UTC.
 
 ## Design rules this implements
+
+**Fetching** — Both IPOWatch pages are server-rendered, so `fetch.py` makes a
+plain HTTPS request and parses the delivered HTML. It is the live page every
+run, never a cache or a search snippet. A browser path remains in
+`fetch.render_pages()` for a future redesign that needs JavaScript.
 
 **Scope** — Only Mainboard IPOs that are Open or Upcoming are published. SME
 issues are excluded (detected from the IPO name, the link URL, *and* the

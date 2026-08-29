@@ -120,7 +120,7 @@ def build_dataset(
         key = norm_key(row.name)
         if not key:
             continue
-        row.prov.gmp_timestamp = gmp_ts
+        row.prov.gmp_timestamp = row.row_updated or gmp_ts
         merged[key] = row
 
     # Subscription page is authoritative for retail/total.
@@ -129,21 +129,27 @@ def build_dataset(
         if not key:
             continue
         if key not in merged:
-            row.prov.subscription_timestamp = sub_ts
+            row.prov.subscription_timestamp = row.row_updated or sub_ts
             merged[key] = row
             continue
         tgt = merged[key]
-        tgt.prov.subscription_timestamp = sub_ts
+        tgt.prov.subscription_timestamp = row.row_updated or sub_ts
         tgt.retail_sub = row.retail_sub if row.retail_sub is not None else tgt.retail_sub
         tgt.total_sub = row.total_sub if row.total_sub is not None else tgt.total_sub
         for attr in ("open_date", "close_date", "price_min", "price_max"):
             _merge_field(tgt, row, attr, gmp_ts, sub_ts, ds.conflicts)
         if row.board == Board.SME:      # an SME marker on either page is decisive
             tgt.board = Board.SME
+        # The subscription page carries no open date, so let the GMP page's
+        # dates stand; but its explicit status wins if the GMP page had none.
+        if row.status_from_page and not tgt.status_from_page:
+            tgt.status, tgt.status_from_page = row.status, True
 
-    # Re-derive status from the merged dates so it can never contradict them.
+    # Only derive status where IPOWatch did not state one itself (rule 5.3:
+    # prefer what the source says over anything we infer).
     for ipo in merged.values():
-        ipo.status = classify_status(ipo.open_date, ipo.close_date, today)
+        if not ipo.status_from_page:
+            ipo.status = classify_status(ipo.open_date, ipo.close_date, today)
 
     for ipo in merged.values():
         if ipo.board == Board.SME:
@@ -152,17 +158,51 @@ def build_dataset(
         if ipo.board == Board.UNKNOWN:
             ds.warnings.append(f"{ipo.name}: could not confirm Mainboard vs SME - excluded")
             continue
-        _flag_unverified(ipo, ds)
         if ipo.status == Status.OPEN:
+            _flag_unverified(ipo, ds)
             ds.open_ipos.append(ipo)
         elif ipo.status == Status.UPCOMING:
+            _flag_unverified(ipo, ds)
             ds.upcoming_ipos.append(ipo)
         elif ipo.status == Status.CLOSED:
-            ds.recently_closed.append(ipo)   # retained internally only (section 2)
+            # Retained internally only (section 2), and only while still recent -
+            # IPOWatch's subscription table goes back months.
+            if ipo.close_date is None or (today - ipo.close_date).days <= 14:
+                ds.recently_closed.append(ipo)
 
     ds.open_ipos.sort(key=_gmp_sort_key, reverse=True)
     ds.upcoming_ipos.sort(key=_gmp_sort_key, reverse=True)
+
+    # IPOWatch stamps each row rather than the page, so report the newest stamp
+    # among the rows actually published, per source (rule 5.5).
+    ds.subscription_timestamp = _qualify_stamp(_latest(
+        [i.prov.subscription_timestamp for i in ds.published]) or sub_ts, today)
+    ds.gmp_timestamp = _latest(
+        [i.prov.gmp_timestamp for i in ds.published]) or gmp_ts
     return ds
+
+
+_TIME_ONLY = re.compile(r"^\s*(\d{1,2}:\d{2})\s*$")
+
+
+def _qualify_stamp(stamp: Optional[str], today: date) -> Optional[str]:
+    """IPOWatch's subscription rows stamp a bare time; add the day it refers to."""
+    if not stamp:
+        return stamp
+    m = _TIME_ONLY.match(stamp)
+    return f"{today.strftime('%d %b')}, {m.group(1)}" if m else stamp
+
+
+def _latest(stamps: list[Optional[str]]) -> Optional[str]:
+    """Newest of a set of row stamps; falls back to the most common string."""
+    vals = [s for s in stamps if s]
+    if not vals:
+        return None
+    parsed = [(_parse_stamp(v), v) for v in vals]
+    dated = [(d, v) for d, v in parsed if d]
+    if dated:
+        return max(dated, key=lambda t: t[0])[1]
+    return max(set(vals), key=vals.count)
 
 
 def _flag_unverified(ipo: IPO, ds: Dataset) -> None:

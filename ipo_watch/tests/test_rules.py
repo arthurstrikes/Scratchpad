@@ -166,3 +166,60 @@ def test_report_names_the_leaders():
     out = build_report(ds)
     assert "Highest GMP: Acme — 75.76%" in out
     assert "Highest Retail Subscription: Acme — 3.25x" in out
+
+
+# --- Section 5: parsing IPOWatch's real markup ------------------------------
+# fixtures/live/ is trimmed from an actual fetch on 2026-08-29. These pin the
+# parser to the real page shape: explicit Type / Status columns, a single
+# cap price rather than a range, compact "28-1 September" date ranges, and a
+# historical GMP table that must be ignored.
+
+import os
+LIVE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "fixtures", "live")
+
+
+def _live_dataset():
+    from ipo_watch.parse import parse_page
+    sub = parse_page(open(os.path.join(LIVE, "sub_sample.html"), encoding="utf-8").read(),
+                     "sub", date(2026, 8, 29))
+    gmp = parse_page(open(os.path.join(LIVE, "gmp_sample.html"), encoding="utf-8").read(),
+                     "gmp", date(2026, 8, 29))
+    return build_dataset(sub, gmp, date(2026, 8, 29))
+
+
+def test_live_markup_selects_the_right_ipos():
+    ds = _live_dataset()
+    assert [i.name for i in ds.open_ipos] == [
+        "ESDS Software", "Lumino Industries", "Priority Jewels"]
+    assert [i.name for i in ds.upcoming_ipos] == [
+        "Deepa Jewellers", "Rays of Belief", "Purple Style Labs"]
+
+
+def test_live_markup_gmp_matches_hand_calculation():
+    ds = _live_dataset()
+    got = {i.name: i.gmp_pct_text for i in ds.published}
+    assert got["ESDS Software"] == "83.92%"      # 360/429, rounded not truncated
+    assert got["Lumino Industries"] == "73.17%"  # 60/82
+    assert got["Priority Jewels"] == "22.50%"    # 45/200
+    assert got["Deepa Jewellers"] == "26.55%"    # 47/177
+
+
+def test_live_markup_carries_subscription_from_the_other_page():
+    ds = _live_dataset()
+    esds = next(i for i in ds.open_ipos if i.name == "ESDS Software")
+    assert esds.retail_text == "2.84x" and esds.total_text == "2.21x"
+
+
+def test_live_markup_excludes_sme_and_history():
+    ds = _live_dataset()
+    names = {i.name for i in ds.published}
+    assert "Paluck Technologies" not in names      # SME, from the Type column
+    assert "Kwick Forensic Solutions" not in names  # SME, from the SME GMP table
+    assert "Lalithaa Jewellery Mart" not in names   # already-listed history table
+    assert all(i.board.value == "Mainboard" for i in ds.published)
+
+
+def test_live_markup_keeps_the_two_timestamps_apart():
+    ds = _live_dataset()
+    assert ds.subscription_timestamp == "29 Aug, 17:45"
+    assert ds.gmp_timestamp == "29 Aug, 16:50"
