@@ -144,6 +144,14 @@ Send the user the PNG **and** the .txt together - both are the deliverable.
 There is deliberately no separate caption file: the text report already ends
 with the ranking and the highest GMP / retail / total lines.
 
+On the scheduled run specifically (not necessarily an ad-hoc one run by hand),
+also paste the complete report text into the chat reply itself, in a code
+block, in addition to attaching the .txt file. The user reads this on a
+phone and long-presses the message to copy it straight into WhatsApp; making
+them open the attachment first was needless friction. This lives in the
+Routine's own prompt (`trig_01EReco6VzLZHTxJ5tdFADpG`), not in this repo's
+code - if the Routine is ever recreated, carry this instruction over too.
+
 ## Creative
 
 `creative.py` renders HTML to PNG via Chromium. Every figure carries a
