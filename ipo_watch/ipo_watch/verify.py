@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .merge import Dataset
+from .merge import Dataset, leader, rank_by_gmp
 
 
 @dataclass
@@ -41,6 +41,24 @@ def expected_map(ds: Dataset) -> dict[str, str]:
         out[f"{k}.gmppct"] = ipo.gmp_pct_text
         out[f"{k}.dates"] = ipo.date_range_text
         out[f"{k}.price"] = f"₹{ipo.price_band_text}"
+
+    # The ranking strip restates every GMP %, so it is verified too - a strip
+    # that disagreed with the cards above it would be worse than no strip.
+    for n, ipo in enumerate(rank_by_gmp(ds), 1):
+        out[f"rank{n}.name"] = ipo.name
+        out[f"rank{n}.pct"] = ipo.gmp_pct_text
+
+    ranked = rank_by_gmp(ds)
+    top_gmp = next((i for i in ranked if i.gmp_pct is not None), None)
+    top_ret, top_tot = leader(ds, "retail_sub"), leader(ds, "total_sub")
+    for key, ipo, val in (
+        ("lead_gmp", top_gmp, top_gmp.gmp_pct_text if top_gmp else None),
+        ("lead_ret", top_ret, top_ret.retail_text if top_ret else None),
+        ("lead_tot", top_tot, top_tot.total_text if top_tot else None),
+    ):
+        if ipo is not None:
+            out[f"{key}.name"] = ipo.name
+            out[f"{key}.val"] = val
     return out
 
 
