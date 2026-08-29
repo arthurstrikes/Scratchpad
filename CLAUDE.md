@@ -71,6 +71,47 @@ needs JavaScript.
 If a column moves, add its header wording to `ALIASES` in `parse.py` - columns
 are matched by header text, never by position.
 
+## Working agreement with the user
+
+The user is not a programmer and has asked to be kept out of technical
+decisions. So:
+
+- **Decide, then explain.** Make the technical call yourself. Explain what you
+  did in plain language - no jargon, no assumed background - and say why.
+- **Ask first for anything hard to undo**, and for anything that changes the
+  published numbers, the creative design, the schedule, or how the update is
+  delivered. Explain the options in simple words and wait for a clear yes.
+- **Merge low-risk work yourself**: documentation, bug fixes, parser repairs
+  after an IPOWatch layout change. Open the PR, merge it, and tell them what
+  changed. Do not make them click through it.
+- **Never give investment advice or rank IPOs as buys.** Report the numbers.
+
+## Delivery is manual on purpose
+
+The user asked for the update to post itself to WhatsApp with no interaction.
+This was researched on 29 Aug 2026 and declined; do not rebuild it without a
+fresh decision from them.
+
+- WhatsApp has no free, terms-compliant way for software to post into a
+  personal chat or group. That is Meta's product decision.
+- The official Cloud API bills per business-initiated message (India: roughly
+  ₹0.115-0.145 + GST, about ₹60/year for one a day), needs a phone number
+  never registered on normal WhatsApp, business verification, and template
+  approval.
+- Its group support, added in 2026, caps groups at 8 members and appears to
+  cover only groups the business number itself owns - not an existing
+  personal group.
+- Unofficial libraries (whatsapp-web.js and similar) break WhatsApp's terms
+  and risk a ban on the user's own number. They also need a session that
+  stays logged in, which cannot survive a fresh container every night.
+  **Do not build this.**
+
+So the run sends the user the PNG and the .txt, and they forward it by hand:
+notification -> open session -> long-press image -> Share -> WhatsApp. Free,
+permitted, and it keeps a human eye on the figures before they reach anyone
+else. Telegram remains the free fully-automatic option if they ever accept a
+different app.
+
 ## Rules that must not be broken
 
 These come from the user and are enforced by tests in `tests/test_rules.py`:
