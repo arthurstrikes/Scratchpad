@@ -171,9 +171,19 @@ stay near a 1:1 aspect ratio.
 `30 14 * * *` UTC — 8:00 PM IST — in the allowlisted environment, runs the
 pipeline, and sends the user the PNG and the .txt with a push notification.
 
-- Trigger id: `trig_01EReco6VzLZHTxJ5tdFADpG`
+- Trigger id: `trig_01RLth6vAxrBZNfhHCXmWNDV`
 - Environment: `env_01Vf2kqsvn722zF65XjRQxQj` (Network access: Custom,
   `ipowatch.in` + `*.ipowatch.in`, package-manager defaults included)
+- Notifications: push AND email. Email was added on 29 Aug 2026 as a second
+  channel after push notifications did not reach the user's phone on two
+  separate real, successful test runs - both confirmed
+  `ROUTINE_RUN_STATUS_SUCCEEDED`, so the break is in notification delivery,
+  not the pipeline. `update_trigger` cannot change notification settings -
+  it has no such parameter - so changing this means delete + recreate,
+  which is why the trigger id above differs from earlier in this file's
+  history. If the user says push notifications are working reliably again,
+  email can be dropped the same way (delete + recreate with
+  `{"push": true}` only).
 
 To change the time, pause it, or edit what it says, use `update_trigger` with
 that id, or the Routines UI on claude.ai. Do not create a second Routine for
@@ -202,3 +212,10 @@ report. Usual causes, in order of likelihood:
    prompt assumed the code would already be there. If the trigger is ever
    deleted and recreated (e.g. to change the time), copy the clone step from
    `update_trigger`'s current prompt - do not write a fresh one from memory.
+5. **Push notification silent, but the run itself succeeded.** Check
+   `list_triggers` for `last_run.status` - if it says
+   `ROUTINE_RUN_STATUS_SUCCEEDED`, the pipeline is fine and the problem is
+   notification delivery, which lives outside this repo entirely (Routines
+   are in research preview). This happened on 29 Aug 2026; email was added
+   as a second channel for exactly this reason. Do not try to "fix" this by
+   changing the pipeline - there is nothing wrong with it.
