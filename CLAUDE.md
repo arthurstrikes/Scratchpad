@@ -185,3 +185,12 @@ report. Usual causes, in order of likelihood:
    settings changed; nothing to fix in code.
 3. **Image check failed** — the creative disagreed with the dataset. This
    should be impossible; investigate rather than loosening the check.
+4. **The Routine's own prompt is missing the `git clone` step.** Every firing
+   starts on a completely bare computer - nothing survives between nights.
+   The stored prompt MUST open with cloning
+   `https://github.com/arthurstrikes/Scratchpad.git` before it does anything
+   else; CLAUDE.md being "read at the repo root" only works once that clone
+   has happened. This bit the very first scheduled run (29 Aug 2026) - the
+   prompt assumed the code would already be there. If the trigger is ever
+   deleted and recreated (e.g. to change the time), copy the clone step from
+   `update_trigger`'s current prompt - do not write a fresh one from memory.
