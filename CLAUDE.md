@@ -118,9 +118,29 @@ stay near a 1:1 aspect ratio.
 
 ## Scheduling
 
-Not yet scheduled. 8:00 PM IST = **14:30 UTC**. Two routes:
-- A Routine firing a fresh cloud session daily (works with the user on
-  mobile only; needs the allowlisted environment).
-- `ipo_watch/install_schedule.sh` for a local 20:00 cron on their own machine.
+**Live since 29 Aug 2026.** A Routine fires a fresh cloud session every day at
+`30 14 * * *` UTC — 8:00 PM IST — in the allowlisted environment, runs the
+pipeline, and sends the user the PNG and the .txt with a push notification.
 
-Confirm with the user before creating either.
+- Trigger id: `trig_01EReco6VzLZHTxJ5tdFADpG`
+- Environment: `env_01Vf2kqsvn722zF65XjRQxQj` (Network access: Custom,
+  `ipowatch.in` + `*.ipowatch.in`, package-manager defaults included)
+
+To change the time, pause it, or edit what it says, use `update_trigger` with
+that id, or the Routines UI on claude.ai. Do not create a second Routine for
+this — the user would get two updates a night.
+
+`ipo_watch/install_schedule.sh` still exists for a local 20:00 cron if they
+ever want it running on their own machine instead.
+
+## If a scheduled run reports a problem
+
+The run fails closed, so a failure means no report was sent — not a wrong
+report. Usual causes, in order of likelihood:
+
+1. **IPOWatch layout changed** — parse counts drop to zero and the run aborts.
+   Read the snapshot, extend `ALIASES`, re-pin `fixtures/live/`.
+2. **Egress blocked again** — `curl` returns 000. The environment's network
+   settings changed; nothing to fix in code.
+3. **Image check failed** — the creative disagreed with the dataset. This
+   should be impossible; investigate rather than loosening the check.
