@@ -89,6 +89,16 @@ the first live run, check `output/snapshots/` and confirm the parsed row
 count looks right. If a column is missed, add its header wording to
 `ALIASES` in `ipo_watch/parse.py` — no other change should be needed.
 
+## Creative sizing
+
+The image is tuned for being read at roughly a third of its native width in
+a chat thread, so type is larger than a screen design would use and the
+layout is dense: upcoming IPOs (which carry no subscription data) use a
+compact single-line card, and ranking is shown once in the ranking strip
+rather than repeated on every card. A busy day of 5 open + 3 upcoming IPOs
+renders at 1080x2333, a 1:2.16 ratio that WhatsApp still shows legibly.
+`fixtures/busy/` exercises that case.
+
 ## Tests
 
 ```bash
@@ -105,6 +115,7 @@ the image-vs-dataset check catching an altered number.
 ```
 ipo_watch/
   config.py    URLs, sentinels, thresholds
+  fonts.py     subset Roboto, inlined so the creative needs no system font
   fetch.py     rendered-DOM fetching + HTML snapshots + timestamp scraping
   parse.py     header-driven table parsing, SME detection
   models.py    IPO record, GMP maths, all number formatting
