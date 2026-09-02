@@ -212,10 +212,17 @@ report. Usual causes, in order of likelihood:
    prompt assumed the code would already be there. If the trigger is ever
    deleted and recreated (e.g. to change the time), copy the clone step from
    `update_trigger`'s current prompt - do not write a fresh one from memory.
-5. **Push notification silent, but the run itself succeeded.** Check
+5. **Notification silent, but the run itself succeeded.** Check
    `list_triggers` for `last_run.status` - if it says
    `ROUTINE_RUN_STATUS_SUCCEEDED`, the pipeline is fine and the problem is
    notification delivery, which lives outside this repo entirely (Routines
-   are in research preview). This happened on 29 Aug 2026; email was added
-   as a second channel for exactly this reason. Do not try to "fix" this by
-   changing the pipeline - there is nothing wrong with it.
+   are in research preview). This has now happened twice with two different
+   notification configurations: push-only failed to notify during testing on
+   29 Aug 2026 (which is why email was added as a second channel), and then
+   on 1 Sep 2026 the real scheduled 8 PM run succeeded but *neither* push nor
+   email arrived. Two failures across two configurations means this is a
+   platform reliability issue, not a settings problem - do not keep adding
+   channels or "fixing" the pipeline in response to a silent night. Tell the
+   user plainly that the run succeeded and where to find it (their session
+   list, titled after this Routine), and suggest they check the app directly
+   around 8:05 PM IST until Anthropic's notification delivery is reliable.
