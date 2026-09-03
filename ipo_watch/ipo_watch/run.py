@@ -24,6 +24,7 @@ from .models import Board, IPO, Provenance, Status, parse_date
 from .parse import parse_page
 from .report import build_report
 from .share import build_share_page
+from . import telegram
 from .verify import check
 
 
@@ -157,6 +158,19 @@ def publish(ds: Dataset, outdir: str) -> dict[str, str]:
 
     paths["share"] = build_share_page(
         ds, os.path.basename(paths["image"]), os.path.join(outdir, "share.html"))
+
+    # Telegram is an additional delivery channel, not a data-accuracy control.
+    # A Telegram outage must never be reported the same way as a bad number,
+    # so failures here are logged plainly and never change the run's exit code.
+    if telegram.configured():
+        try:
+            telegram.send_report(paths["image"], build_report(ds))
+            _log("telegram  -> delivered")
+        except telegram.TelegramError as exc:
+            _log(f"telegram  -> FAILED: {exc}")
+    else:
+        _log("telegram  -> not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID unset)")
+
     return paths
 
 

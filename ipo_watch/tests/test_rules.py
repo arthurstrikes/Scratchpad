@@ -223,3 +223,88 @@ def test_live_markup_keeps_the_two_timestamps_apart():
     ds = _live_dataset()
     assert ds.subscription_timestamp == "29 Aug, 17:45"
     assert ds.gmp_timestamp == "29 Aug, 16:50"
+
+
+# --- Telegram delivery (mocked; no real bot token needed to test) ----------
+
+def test_telegram_skips_silently_when_not_configured(monkeypatch):
+    from ipo_watch import telegram
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("TELEGRAM_CHAT_ID", raising=False)
+    assert telegram.configured() is False
+    try:
+        telegram.send_report("x.png", "report text")
+        assert False, "should have raised"
+    except telegram.TelegramError:
+        pass
+
+
+def test_telegram_sends_photo_then_report_text(monkeypatch, tmp_path):
+    from ipo_watch import telegram
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:fake")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "999")
+
+    calls = []
+
+    def fake_post(method, fields, files=None):
+        calls.append((method, dict(fields), files))
+        return {"ok": True, "result": {}}
+
+    monkeypatch.setattr(telegram, "_post", fake_post)
+
+    png = tmp_path / "ipo-watch-2026-09-03.png"
+    png.write_bytes(b"\x89PNG fake bytes")
+
+    telegram.send_report(str(png), "the full report text")
+
+    assert calls[0][0] == "sendPhoto"
+    assert calls[0][1]["chat_id"] == "999"
+    assert "2026-09-03" in calls[0][1]["caption"]
+    assert calls[0][2]["photo"][0] == "ipo-watch-2026-09-03.png"
+
+    assert calls[1][0] == "sendMessage"
+    assert calls[1][1]["text"] == "the full report text"
+
+
+def test_telegram_chunks_long_reports_under_the_message_limit(monkeypatch, tmp_path):
+    from ipo_watch import telegram
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:fake")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "999")
+
+    calls = []
+    monkeypatch.setattr(telegram, "_post",
+                        lambda method, fields, files=None: calls.append((method, fields)) or {"ok": True})
+
+    png = tmp_path / "ipo-watch-2026-09-03.png"
+    png.write_bytes(b"fake")
+    huge_report = "x" * 9000
+
+    telegram.send_report(str(png), huge_report)
+
+    message_calls = [c for c in calls if c[0] == "sendMessage"]
+    assert len(message_calls) == 3  # 4000 + 4000 + 1000
+    assert all(len(c[1]["text"]) <= 4000 for c in message_calls)
+    assert "".join(c[1]["text"] for c in message_calls) == huge_report
+
+
+def test_telegram_lookup_chat_id_reads_latest_update(monkeypatch):
+    from ipo_watch import telegram
+    import json as _json
+
+    class FakeResp:
+        def __init__(self, payload):
+            self._payload = _json.dumps(payload).encode()
+        def read(self):
+            return self._payload
+        def __enter__(self):
+            return self
+        def __exit__(self, *a):
+            return False
+
+    payload = {"ok": True, "result": [
+        {"message": {"chat": {"id": 111}}},
+        {"message": {"chat": {"id": 222}}},
+    ]}
+    monkeypatch.setattr(telegram.urllib.request, "urlopen", lambda *a, **k: FakeResp(payload))
+
+    assert telegram.lookup_chat_id("123:fake") == 222
