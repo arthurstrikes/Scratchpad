@@ -86,11 +86,10 @@ decisions. So:
   changed. Do not make them click through it.
 - **Never give investment advice or rank IPOs as buys.** Report the numbers.
 
-## Delivery is manual on purpose
+## Delivery: Telegram, plus the Claude session as a backup
 
-The user asked for the update to post itself to WhatsApp with no interaction.
-This was researched on 29 Aug 2026 and declined; do not rebuild it without a
-fresh decision from them.
+**Direct WhatsApp delivery was researched on 29 Aug 2026 and declined** - do
+not rebuild it without a fresh decision from the user:
 
 - WhatsApp has no free, terms-compliant way for software to post into a
   personal chat or group. That is Meta's product decision.
@@ -106,11 +105,61 @@ fresh decision from them.
   stays logged in, which cannot survive a fresh container every night.
   **Do not build this.**
 
-So the run sends the user the PNG and the .txt, and they forward it by hand:
-notification -> open session -> long-press image -> Share -> WhatsApp. Free,
-permitted, and it keeps a human eye on the figures before they reach anyone
-else. Telegram remains the free fully-automatic option if they ever accept a
-different app.
+**The original plan - the Routine sends the PNG and .txt into a Claude
+session, the user forwards it by hand - turned out not to work reliably**,
+for two independent reasons discovered between 29 Aug and 3 Sep 2026:
+
+1. Push notifications from the Routine failed silently on multiple confirmed
+   *successful* runs (see "If a scheduled run reports a problem" below). The
+   user could not tell a quiet night from a broken one without opening the
+   app to check.
+2. The Claude mobile app's own image viewer for a file sent via
+   `SendUserFile` has no share, save, or download option - confirmed by
+   screenshot on 29 Aug 2026. Neither switching `display` to `"attach"` nor
+   publishing the image as a Claude Artifact fixed this: an Artifact link
+   opens inside the same app's own restricted in-app browser (Android treats
+   `claude.ai` as an app link), even after the user changed their phone's
+   "open by default" setting for the Claude app. The only thing that worked
+   was manually copying the link and pasting it into a separate browser app -
+   more manual steps than the problem it was meant to solve.
+
+**So `ipo_watch/telegram.py` sends the image and the full report directly to
+a personal Telegram bot**, via `python3 -m ipo_watch.run` itself - not
+something the Routine's prompt has to remember to do. A Telegram photo
+message is a normal, fully-native message: long-press it and the phone's own
+share sheet offers WhatsApp directly, the same as any other photo. This
+fixes both problems in one move, since neither limitation exists on
+Telegram.
+
+**Setup** (one-time, done by the user - I cannot do this part; there is no
+tool to set environment variables on a cloud environment):
+
+1. In Telegram, message **@BotFather**, send `/newbot`, give it a name and a
+   username ending in "bot". It replies with a bot token.
+2. Search for that new bot by username and send it any message (e.g. "hi") -
+   required once, since a bot cannot message someone who has never messaged
+   it first.
+3. Get the numeric chat id either by messaging **@userinfobot** directly (it
+   replies with the id, keeping the bot token out of any conversation with
+   Claude), or by giving Claude the token and having it call
+   `telegram.lookup_chat_id()` to read it from the bot's own pending updates.
+4. Add both as environment variables on the environment the Routine runs in
+   (`env_01Vf2kqsvn722zF65XjRQxQj`) - **never commit them to this repo**:
+   ```
+   TELEGRAM_BOT_TOKEN=<from BotFather>
+   TELEGRAM_CHAT_ID=<numeric id>
+   ```
+
+Without both variables set, `telegram.configured()` is `False` and sending
+is silently skipped - this keeps every existing fixture-based test and
+offline run working exactly as before. Telegram delivery is additive, not a
+data-accuracy control: a Telegram outage is logged plainly
+(`telegram -> FAILED: ...`) but never changes the run's exit code, and must
+never be treated as if the underlying numbers were wrong.
+
+The Routine still also does the original `SendUserFile` + paste-in-chat
+delivery on top of this - kept as a free backup, not because it is expected
+to be the primary way the user gets the update.
 
 ## Rules that must not be broken
 
