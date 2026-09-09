@@ -275,3 +275,26 @@ report. Usual causes, in order of likelihood:
    user plainly that the run succeeded and where to find it (their session
    list, titled after this Routine), and suggest they check the app directly
    around 8:05 PM IST until Anthropic's notification delivery is reliable.
+6. **`python3 -m ipo_watch.run` itself gets denied by an auto-mode permission
+   classifier**, with no further detail than "Blocked by classifier," before
+   the command ever runs - no fetch, no output, nothing to debug in the code.
+   First seen 9 Sep 2026, on the real scheduled run, after two denials in a
+   row inside that session. Ruled out as a code or data problem within
+   minutes: the identical command, on the identical commit, run interactively
+   in a normal session, worked cleanly - same day, same live IPOWatch data,
+   exit 0. So the block is tied to *unattended* execution (a Routine firing
+   with nobody watching), not the command, the repo, or that day's data - do
+   not go looking for a bug in `ipo_watch/` in response to this.
+   There is no known lever to change this from inside the repo or from any
+   tool available here: `create_trigger` has no `permission_mode` parameter,
+   so a Routine-fired session's permission mode is not something we control.
+   Do not "fix" it by adding retries to the Routine's prompt - two denials of
+   the exact same command in one session is a signal to stop, not to hammer a
+   safety mechanism until it relents, and that is what the session correctly
+   did. If it happens again: (a) confirm interactively, exactly as above,
+   that the command still runs cleanly outside the Routine - this takes two
+   minutes and rules out the pipeline immediately; (b) send the user that
+   day's real output directly, generated the same way; (c) update this entry
+   with the new date once there are two or more occurrences, the same way
+   cause 5 above was upgraded from "seen once" to "confirmed pattern" - one
+   occurrence is a data point, not yet evidence of a systemic issue.
