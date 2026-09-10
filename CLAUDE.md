@@ -1,6 +1,6 @@
 # Daily Mainboard IPO Watch
 
-A recurring 8:00 PM IST workflow that reads IPOWatch, verifies the numbers,
+A recurring 5:00 PM IST workflow that reads IPOWatch, verifies the numbers,
 and produces a WhatsApp-shareable IPO update. Code lives in `ipo_watch/`.
 
 **If you are a fresh session picking this up, read this whole file first.**
@@ -198,8 +198,9 @@ also paste the complete report text into the chat reply itself, in a code
 block, in addition to attaching the .txt file. The user reads this on a
 phone and long-presses the message to copy it straight into WhatsApp; making
 them open the attachment first was needless friction. This lives in the
-Routine's own prompt (`trig_01EReco6VzLZHTxJ5tdFADpG`), not in this repo's
-code - if the Routine is ever recreated, carry this instruction over too.
+Routine's own prompt (see "Scheduling" below for the current trigger id -
+it has changed before and will again), not in this repo's code - if the
+Routine is ever recreated, carry this instruction over too.
 
 ## Creative
 
@@ -216,8 +217,9 @@ stay near a 1:1 aspect ratio.
 
 ## Scheduling
 
-**Live since 29 Aug 2026.** A Routine fires a fresh cloud session every day at
-`30 14 * * *` UTC — 8:00 PM IST — in the allowlisted environment, runs the
+**Live since 29 Aug 2026, moved from 8:00 PM to 5:00 PM IST on 10 Sep 2026
+at the user's request.** A Routine fires a fresh cloud session every day at
+`30 11 * * *` UTC — 5:00 PM IST — in the allowlisted environment, runs the
 pipeline, and sends the user the PNG and the .txt with a push notification.
 
 - Trigger id: `trig_01RLth6vAxrBZNfhHCXmWNDV`
