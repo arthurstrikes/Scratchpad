@@ -157,6 +157,18 @@ data-accuracy control: a Telegram outage is logged plainly
 (`telegram -> FAILED: ...`) but never changes the run's exit code, and must
 never be treated as if the underlying numbers were wrong.
 
+**Confirmed working end-to-end on 11 Sep 2026**, including on the real
+automatic 5 PM firing itself, not just a manual test - fetch, build,
+Telegram delivery, phone notification, no intervention. The one hiccup on
+the way there is worth knowing about: the user first added only
+`TELEGRAM_BOT_TOKEN` to the environment and reported "no notification" -
+`TELEGRAM_CHAT_ID` was simply missing, so `configured()` correctly returned
+`False` and skipped silently, exactly as designed. That is the first thing
+to check if delivery ever goes quiet again: read back the environment's
+variable box (screenshot from the user if there is no other way to see it)
+and confirm both lines are actually present, before suspecting the code,
+the network allowlist, or Telegram itself.
+
 The Routine still also does the original `SendUserFile` + paste-in-chat
 delivery on top of this - kept as a free backup, not because it is expected
 to be the primary way the user gets the update.
