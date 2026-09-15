@@ -312,6 +312,39 @@ report. Usual causes, in order of likelihood:
    with the new date once there are two or more occurrences, the same way
    cause 5 above was upgraded from "seen once" to "confirmed pattern" - one
    occurrence is a data point, not yet evidence of a systemic issue.
+
+   **Upgraded to a confirmed, ongoing pattern on 15 Sep 2026.** The user's
+   Telegram chat history shows zero IPO Watch messages between 11 Sep and
+   15 Sep - covering the real scheduled firings on 12, 13, 14 and 15 Sep,
+   plus an on-demand `fire_trigger` test of the live Routine on 15 Sep - all
+   silent, all reported `ROUTINE_RUN_STATUS_SUCCEEDED`. In the same window,
+   every interactive run (11 Sep, and twice more on 15 Sep, run by hand from
+   a normal Claude Code session in the same environment, same credentials)
+   delivered instantly with no code changes at all. That is a clean,
+   repeated split: Routine-fired sessions fail every time; manually-run
+   sessions succeed every time. This rules out the pipeline, the Telegram
+   credentials, the network allowlist, and that day's IPOWatch data as
+   causes - the only variable that differs is *how the session was started*.
+   The test-fire session on 15 Sep (`cse_01EuZKTYaLPVcqb4rVaGqzFv`) burned a
+   substantial number of tokens (~67k) before going quiet, which reads as
+   getting partway through the prompt (clone, install, maybe reading
+   CLAUDE.md) before being blocked, not an instant one-line refusal - so the
+   block does not necessarily happen at the very first tool call every time,
+   which makes it harder to spot from token usage alone.
+   Given there is still no `permission_mode` lever on `create_trigger` or
+   `update_trigger`, the one untried option worth a real test is
+   `persistent_session_id`: pre-create a session via `create_session` with a
+   more permissive `permission_mode` (e.g. `acceptEdits`), then point a
+   *newly created* trigger at it with `persistent_session_id` (existing
+   triggers cannot be retargeted - `update_trigger` has no such parameter,
+   so this means delete + recreate, same as the notification-channel
+   change). This is explicitly **not** done yet - it changes delivery
+   mechanics (a persisting container instead of a fresh one every night,
+   a non-default permission mode) and needs the user's explicit yes first,
+   per the working agreement above. Until that decision is made, treat every
+   scheduled firing as unverified until a human confirms the Telegram
+   message actually arrived, and be ready to run the pipeline by hand as a
+   backup.
 7. **`ROUTINE_RUN_STATUS_SUCCEEDED` does not mean the report was actually
    delivered.** First caught 15 Sep 2026: the platform reported the 5 PM
    firing as succeeded, but no Telegram message arrived, while a direct test
