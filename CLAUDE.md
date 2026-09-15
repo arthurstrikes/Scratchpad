@@ -312,3 +312,27 @@ report. Usual causes, in order of likelihood:
    with the new date once there are two or more occurrences, the same way
    cause 5 above was upgraded from "seen once" to "confirmed pattern" - one
    occurrence is a data point, not yet evidence of a systemic issue.
+7. **`ROUTINE_RUN_STATUS_SUCCEEDED` does not mean the report was actually
+   delivered.** First caught 15 Sep 2026: the platform reported the 5 PM
+   firing as succeeded, but no Telegram message arrived, while a direct test
+   with the exact same bot token and chat id from a normal session sent
+   instantly. That status field only means the session finished without an
+   execution-level crash - not that `ipo_watch.run` exited 0, and not that
+   `telegram.send_report()` succeeded, since a Telegram failure is caught
+   and logged but deliberately never changes the run's exit code (see
+   "Delivery" above). Do not read `ROUTINE_RUN_STATUS_SUCCEEDED` as proof
+   the user received anything.
+   There is also no way to read a past session's own terminal output or
+   transcript from another session - once a firing has happened, its
+   `telegram -> delivered` / `telegram -> FAILED: ...` / `telegram -> not
+   configured` line is invisible unless someone opens that exact session.
+   Fixed going forward by adding a step to the Routine's prompt requiring
+   that line to be quoted back explicitly in the session's own visible
+   chat reply, every time - so a human can tell delivered from failed from
+   unconfigured just by opening that day's session, without looping in a
+   fresh Claude session to re-diagnose it. If a future incident still can't
+   be explained this way, the next thing to check is whether IPOWatch's
+   subscription table behaves differently on non-trading days (weekends,
+   market holidays) in a way that could affect parsing - untested as of
+   this writing, and worth ruling in or out before assuming it's another
+   Telegram-specific gap.
