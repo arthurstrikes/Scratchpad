@@ -345,6 +345,28 @@ report. Usual causes, in order of likelihood:
    scheduled firing as unverified until a human confirms the Telegram
    message actually arrived, and be ready to run the pipeline by hand as a
    backup.
+
+   **Directly confirmed on 15 Sep 2026, night firing.** Unlike the 15 Sep
+   daytime test (where the block had to be inferred from token usage), this
+   firing's own session stated the block explicitly in its reply: clone,
+   reachability check, and `pip install` all succeeded, then
+   `python3 -m ipo_watch.run --outdir output` was denied twice in a row by
+   the classifier before it made any network request - no fetch, no
+   `output/` directory, nothing to publish. This is now a directly-witnessed
+   second occurrence six days after 9 Sep, not just an inferred one, and
+   removes any remaining doubt that this is a real, repeating block on the
+   unattended path specifically.
+   That same session also could not push its own log-the-problem commit -
+   `git push` returned 403, "not authorized to write to this repo" - from
+   that specific fresh container. This looks unrelated to the classifier
+   block (a repo-write-access problem, not a command-execution one) and has
+   only been seen this once; note it here in case it recurs, but do not
+   assume it is the same root cause.
+   Given two directly-confirmed occurrences now sit on either side of the
+   inferred one, the next decision - whether to try the `persistent_session_id`
+   + more-permissive-`permission_mode` experiment described just above, and
+   whether to run the pipeline by hand as a nightly backup until it's fixed -
+   is with the user; do not implement either without their explicit yes.
 7. **`ROUTINE_RUN_STATUS_SUCCEEDED` does not mean the report was actually
    delivered.** First caught 15 Sep 2026: the platform reported the 5 PM
    firing as succeeded, but no Telegram message arrived, while a direct test
