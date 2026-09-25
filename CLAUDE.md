@@ -61,6 +61,20 @@ Learned from the live page; `fixtures/live/` pins it and five tests assert it.
   or Date. Skipped, because a table with no date and no status cannot be
   placed in time and its names could collide with live rows.
 
+**IPOWatch removed the `Last Updated` column from the GMP page entirely on
+25 Sep 2026** - table 0's header row went from 8 columns to 7, with no
+replacement column and no header text to add to `ALIASES`. Nothing broke:
+every row still parsed correctly (GMP, price band, trend, status, dates all
+intact, 42 rows that day), but with no `Last Updated` cell to read, every
+row's `row_updated` came back `None`, so `gmp_timestamp` fell back to `None`
+too and the report simply dropped its `| GMP data: ...` half, printing only
+the subscription timestamp. This is the parser behaving exactly as designed
+for a missing field - fail closed on the one piece of metadata that vanished,
+publish everything that's still verifiable - not a bug to fix. If IPOWatch
+ever brings the column back (rename or otherwise), it will be picked up
+automatically the moment its header text matches `ALIASES["updated"]` again;
+no code change is needed unless the new wording doesn't match.
+
 Both pages are **server-rendered** - the tables are complete in the delivered
 HTML. `fetch.py` uses a plain HTTPS request, not a browser. Chromium in this
 sandbox does not trust the egress proxy's CA (a known-good host fails with
