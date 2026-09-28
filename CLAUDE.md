@@ -75,6 +75,24 @@ ever brings the column back (rename or otherwise), it will be picked up
 automatically the moment its header text matches `ALIASES["updated"]` again;
 no code change is needed unless the new wording doesn't match.
 
+**IPOWatch itself listed one company under two different names across its
+own two pages on 28 Sep 2026** - "Shah Investor's" on the subscription page,
+"Shah Investor's Home" on the GMP page (not just an apostrophe difference;
+the word "Home" is missing entirely on one page). `merge.py`'s `norm_key()`
+already strips punctuation and common noise words (`ipo`, `ltd`, `private`,
+etc.) before comparing names, so this was not an apostrophe-encoding bug -
+the two strings are genuinely different after normalization
+(`shahinvestors` vs `shahinvestorshome`). The two rows correctly did not
+merge, and each showed up as its own line, honestly marked `Not updated` /
+`Not verified` for whatever the other page would have supplied. Loosening
+`norm_key()` to substring-match names (which would have merged these two)
+is deliberately not done: a company legitimately named e.g. "Orient Cables"
+could otherwise wrongly absorb a genuinely different "Orient Cables
+International" row. A one-off duplicate-looking entry from IPOWatch's own
+inconsistent naming is the safer failure mode than a silent false merge -
+do not "fix" this by making name matching fuzzier without a much larger
+sample of real collisions to weigh against the false-merge risk.
+
 Both pages are **server-rendered** - the tables are complete in the delivered
 HTML. `fetch.py` uses a plain HTTPS request, not a browser. Chromium in this
 sandbox does not trust the egress proxy's CA (a known-good host fails with
