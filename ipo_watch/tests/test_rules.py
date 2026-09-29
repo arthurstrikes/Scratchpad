@@ -78,6 +78,17 @@ def test_newer_timestamp_wins_on_conflict():         # rules 5.4 / 5.8
     assert ds.conflicts and "price_max" in ds.conflicts[0].field_name
 
 
+def test_sme_conflict_never_reaches_the_report():    # rules 2 / 5.8
+    gmp_row = mk("Tiny Co", Decimal("50"), Decimal("200"), board=Board.SME)
+    sub_row = mk("Tiny Co", retail=Decimal("4"), total=Decimal("6"), board=Board.SME)
+    sub_row.price_max = Decimal("250")                # disagrees with GMP page
+    ds = build_dataset([sub_row], [gmp_row], TODAY,
+                       sub_ts="29 Aug 2026, 08:30 PM",
+                       gmp_ts="29 Aug 2026, 07:00 PM")
+    assert "Tiny Co" in ds.excluded_sme
+    assert not ds.conflicts, "an excluded SME's name must not leak into the report"
+
+
 def test_older_timestamp_does_not_overwrite():
     gmp_row = mk("Acme", Decimal("50"), Decimal("200"))
     sub_row = mk("Acme", retail=Decimal("4"))
