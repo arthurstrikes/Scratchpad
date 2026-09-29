@@ -179,6 +179,12 @@ def build_dataset(
         [i.prov.subscription_timestamp for i in ds.published]) or sub_ts, today)
     ds.gmp_timestamp = _latest(
         [i.prov.gmp_timestamp for i in ds.published]) or gmp_ts
+
+    # Conflicts are recorded while merging every row, before SME/unknown-board
+    # rows are dropped - an excluded company's name must never surface in the
+    # report just because its two source pages disagreed on a field.
+    published_names = {i.name for i in ds.published}
+    ds.conflicts = [c for c in ds.conflicts if c.ipo in published_names]
     return ds
 
 

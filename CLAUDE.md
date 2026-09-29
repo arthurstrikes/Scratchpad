@@ -221,6 +221,17 @@ These come from the user and are enforced by tests in `tests/test_rules.py`:
   discarded figure is listed at the bottom of the report.
 - **Never guess a number, ever.** Failing closed is always correct.
 
+**Bug found and fixed 29 Sep 2026:** conflicts are recorded while merging
+every row, before SME/unknown-board rows are dropped from publication - so
+an SME company whose two source pages disagreed on a field (e.g. close date)
+was leaking into the "Source conflicts resolved" footer by name, even though
+it never appeared anywhere else in the report. `build_dataset()` in
+`merge.py` now filters `ds.conflicts` down to published names only, right
+after the SME/board filtering step. Covered by
+`test_sme_conflict_never_reaches_the_report` in `tests/test_rules.py`. Found
+live via `Green Asia Impex` (SME) disagreeing on `close_date` across the two
+pages on 29 Sep 2026.
+
 ## Output
 
 Written to `ipo_watch/output/` (gitignored):
