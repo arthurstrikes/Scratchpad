@@ -36,7 +36,7 @@ ALIASES: dict[str, tuple[str, ...]] = {
 # Columns we must never surface (section 3).
 BANNED = ("qib", "nii", "hni", "snii", "bnii", "anchor", "employee", "shareholder",
           "est listing", "estimated listing", "listing price", "listing gain",
-          "expected listing", "trend")
+          "expected listing", "trend", "est gain", "estimated gain")
 
 
 def _norm(s: str) -> str:
@@ -298,6 +298,16 @@ _NAME_NOISE = re.compile(
 def _clean_name(raw: str) -> str:
     n = re.sub(r"\s+", " ", raw).strip(" -–—|")
     n = re.sub(r"\b(SME|NSE SME|BSE SME|Emerge)\b", "", n, flags=re.I)
+    # IPOWatch's GMP page started appending a single-letter status marker
+    # directly onto the company name - "Jio Platform(U)", "Vishal Nirmiti(O)"
+    # - rather than a separate Status column (seen 2 Oct 2026). Strip it: the
+    # letter's meaning is not documented anywhere on the page, so it is never
+    # used to derive status (that still comes from the explicit Status column
+    # when present, or from dates via classify_status otherwise - rule 5.3).
+    # Left in place, it would make the same company's name on this page
+    # normalize differently from its bare name on the subscription page,
+    # splitting one IPO into two partial rows (norm_key in merge.py).
+    n = re.sub(r"\([A-Za-z]\)\s*$", "", n)
     n = _NAME_NOISE.sub(" ", n)
     return re.sub(r"\s+", " ", n).strip(" -–—,|") or raw.strip()
 

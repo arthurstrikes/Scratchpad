@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from ipo_watch.models import IPO, Board, Status, parse_price_band, to_decimal
 from ipo_watch.merge import build_dataset, norm_key
-from ipo_watch.parse import parse_page, detect_board
+from ipo_watch.parse import parse_page, detect_board, _clean_name
 from ipo_watch.report import build_report
 from ipo_watch.verify import check, expected_map
 
@@ -76,6 +76,19 @@ def test_newer_timestamp_wins_on_conflict():         # rules 5.4 / 5.8
                        gmp_ts="29 Aug 2026, 07:00 PM")
     assert ds.open_ipos[0].price_max == Decimal("250")
     assert ds.conflicts and "price_max" in ds.conflicts[0].field_name
+
+
+def test_name_strips_ipowatch_status_suffix():
+    # IPOWatch started appending a bare status letter to the GMP page's
+    # company name (seen 2 Oct 2026): "Vishal Nirmiti(O)", "Jio Platform(U)".
+    # Left in, it would make the same company's name on this page normalize
+    # differently from its plain name on the subscription page.
+    assert _clean_name("Vishal Nirmiti(O)") == "Vishal Nirmiti"
+    assert _clean_name("Jio Platform(U)") == "Jio Platform"
+    # parse.py always cleans the name before merge.py ever sees it, so the
+    # merge key only needs to agree once both names have gone through
+    # _clean_name - exactly what happens in the real pipeline.
+    assert norm_key(_clean_name("Vishal Nirmiti(O)")) == norm_key("Vishal Nirmiti")
 
 
 def test_sme_conflict_never_reaches_the_report():    # rules 2 / 5.8

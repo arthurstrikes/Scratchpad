@@ -48,18 +48,41 @@ Learned from the live page; `fixtures/live/` pins it and five tests assert it.
 - `Last Updated` is a bare time per row, e.g. `17:45`.
 - ~190 rows going back months, mostly closed.
 
-**GMP page** - three tables:
-- Table 0, under "Mainboard IPO GMP", and table 1, under "SME IPO GMP":
-  `IPO Name | IPO GMP* | Trend | Price Band | Est. Listing | Date | Status | Last Updated`
-  - `Status` says "Open"/"Upcoming"/"Closed" outright. Authoritative.
+**GMP page** - redesigned by IPOWatch on 2 Oct 2026 (full history of what
+changed and why it mattered is two paragraphs below). As of that date, **one
+combined table**, Mainboard and SME together:
+`Company | GMP* | Trend | Price Band | Est. Gain | Date | Type`
+  - `Type` says "Mainboard" or "SME" outright - the same signal the
+    subscription page's `Type` column gives, just also present here now.
+    Authoritative; `board_from_cell()` in `parse.py` reads it the same way
+    regardless of which page it came from.
   - `Price Band` is a single cap price (`₹429`), not a range.
   - `Date` is compact: `28-1 September` means 28 Aug to 1 Sep. When the first
     number is larger it belongs to the previous month.
-  - `Est. Listing` is IPOWatch's own estimate - **banned**, section 4 requires
-    computing GMP % ourselves.
-- Table 2, "Mainboard IPO GMP Performance": already-listed history, no Status
-  or Date. Skipped, because a table with no date and no status cannot be
-  placed in time and its names could collide with live rows.
+  - `Est. Gain` is IPOWatch's own estimated-listing-gain figure under a new
+    name - still **banned** (now in both spellings in `BANNED` in
+    `parse.py`), section 4 requires computing GMP % ourselves.
+  - There is no `Status` column any more (see below) and no separate
+    already-listed "Performance" table either - `parse_page()` in
+    `parse.py` iterates every `<table>` on the page generically (never by
+    position), so going from three tables to one changed nothing about how
+    parsing works.
+
+**IPOWatch replaced the GMP page's `Status` column with a one-letter suffix
+baked into the company name itself, on 2 Oct 2026** - `"Vishal Nirmiti(O)"`,
+`"Jio Platform(U)"` instead of a separate `Status: Open` / `Status:
+Upcoming` cell. The letters' meaning is not documented anywhere on the page
+and is never guessed at or used to derive status (rule 5.3) - status still
+comes from an explicit Status column when one exists, or from
+`classify_status()` using dates otherwise, exactly as before. What **is**
+done: `_clean_name()` in `parse.py` strips a trailing `(X)` from any parsed
+name, because leaving it in would make the GMP page's name for a company
+normalize differently from its bare name on the subscription page,
+splitting one IPO into two partial rows under `merge.py`'s `norm_key()` -
+confirmed live with `"Vishal Nirmiti(O)"` vs `"Vishal Nirmiti"` and
+`"Nityas Gems(O)"` vs `"Nityas Gems"` both appearing as duplicate rows
+before the fix. Covered by `test_name_strips_ipowatch_status_suffix` in
+`tests/test_rules.py`.
 
 **IPOWatch removed the `Last Updated` column from the GMP page entirely on
 25 Sep 2026** - table 0's header row went from 8 columns to 7, with no
