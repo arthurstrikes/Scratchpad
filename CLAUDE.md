@@ -48,41 +48,51 @@ Learned from the live page; `fixtures/live/` pins it and five tests assert it.
 - `Last Updated` is a bare time per row, e.g. `17:45`.
 - ~190 rows going back months, mostly closed.
 
-**GMP page** - redesigned by IPOWatch on 2 Oct 2026 (full history of what
-changed and why it mattered is two paragraphs below). As of that date, **one
-combined table**, Mainboard and SME together:
-`Company | GMP* | Trend | Price Band | Est. Gain | Date | Type`
-  - `Type` says "Mainboard" or "SME" outright - the same signal the
-    subscription page's `Type` column gives, just also present here now.
-    Authoritative; `board_from_cell()` in `parse.py` reads it the same way
-    regardless of which page it came from.
+**GMP page** - IPOWatch redesigned this page twice in two consecutive days
+(2 and 3 Oct 2026); full history of what changed and why it mattered is in
+the two notes just below. As of 3 Oct 2026, **one combined table**,
+Mainboard and SME together:
+`Company | GMP* | Trend | Price Band | Est. Gain | Date`
+  - There is no `Status` column and no `Type`/board column any more (the
+    latter lasted exactly one day - see below), and no separate
+    already-listed "Performance" table either - `parse_page()` in
+    `parse.py` iterates every `<table>` on the page generically (never by
+    position), so the collapse from three tables to one changed nothing
+    about how parsing works.
   - `Price Band` is a single cap price (`₹429`), not a range.
   - `Date` is compact: `28-1 September` means 28 Aug to 1 Sep. When the first
     number is larger it belongs to the previous month.
   - `Est. Gain` is IPOWatch's own estimated-listing-gain figure under a new
     name - still **banned** (now in both spellings in `BANNED` in
     `parse.py`), section 4 requires computing GMP % ourselves.
-  - There is no `Status` column any more (see below) and no separate
-    already-listed "Performance" table either - `parse_page()` in
-    `parse.py` iterates every `<table>` on the page generically (never by
-    position), so going from three tables to one changed nothing about how
-    parsing works.
 
-**IPOWatch replaced the GMP page's `Status` column with a one-letter suffix
-baked into the company name itself, on 2 Oct 2026** - `"Vishal Nirmiti(O)"`,
-`"Jio Platform(U)"` instead of a separate `Status: Open` / `Status:
-Upcoming` cell. The letters' meaning is not documented anywhere on the page
-and is never guessed at or used to derive status (rule 5.3) - status still
-comes from an explicit Status column when one exists, or from
-`classify_status()` using dates otherwise, exactly as before. What **is**
-done: `_clean_name()` in `parse.py` strips a trailing `(X)` from any parsed
-name, because leaving it in would make the GMP page's name for a company
-normalize differently from its bare name on the subscription page,
-splitting one IPO into two partial rows under `merge.py`'s `norm_key()` -
-confirmed live with `"Vishal Nirmiti(O)"` vs `"Vishal Nirmiti"` and
-`"Nityas Gems(O)"` vs `"Nityas Gems"` both appearing as duplicate rows
-before the fix. Covered by `test_name_strips_ipowatch_status_suffix` in
-`tests/test_rules.py`.
+**IPOWatch replaced the GMP page's `Status` column with a one-letter marker
+baked into the company name itself, on 2 Oct 2026** - `"Vishal
+Nirmiti(O)"`, `"Jio Platform(U)"` instead of a separate `Status: Open` /
+`Status: Upcoming` cell. Then, one day later on 3 Oct 2026, IPOWatch also
+dropped that day's new `Type` (board) column and started appending the
+board type into the name the same way - `"Vishal Nirmiti (O) Mainboard"`,
+`"TNA Solutions (O) SME"`. Neither the letter nor the board word is ever
+interpreted or guessed at (rule 5.3): status still comes from an explicit
+Status column when one exists, or `classify_status()` via dates otherwise;
+board still comes from `board_from_cell()` when a board column exists, or
+`detect_board()`'s SME-token fallback otherwise, which runs on the raw,
+unstripped name in `parse_table()` before `_clean_name()` ever touches it -
+so stripping "SME" out of the display name does not blind that fallback.
+`_clean_name()` in `parse.py` strips a trailing `(X)`, optionally followed
+by `Mainboard`/`SME`/`Mainline`, from any parsed name. Left in, either
+marker would make the GMP page's name for a company normalize differently
+from its bare name on the subscription page, splitting one IPO into two
+partial rows under `merge.py`'s `norm_key()` - confirmed live both days:
+`"Vishal Nirmiti(O)"` vs `"Vishal Nirmiti"` on 2 Oct, then
+`"Vishal Nirmiti (O) Mainboard"` vs `"Vishal Nirmiti"` again on 3 Oct, since
+the first fix's regex was anchored to end-of-string right after the letter
+and no longer matched once a trailing board word was appended after it.
+Covered by `test_name_strips_ipowatch_status_suffix` and
+`test_name_strips_ipowatch_status_and_board_suffix` in `tests/test_rules.py`.
+Given this page has now changed twice in two days, treat another near-term
+tweak to this same area as likely, not surprising - check the live snapshot
+before assuming the existing regex still covers it.
 
 **IPOWatch removed the `Last Updated` column from the GMP page entirely on
 25 Sep 2026** - table 0's header row went from 8 columns to 7, with no
