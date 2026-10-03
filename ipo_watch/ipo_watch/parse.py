@@ -297,17 +297,23 @@ _NAME_NOISE = re.compile(
 
 def _clean_name(raw: str) -> str:
     n = re.sub(r"\s+", " ", raw).strip(" -–—|")
+    # IPOWatch's GMP page appends a one-letter status marker directly onto
+    # the company name instead of a separate Status column - "Jio
+    # Platform(U)" (seen 2 Oct 2026) - and a day later dropped the Type
+    # column too, appending the board type the same way - "Vishal Nirmiti
+    # (O) Mainboard", "TNA Solutions (O) SME" (seen 3 Oct 2026). Strip both:
+    # neither marker's meaning is ever interpreted here. Status still comes
+    # from an explicit Status column when present, or classify_status() via
+    # dates otherwise (rule 5.3). Board still comes from board_from_cell()
+    # when a board column exists, or detect_board()'s SME-token fallback
+    # otherwise - which runs on the raw, unstripped name in parse_table(),
+    # so stripping "SME" here first does not blind that fallback. Left in
+    # the cleaned name, either marker would make this page's name normalize
+    # differently from the plain name on the subscription page, splitting
+    # one IPO into two partial rows (norm_key in merge.py).
+    n = re.sub(r"\(\s*[A-Za-z]\s*\)\s*(mainboard|main\s*board|mainline|sme)?\s*$",
+                "", n, flags=re.I)
     n = re.sub(r"\b(SME|NSE SME|BSE SME|Emerge)\b", "", n, flags=re.I)
-    # IPOWatch's GMP page started appending a single-letter status marker
-    # directly onto the company name - "Jio Platform(U)", "Vishal Nirmiti(O)"
-    # - rather than a separate Status column (seen 2 Oct 2026). Strip it: the
-    # letter's meaning is not documented anywhere on the page, so it is never
-    # used to derive status (that still comes from the explicit Status column
-    # when present, or from dates via classify_status otherwise - rule 5.3).
-    # Left in place, it would make the same company's name on this page
-    # normalize differently from its bare name on the subscription page,
-    # splitting one IPO into two partial rows (norm_key in merge.py).
-    n = re.sub(r"\([A-Za-z]\)\s*$", "", n)
     n = _NAME_NOISE.sub(" ", n)
     return re.sub(r"\s+", " ", n).strip(" -–—,|") or raw.strip()
 

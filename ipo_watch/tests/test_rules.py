@@ -91,6 +91,16 @@ def test_name_strips_ipowatch_status_suffix():
     assert norm_key(_clean_name("Vishal Nirmiti(O)")) == norm_key("Vishal Nirmiti")
 
 
+def test_name_strips_ipowatch_status_and_board_suffix():
+    # One day later (3 Oct 2026) IPOWatch dropped the Type column too and
+    # started appending the board type the same way the status letter was:
+    # "Vishal Nirmiti (O) Mainboard", "TNA Solutions (O) SME".
+    assert _clean_name("Vishal Nirmiti (O) Mainboard") == "Vishal Nirmiti"
+    assert _clean_name("TNA Solutions (O) SME") == "TNA Solutions"
+    assert _clean_name("Jio Platform(U)Mainboard") == "Jio Platform"
+    assert norm_key(_clean_name("Vishal Nirmiti (O) Mainboard")) == norm_key("Vishal Nirmiti")
+
+
 def test_sme_conflict_never_reaches_the_report():    # rules 2 / 5.8
     gmp_row = mk("Tiny Co", Decimal("50"), Decimal("200"), board=Board.SME)
     sub_row = mk("Tiny Co", retail=Decimal("4"), total=Decimal("6"), board=Board.SME)
