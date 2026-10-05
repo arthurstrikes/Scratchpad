@@ -101,6 +101,22 @@ def test_name_strips_ipowatch_status_and_board_suffix():
     assert norm_key(_clean_name("Vishal Nirmiti (O) Mainboard")) == norm_key("Vishal Nirmiti")
 
 
+def test_name_strips_bare_status_word_suffix():
+    # Two days later still (5 Oct 2026) IPOWatch dropped the parentheses
+    # too: the bare status word now follows the name as a separate text
+    # node in the same cell - "Vishal Nirmiti Open", "Nityas Gems Closed"
+    # (what `_cell_text()`'s join character actually produces live) - but
+    # cover the no-space join too, since this page has changed three days
+    # running and the exact join character is not something to rely on.
+    assert _clean_name("Jio Platform Upcoming") == "Jio Platform"
+    assert _clean_name("Vishal Nirmiti Open") == "Vishal Nirmiti"
+    assert _clean_name("Nityas Gems Closed") == "Nityas Gems"
+    assert _clean_name("TNA Solutions Open") == "TNA Solutions"
+    assert _clean_name("Jio PlatformUpcoming") == "Jio Platform"
+    assert _clean_name("Vishal NirmitiOpen") == "Vishal Nirmiti"
+    assert norm_key(_clean_name("Vishal Nirmiti Open")) == norm_key("Vishal Nirmiti")
+
+
 def test_sme_conflict_never_reaches_the_report():    # rules 2 / 5.8
     gmp_row = mk("Tiny Co", Decimal("50"), Decimal("200"), board=Board.SME)
     sub_row = mk("Tiny Co", retail=Decimal("4"), total=Decimal("6"), board=Board.SME)
