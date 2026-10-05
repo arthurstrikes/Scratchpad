@@ -313,6 +313,21 @@ def _clean_name(raw: str) -> str:
     # one IPO into two partial rows (norm_key in merge.py).
     n = re.sub(r"\(\s*[A-Za-z]\s*\)\s*(mainboard|main\s*board|mainline|sme)?\s*$",
                 "", n, flags=re.I)
+    # Two days after that, IPOWatch dropped the parentheses too and just
+    # appends the bare status word straight after the name - "Vishal
+    # Nirmiti Open", "Nityas Gems Closed" (seen 5 Oct 2026). The source HTML
+    # has the name and the status word as separate text nodes in the same
+    # cell with no punctuation between them, so whether a space ends up
+    # between them depends on `_cell_text()`'s join character - it does
+    # insert one, but this is written to tolerate either, since relying on
+    # exact whitespace from a site that has changed this three days running
+    # is not something to bet on. The lookbehind requires either a lowercase
+    # letter or whitespace immediately before the status word, so this
+    # cannot eat the last word of a name that already ends in a capital
+    # letter or punctuation with nothing separating it. Same reasoning as
+    # above: status is never derived from this text, only stripped so
+    # cross-page name matching keeps working.
+    n = re.sub(r"(?:(?<=[a-z])|(?<=\s))(open|closed|upcoming)\s*$", "", n, flags=re.I)
     n = re.sub(r"\b(SME|NSE SME|BSE SME|Emerge)\b", "", n, flags=re.I)
     n = _NAME_NOISE.sub(" ", n)
     return re.sub(r"\s+", " ", n).strip(" -–—,|") or raw.strip()

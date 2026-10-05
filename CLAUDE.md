@@ -90,9 +90,36 @@ the first fix's regex was anchored to end-of-string right after the letter
 and no longer matched once a trailing board word was appended after it.
 Covered by `test_name_strips_ipowatch_status_suffix` and
 `test_name_strips_ipowatch_status_and_board_suffix` in `tests/test_rules.py`.
-Given this page has now changed twice in two days, treat another near-term
+Two days after that, on 5 Oct 2026, IPOWatch dropped the parentheses too:
+the bare status word now just follows the name as a separate text node in
+the same table cell - `"Vishal Nirmiti Open"`, `"Nityas Gems Closed"`,
+`"Jio Platform Upcoming"` - also switching back to two tables (Mainboard,
+SME) instead of one, each now with **no board column at all**, relying
+entirely on the "Current Mainboard IPO" / "Current SME IPO" heading just
+above each table for `detect_board()`'s heading fallback to classify
+correctly - confirmed still working, SME rows are still excluded.
+`_clean_name()` now also strips a trailing `open`/`closed`/`upcoming` word,
+matched whether or not whitespace actually separates it from the name.
+**A real mistake happened writing this fix**, worth remembering: the raw
+HTML has the name and the status word as two separate text nodes with zero
+characters between them, so inspecting the saved snapshot with BeautifulSoup
+'s plain `get_text(strip=True)` (no join separator) showed `"Vishal
+NirmitiOpen"` with no space - but the actual pipeline's `_cell_text()` calls
+`get_text(" ", strip=True)`, which *does* insert a space between sibling
+text nodes, so the real parsed name is `"Vishal Nirmiti Open"`. The first
+version of this fix was written and tested against the no-space form,
+passed its own test, and then did nothing on the live site, because the
+real text had a space the test didn't cover. Re-running the live pipeline
+after any name-cleaning change - not just the unit tests - is what caught
+this; the fix now tolerates either form, but the lesson is to always check
+what `_cell_text()` actually produces, not what a quick BeautifulSoup
+one-liner without its separator argument shows. Covered by
+`test_name_strips_bare_status_word_suffix` in `tests/test_rules.py`.
+
+Given this page has changed three days running, treat another near-term
 tweak to this same area as likely, not surprising - check the live snapshot
-before assuming the existing regex still covers it.
+(with the same join character `_cell_text()` uses) before assuming the
+existing regex still covers it.
 
 **IPOWatch removed the `Last Updated` column from the GMP page entirely on
 25 Sep 2026** - table 0's header row went from 8 columns to 7, with no
