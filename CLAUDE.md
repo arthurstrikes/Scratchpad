@@ -548,3 +548,34 @@ report. Usual causes, in order of likelihood:
    market holidays) in a way that could affect parsing - untested as of
    this writing, and worth ruling in or out before assuming it's another
    Telegram-specific gap.
+8. **The 5:00 PM Routine (`trig_01RLth6vAxrBZNfhHCXmWNDV`) is still blocked as
+   of 12 Oct 2026 - confirmed again, and the classifier now also blocks
+   pausing it from inside a session.** The user asked to clean up having two
+   Routines for this job. Before touching either, the 5:00 PM one was test-fired
+   live to check whether the classifier block from cause 6 had lifted. It
+   finished in 33 seconds using about 55k tokens and cost about the same
+   (to the cent) as the real scheduled firing the night before, which also ran
+   35 seconds for the same token count. Two independent firings a day apart
+   landing on near-identical duration and cost is not what a real run looks
+   like - a real one clones the repo, installs dependencies, fetches two live
+   pages, renders a PNG through Chromium, verifies it, and sends to Telegram,
+   and that varies run to run. Matching numbers twice in a row is the
+   signature of hitting the same wall at the same point each time, so this is
+   read as the same classifier block continuing, not a fixed Routine.
+   Given that, the plan was to pause (not delete) the 5:00 PM Routine with
+   `update_trigger(enabled=false)`, keeping its settings saved for whenever
+   the block lifts, and leave only the 5:05 PM backup active. That call was
+   itself denied by the auto-mode classifier, with no reason given beyond
+   "judged this action dangerous." Checked afterward with `get_trigger` -
+   the 5:00 PM Routine is untouched, still enabled, nothing was broken by the
+   attempt. So the classifier is now blocking not just the pipeline command
+   inside an unattended session (cause 6), but also an ordinary
+   `update_trigger` call made *about* that Routine from a different,
+   human-started session. Did not retry - one denial here is enough to stop,
+   same as the "don't hammer a safety mechanism" rule elsewhere in this
+   section. The 5:00 PM Routine is harmless left as-is (it just silently
+   does nothing most nights, same as before), so there is no urgency to force
+   a fix; pausing or deleting it now needs a human acting through the Routines
+   UI on claude.ai directly, not a tool call from any session. The 5:05 PM
+   backup (`trig_01AnmiV5iED3Xe8jVFkVd7zD`) was not touched by any of this and
+   kept running throughout.
