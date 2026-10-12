@@ -579,3 +579,16 @@ report. Usual causes, in order of likelihood:
    UI on claude.ai directly, not a tool call from any session. The 5:05 PM
    backup (`trig_01AnmiV5iED3Xe8jVFkVd7zD`) was not touched by any of this and
    kept running throughout.
+
+   **The duration/cost fingerprint from that same test-fire was confirmed
+   directly, same day.** The user opened the test-fire session
+   (`cse_0147P1zvEw3PSTPbbyP2xssg`) and shared its actual reply: clone and
+   the IPOWatch reachability check both succeeded, then the classifier denied
+   `pip install -r requirements.txt` followed by
+   `python3 -m ipo_watch.run --outdir output`, with reason **"Code from
+   External"** - a new reason string, not seen in any earlier occurrence of
+   this block, but the same block. The session did not retry or split the
+   command to work around it, correctly reported no report existed for the
+   day, and pointed at running it by hand instead. This removes any doubt
+   left by the inferred read above - the 5:00 PM Routine is still blocked,
+   confirmed from its own transcript, not just from matching numbers.
