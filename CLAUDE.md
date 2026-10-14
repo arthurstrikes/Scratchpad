@@ -326,9 +326,29 @@ then fails the run. Never loosen that check.
 
 Design decisions the user has already signed off, do not undo without asking:
 two-line rows (not cards), no GMP ranking block in the image (it is in the
-text), no per-row comparison bars, embedded Roboto from `assets/fonts/`.
-Height is the priority - it is read on a phone. A realistic 8-IPO day should
-stay near a 1:1 aspect ratio.
+text), no per-row comparison bars. Height is the priority - it is read on a
+phone. A realistic 8-IPO day should stay near a 1:1 aspect ratio (a 7-IPO
+day renders at 2160x2306).
+
+**Visual language, since 14 Oct 2026 at the user's request: the Loop / Inner
+Circle house style**, the same one the user's Loop and India Stock Watch apps
+use (both are Claude artifacts; India Stock Watch publishes the shared token
+file as `loop-tokens.css`). Dark `#111` ground, `#1A1A1A` surfaces, `#2A2A2A`
+hairlines, the orange striped gradient band (`#C94A1A` -> `#9E3410`) as the
+masthead, `#FF6B35` brand orange, `#4CAF50` green for positive GMP %, DM Sans
+for words and Bebas Neue for figures, 4-6px corners, colour for status only.
+Both fonts are subset and embedded from `assets/fonts/` (SIL OFL). Sizes are
+about 3x the apps' phone tokens because the PNG is 1080 CSS px wide. If the
+user's design system changes, re-read that token file rather than guessing.
+
+## WhatsApp text format
+
+`report.py` writes WhatsApp's own markup: `*bold*` for headings, IPO names
+and GMP %, `_italic_` for the disclaimers. Telegram receives the report inside
+a `<pre>` block (`parse_mode=HTML`), because one tap on a code block copies
+the whole thing with the asterisks intact, which then render as bold once
+pasted into WhatsApp. Telegram's own bold formatting would be dropped on copy,
+so do not switch to it. Long reports are split on line boundaries.
 
 ## Scheduling
 

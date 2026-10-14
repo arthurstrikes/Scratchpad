@@ -118,7 +118,7 @@ the image-vs-dataset check catching an altered number.
 ```
 ipo_watch/
   config.py    URLs, sentinels, thresholds
-  fonts.py     subset Roboto, inlined so the creative needs no system font
+  fonts.py     subset DM Sans + Bebas Neue, inlined so the creative needs no system font
   fetch.py     rendered-DOM fetching + HTML snapshots + timestamp scraping
   parse.py     header-driven table parsing, SME detection
   models.py    IPO record, GMP maths, all number formatting

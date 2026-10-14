@@ -210,6 +210,16 @@ def test_name_matching_across_pages():
     assert norm_key("Vidya Wires IPO") == norm_key("Vidya Wires Limited")
 
 
+def test_report_uses_whatsapp_markup():
+    ds = build_dataset([mk("Acme", retail=Decimal("3.25"))],
+                       [mk("Acme", Decimal("325"), Decimal("429"))], TODAY)
+    out = build_report(ds)
+    assert out.startswith("*📊 DAILY MAINBOARD IPO WATCH*")
+    assert "*🔥 ACME*" in out
+    assert "| *75.76%*" in out
+    assert "📌 _GMP = Grey Market Premium_" in out
+
+
 def test_report_names_the_leaders():
     ds = build_dataset([mk("Acme", retail=Decimal("3.25"))],
                        [mk("Acme", Decimal("325"), Decimal("429"))], TODAY)
@@ -313,7 +323,21 @@ def test_telegram_sends_photo_then_report_text(monkeypatch, tmp_path):
     assert calls[0][2]["photo"][0] == "ipo-watch-2026-09-03.png"
 
     assert calls[1][0] == "sendMessage"
-    assert calls[1][1]["text"] == "the full report text"
+    assert calls[1][1]["parse_mode"] == "HTML"
+    assert calls[1][1]["text"] == "<pre>the full report text</pre>"
+
+
+def test_telegram_escapes_report_html_and_keeps_whatsapp_markup(monkeypatch, tmp_path):
+    from ipo_watch import telegram
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:fake")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "999")
+    calls = []
+    monkeypatch.setattr(telegram, "_post",
+                        lambda method, fields, files=None: calls.append((method, fields)) or {"ok": True})
+    png = tmp_path / "ipo-watch-2026-09-03.png"
+    png.write_bytes(b"fake")
+    telegram.send_report(str(png), "*A & B <Co>* _note_")
+    assert calls[1][1]["text"] == "<pre>*A &amp; B &lt;Co&gt;* _note_</pre>"
 
 
 def test_telegram_chunks_long_reports_under_the_message_limit(monkeypatch, tmp_path):
@@ -327,14 +351,16 @@ def test_telegram_chunks_long_reports_under_the_message_limit(monkeypatch, tmp_p
 
     png = tmp_path / "ipo-watch-2026-09-03.png"
     png.write_bytes(b"fake")
-    huge_report = "x" * 9000
+    huge_report = "".join(f"line {n:04d} " + "x" * 40 + "\n" for n in range(200))
 
     telegram.send_report(str(png), huge_report)
 
     message_calls = [c for c in calls if c[0] == "sendMessage"]
-    assert len(message_calls) == 3  # 4000 + 4000 + 1000
-    assert all(len(c[1]["text"]) <= 4000 for c in message_calls)
-    assert "".join(c[1]["text"] for c in message_calls) == huge_report
+    bodies = [c[1]["text"][len("<pre>"):-len("</pre>")] for c in message_calls]
+    assert len(message_calls) == 3
+    assert all(len(b) <= 4000 for b in bodies)
+    assert all(b.endswith("\n") for b in bodies)  # never split mid-line
+    assert "".join(bodies) == huge_report
 
 
 def test_telegram_lookup_chat_id_reads_latest_update(monkeypatch):

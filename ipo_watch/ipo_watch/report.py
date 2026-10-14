@@ -1,4 +1,8 @@
-"""WhatsApp-ready text report and share caption (spec sections 6, 8, 9)."""
+"""WhatsApp-ready text report and share caption (spec sections 6, 8, 9).
+
+Uses WhatsApp's own markup - *bold* and _italic_ - so a straight copy-paste
+from Telegram or the .txt file lands in WhatsApp already formatted.
+"""
 from __future__ import annotations
 
 from typing import Optional
@@ -12,7 +16,8 @@ HOT = "🔥"
 
 def _title(ipo: IPO) -> str:
     """Name line; GMP above 10% is flagged (section 6)."""
-    return f"{HOT} {ipo.name.upper()}" if ipo.is_hot else ipo.name.upper()
+    name = f"{HOT} {ipo.name.upper()}" if ipo.is_hot else ipo.name.upper()
+    return f"*{name}*"
 
 
 def _open_block(ipo: IPO) -> str:
@@ -22,7 +27,7 @@ def _open_block(ipo: IPO) -> str:
         f"💰 Price: ₹{ipo.price_band_text}\n"
         f"👥 Retail: {ipo.retail_text}\n"
         f"📊 Total: {ipo.total_text}\n"
-        f"🟢 GMP: {ipo.gmp_text} | {ipo.gmp_pct_text}"
+        f"🟢 GMP: {ipo.gmp_text} | *{ipo.gmp_pct_text}*"
     )
 
 
@@ -31,15 +36,15 @@ def _upcoming_block(ipo: IPO) -> str:
         f"{_title(ipo)}\n"
         f"📅 {ipo.date_range_text}\n"
         f"💰 Price: ₹{ipo.price_band_text}\n"
-        f"🟢 GMP: {ipo.gmp_text} | {ipo.gmp_pct_text}"
+        f"🟢 GMP: {ipo.gmp_text} | *{ipo.gmp_pct_text}*"
     )
 
 
 def build_report(ds: Dataset) -> str:
     d = ds.run_date.strftime("%d %b %Y") if ds.run_date else ""
-    L: list[str] = ["📊 DAILY MAINBOARD IPO WATCH", f"📅 {d} | 5:00 PM", ""]
+    L: list[str] = ["*📊 DAILY MAINBOARD IPO WATCH*", f"📅 {d} | 5:00 PM IST", ""]
 
-    L.append("🟢 OPEN MAINBOARD IPOs")
+    L.append("*🟢 OPEN MAINBOARD IPOs*")
     L.append("")
     if ds.open_ipos:
         for ipo in ds.open_ipos:
@@ -48,7 +53,7 @@ def build_report(ds: Dataset) -> str:
     else:
         L += ["No Mainboard IPOs are open today.", ""]
 
-    L.append("🔵 UPCOMING MAINBOARD IPOs")
+    L.append("*🔵 UPCOMING MAINBOARD IPOs*")
     L.append("")
     if ds.upcoming_ipos:
         for ipo in ds.upcoming_ipos:
@@ -65,7 +70,7 @@ def build_report(ds: Dataset) -> str:
 
 def _ranking(ds: Dataset) -> str:
     """Section 9. Ranks every Open + Upcoming Mainboard IPO by GMP %."""
-    L = ["🏆 CURRENT GMP RANKING", ""]
+    L = ["*🏆 CURRENT GMP RANKING*", ""]
     ranked = rank_by_gmp(ds)
     if not ranked:
         L.append("No IPOs to rank.")
@@ -73,7 +78,7 @@ def _ranking(ds: Dataset) -> str:
 
     for n, ipo in enumerate(ranked, 1):
         tag = " 🟢" if ipo.status.value == "Open" else " 🔵"
-        L.append(f"{n}. {ipo.name} — {ipo.gmp_pct_text} ({ipo.gmp_text}){tag}")
+        L.append(f"{n}. {ipo.name} — *{ipo.gmp_pct_text}* ({ipo.gmp_text}){tag}")
 
     L.append("")
     top_gmp = next((i for i in ranked if i.gmp_pct is not None), None)
@@ -91,9 +96,9 @@ def _ranking(ds: Dataset) -> str:
 
 def _footer(ds: Dataset) -> str:
     L = [
-        "📌 GMP = Grey Market Premium",
-        "📈 GMP % calculated on upper price band",
-        "⚠️ GMP is unofficial and can change before listing.",
+        "📌 _GMP = Grey Market Premium_",
+        "📈 _GMP % calculated on upper price band_",
+        "⚠️ _GMP is unofficial and can change before listing._",
         f"Source: {SOURCE_NAME}",
     ]
     stamps = []
