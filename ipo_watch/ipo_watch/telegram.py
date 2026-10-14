@@ -21,6 +21,7 @@ Telegram is additive, never a replacement the pipeline depends on.
 """
 from __future__ import annotations
 
+import html
 import json
 import os
 import urllib.parse
@@ -67,8 +68,13 @@ def send_report(image_path: str, report_text: str) -> None:
     _post("sendPhoto", {"chat_id": chat_id, "caption": f"\U0001F4CA IPO Watch — {date_label}"},
           files={"photo": (os.path.basename(image_path), image_bytes, "image/png")})
 
+    # The report goes inside a <pre> block: one tap on it in Telegram copies
+    # the whole text, *bold*/_italic_ markers included, so it pastes into
+    # WhatsApp already formatted. Plain text would need a fiddly long-press
+    # select, and Telegram's own bold would be lost on copy.
     for chunk in _chunk(report_text, _MESSAGE_LIMIT):
-        _post("sendMessage", {"chat_id": chat_id, "text": chunk})
+        _post("sendMessage", {"chat_id": chat_id, "parse_mode": "HTML",
+                              "text": f"<pre>{html.escape(chunk, quote=False)}</pre>"})
 
 
 def lookup_chat_id(bot_token: str) -> Optional[int]:
@@ -138,5 +144,18 @@ def _multipart_body(fields: dict, files: dict) -> bytes:
 
 
 def _chunk(text: str, size: int):
-    for i in range(0, len(text), size):
-        yield text[i:i + size]
+    """Split on line boundaries so no report line is cut in half."""
+    buf = ""
+    for line in text.splitlines(keepends=True):
+        while len(line) > size:
+            if buf:
+                yield buf
+                buf = ""
+            yield line[:size]
+            line = line[size:]
+        if len(buf) + len(line) > size:
+            yield buf
+            buf = ""
+        buf += line
+    if buf:
+        yield buf
