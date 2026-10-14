@@ -37,7 +37,7 @@ def _upcoming_block(ipo: IPO) -> str:
 
 def build_report(ds: Dataset) -> str:
     d = ds.run_date.strftime("%d %b %Y") if ds.run_date else ""
-    L: list[str] = ["📊 DAILY MAINBOARD IPO WATCH", f"📅 {d} | 8:00 PM", ""]
+    L: list[str] = ["📊 DAILY MAINBOARD IPO WATCH", f"📅 {d} | 5:00 PM", ""]
 
     L.append("🟢 OPEN MAINBOARD IPOs")
     L.append("")

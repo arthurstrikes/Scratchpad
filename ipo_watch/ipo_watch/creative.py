@@ -242,7 +242,7 @@ def build_html(ds: Dataset) -> str:
       <div class="mark">{ICONS['logo']}</div>
       <div><h1>IPO WATCH</h1><div class="tag">DAILY UPDATE · MAINBOARD</div></div>
     </div>
-    <div class="datebox"><div class="d">{_e(date_txt)}</div><div class="t">8:00 PM IST</div></div>
+    <div class="datebox"><div class="d">{_e(date_txt)}</div><div class="t">5:00 PM IST</div></div>
   </div>
 
   <div class="sect"><span class="dot open"></span><h2>OPEN MAINBOARD IPOs</h2>
