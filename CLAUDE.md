@@ -15,6 +15,12 @@ python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
 python3 -m pytest tests/ -q              # 20 rule tests
 ```
 
+`python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
+(text only, tap-to-copy, only for Mainboard IPOs whose last bidding day is
+today; prints "nothing to send" and exits 0 on any other day). `--fail-on-telegram-error`
+makes a failed Telegram delivery exit 3 instead of only being logged (used by
+the GitHub workflows so a failure is visible).
+
 Chromium is preinstalled at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`;
 `config.CHROMIUM_PATH` points there and `IPOWATCH_CHROMIUM` overrides it.
 Do **not** run `playwright install` in a cloud session - use the existing binary.

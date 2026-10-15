@@ -72,7 +72,18 @@ def send_report(image_path: str, report_text: str) -> None:
     # the whole text, *bold*/_italic_ markers included, so it pastes into
     # WhatsApp already formatted. Plain text would need a fiddly long-press
     # select, and Telegram's own bold would be lost on copy.
-    for chunk in _chunk(report_text, _MESSAGE_LIMIT):
+    _send_blocks(chat_id, report_text)
+
+
+def send_text(report_text: str) -> None:
+    """Send a text-only message (no image) as a tap-to-copy block."""
+    if not configured():
+        raise TelegramError("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set")
+    _send_blocks(os.environ["TELEGRAM_CHAT_ID"], report_text)
+
+
+def _send_blocks(chat_id: str, text: str) -> None:
+    for chunk in _chunk(text, _MESSAGE_LIMIT):
         _post("sendMessage", {"chat_id": chat_id, "parse_mode": "HTML",
                               "text": f"<pre>{html.escape(chunk, quote=False)}</pre>"})
 

@@ -210,11 +210,14 @@ def enrich_ipo(ipo: IPO, today: date, get: Fetcher,
 
 
 def enrich_dataset(ds: Dataset, today: date, get: Fetcher, workers: int = 1,
-                   history_dir: Optional[str] = None) -> None:
-    """Enrich every published IPO that has its own page link."""
+                   history_dir: Optional[str] = None,
+                   only: Optional[Callable[[IPO], bool]] = None) -> None:
+    """Enrich every published IPO that has its own page link (or just those
+    `only` selects, e.g. the IPOs closing today for the midday update)."""
     local = load_local_history(history_dir, today) if history_dir else {}
-    ipos = [i for i in ds.published if i.gmp_url]
-    for i in ds.published:
+    pool_ = [i for i in ds.published if only is None or only(i)]
+    ipos = [i for i in pool_ if i.gmp_url]
+    for i in pool_:
         if not i.gmp_url:
             i.trend = compute_trend(local.get(norm_key(i.name)), today, i.gmp)
     if not ipos:
