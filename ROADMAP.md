@@ -47,7 +47,6 @@ Last updated: 15 Oct 2026 (evening).
 | G4 | The 5 PM routine has been failing **silently since 9 Sep**, and the platform still shows "succeeded" | Five weeks of a broken job that looked healthy | Understood and documented. Cannot be paused from a session (A3) |
 | G5 | **Single point of failure:** the daily report only exists because *this* session stays alive | If the session is archived or reset, reports stop with no warning | Fix staged: the GitHub runner (A1-A3) |
 | G6 | No alarm if a day is missed | You found out by checking, not by being told | Built 15 Oct (watchdog), not yet switched on |
-| G16 | On 15 Oct IPOWatch's extra pages timed out, so the first GitHub dry run showed "GMP trend: Not updated" for most IPOs | The design degrades honestly, but a real send would look thin | Mitigations shipped (see G13); re-check on the next live run |
 | G7 | IPOWatch changed its layout 5 times in 2 weeks; our only defence is "abort if nothing parses" | A subtle change (like the name suffixes) can degrade quality without aborting | Open: layout canary (I4) |
 | G8 | No archive of past reports outside a container | History disappears if the container does | **Built 15 Oct:** `history` branch seeded with 28 Sep - 14 Oct, filled by each real GitHub run |
 | G9 | `README.md` and `install_schedule.sh` still describe the old 8 PM setup; `CLAUDE.md` still says "20 tests" | Misleading to a newcomer | Open (A9) |
@@ -57,6 +56,7 @@ Last updated: 15 Oct 2026 (evening).
 | G13 | I sent 100+ requests to IPOWatch in one hour while testing, and IPOWatch was slow or timing out for both the sandbox and GitHub that afternoon | Partly my doing, partly the site. Nightly load is only 18 requests | Mitigated: gzip, longer waits, retries, own-history fallback. Test with saved pages |
 | G14 | I suggested a **Telegram channel** for your WhatsApp contacts. That was weak: they can only follow it if they use Telegram | Misleading idea | Withdrawn unless your audience uses Telegram (A8) |
 | G15 | The trend compares against IPOWatch's own daily record; our own previous report can differ (Jio: 200 vs 220) | Two honest baselines | Needs your preference (A5) |
+| G16 | On 15 Oct IPOWatch's extra pages timed out, so the first GitHub dry run showed "GMP trend: Not updated" for most IPOs | The design degrades honestly, but a real send would look thin | Mitigations shipped (see G13); re-check on the next live run |
 
 ## 4. Open actions
 
