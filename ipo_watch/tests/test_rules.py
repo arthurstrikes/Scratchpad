@@ -384,3 +384,194 @@ def test_telegram_lookup_chat_id_reads_latest_update(monkeypatch):
     monkeypatch.setattr(telegram.urllib.request, "urlopen", lambda *a, **k: FakeResp(payload))
 
     assert telegram.lookup_chat_id("123:fake") == 222
+
+
+# --- GMP trend, key facts, 4:5 fit, alerts (added 15 Oct 2026) --------------
+
+from ipo_watch.enrich import (compute_trend, page_is_about, parse_detail_facts,
+                              parse_gmp_history)
+from ipo_watch.models import Trend, _indian
+
+D = date(2026, 10, 15)
+
+
+def _hist(*pairs):
+    return [(date(2026, 10, d), None if g is None else Decimal(str(g))) for d, g in pairs]
+
+
+def test_trend_up_down_flat_against_previous_day():
+    up = compute_trend(_hist((14, 86)), D, Decimal("91"))
+    assert up.direction == "up" and up.text() == "▲ ₹5" and up.vs_text(D) == "vs yesterday"
+    down = compute_trend(_hist((14, 100)), D, Decimal("91"))
+    assert down.direction == "down" and down.text() == "▼ ₹9"
+    flat = compute_trend(_hist((14, 91)), D, Decimal("91"))
+    assert flat.direction == "flat" and flat.text() == "▬ ₹0"
+
+
+def test_trend_ignores_todays_own_history_row_and_skips_blank_days():
+    # today's row on IPOWatch must not be the baseline; a dash day is skipped
+    h = _hist((15, 999), (14, None), (13, 80), (12, 70))
+    t = compute_trend(h, D, Decimal("91"))
+    assert t.prev_gmp == Decimal("80") and t.change == Decimal("11")
+    assert t.vs_text(D) == "vs 13 Oct"          # honest about which day it is
+    assert [str(x) for x in t.series] == ["70", "80", "91"]
+
+
+def test_trend_new_and_unavailable_are_distinct():
+    assert compute_trend(_hist((15, 50)), D, Decimal("91")).status == "new"
+    assert compute_trend(None, D, Decimal("91")).status == "unavailable"
+    assert compute_trend(_hist((14, 80)), D, None).status == "unavailable"
+    assert Trend(status="unavailable").text() == "Not updated"
+
+
+def test_gmp_history_table_parsed_and_dashes_become_none():
+    html = ("<table><tr><th>Date</th><th>IPO GMP</th><th>GMP Trend</th><th>Gain</th></tr>"
+            "<tr><td>15 October</td><td>₹91</td><td>🟢</td><td>33.58%</td></tr>"
+            "<tr><td>6 October</td><td>₹-</td><td>–</td><td>-%</td></tr></table>")
+    got = parse_gmp_history(html, D)
+    assert got == [(date(2026, 10, 15), Decimal("91")), (date(2026, 10, 6), None)]
+    assert parse_gmp_history("<table><tr><th>x</th></tr></table>", D) is None
+
+
+DETAIL = ("<h1>HD Fire Protect IPO Date, Review</h1>"
+          "<table><tr><th>Application</th><th>Lot Size</th><th>Shares</th><th>Amount</th></tr>"
+          "<tr><td>Retail Minimum</td><td>1</td><td>55</td><td>₹14,905</td></tr></table>"
+          "<table><tr><td>Basis of Allotment:</td><td>October 16, 2026</td></tr>"
+          "<tr><td>IPO Listing</td><td>BSE, NSE</td></tr>"
+          "<tr><td>IPO Listing Date:</td><td>October 20, 2026</td></tr></table>")
+
+
+def test_detail_facts_parsed():
+    f = parse_detail_facts(DETAIL, Decimal("271"))
+    assert f["lot_shares"] == 55 and f["min_invest"] == Decimal("14905")
+    assert f["allotment_date"] == date(2026, 10, 16)
+    assert f["listing_date"] == date(2026, 10, 20)     # not the 'IPO Listing: BSE, NSE' row
+
+
+def test_min_investment_hidden_unless_it_equals_shares_times_cap_price():
+    assert parse_detail_facts(DETAIL, Decimal("300"))["min_invest"] is None   # 55 x 300 != 14905
+    assert parse_detail_facts(DETAIL, None)["min_invest"] is None             # no cap price yet
+
+
+def test_page_must_name_the_right_company():
+    assert page_is_about(DETAIL, "HD Fire Protect")
+    assert not page_is_about(DETAIL, "Tonbo Imaging")
+
+
+def test_indian_digit_grouping():
+    assert _indian(Decimal(14905)) == "14,905"
+    assert _indian(Decimal(1993765)) == "19,93,765"
+
+
+def test_stamp_from_the_future_is_dated_yesterday():
+    from datetime import datetime
+    from ipo_watch.merge import _qualify_stamp
+    now = datetime(2026, 10, 15, 14, 25)
+    assert _qualify_stamp("17:41", D, now) == "14 Oct, 17:41"   # not refreshed yet today
+    assert _qualify_stamp("09:10", D, now) == "15 Oct, 09:10"
+    assert _qualify_stamp("17:41", D, None) == "15 Oct, 17:41"  # replay: unchanged behaviour
+
+
+def _rich():
+    ipo = mk("Acme", Decimal("91"), Decimal("271"), retail=Decimal("3.5"), total=Decimal("4"),
+             o=date(2026, 10, 13), c=date(2026, 10, 16))
+    ipo.price_min = None                      # IPOWatch gives a single cap price
+    ipo.trend = compute_trend(_hist((12, 75), (13, 80), (14, 86)), D, Decimal("91"))
+    ipo.lot_shares, ipo.min_invest = 55, Decimal("14905")
+    ipo.allotment_date, ipo.listing_date = date(2026, 10, 17), date(2026, 10, 21)
+    return ipo
+
+
+def test_report_shows_trend_minimum_and_key_dates():
+    out = build_report(build_dataset([], [_rich()], D))
+    assert "💰 Price: ₹271 | Min ₹14,905 (55 shares)" in out
+    assert "📈 GMP trend: ▲ ₹5 vs yesterday (₹86 → ₹91)" in out
+    assert "🗓️ Allotment: 17 Oct | Listing: 21 Oct" in out
+
+
+def test_report_without_enrichment_is_unchanged_and_never_invents():
+    out = build_report(build_dataset([], [mk("Plain", Decimal("5"), Decimal("100"))], TODAY))
+    assert "GMP trend" not in out and "Allotment" not in out and "Min ₹" not in out
+
+
+def test_every_figure_drawn_on_the_image_is_checked_against_the_dataset():
+    """The keys the HTML paints must equal the keys verify expects, exactly,
+    including the new trend / minimum / allotment / listing figures."""
+    import re
+    from ipo_watch.creative import build_html
+    ds = build_dataset([], [_rich()], D)
+    painted = set(re.findall(r'data-verify="([^"]+)"', build_html(ds)))
+    assert painted == set(expected_map(ds))
+    assert {"ipo0.trend", "ipo0.min", "ipo0.allot", "ipo0.list"} <= painted
+
+
+def test_telegram_failure_notice_is_plain_text_and_scrubs_the_token(monkeypatch):
+    from ipo_watch import telegram
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "123:secret")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "999")
+    calls = []
+    monkeypatch.setattr(telegram, "_post",
+                        lambda method, fields, files=None: calls.append((method, fields)) or {"ok": True})
+    telegram.send_alert("boom at https://api.telegram.org/bot123:secret/x")
+    assert calls[0][0] == "sendMessage" and "secret" not in calls[0][1]["text"]
+    assert "parse_mode" not in calls[0][1]
+
+
+def test_run_sends_failure_notice_when_ipowatch_cannot_be_read(monkeypatch, tmp_path):
+    from ipo_watch import run, telegram
+    from ipo_watch.fetch import FetchError
+    sent = []
+    monkeypatch.setattr(telegram, "configured", lambda: True)
+    monkeypatch.setattr(telegram, "send_alert", lambda text: sent.append(text))
+    monkeypatch.setattr(run, "collect", lambda *a, **k: (_ for _ in ()).throw(FetchError("blocked")))
+    assert run.main(["--outdir", str(tmp_path), "--date", "2026-10-15"]) == 2
+    assert len(sent) == 1 and "blocked" in sent[0] and "no numbers were guessed" in sent[0]
+
+
+def test_core_fetch_retries_a_dropped_connection_then_succeeds(monkeypatch):
+    from ipo_watch import fetch
+    calls = {"n": 0}
+
+    class Resp:
+        status = 200
+        def read(self): return b"<table><tr><td>ok</td></tr></table>"
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    def flaky(req, timeout=None, context=None):
+        calls["n"] += 1
+        if calls["n"] < 3:
+            raise OSError("EOF occurred in violation of protocol")
+        return Resp()
+
+    monkeypatch.setattr(fetch.urllib.request, "urlopen", flaky)
+    monkeypatch.setattr(fetch.time, "sleep", lambda s: None)
+    pg = fetch.fetch_pages(["https://ipowatch.in/x/"])["https://ipowatch.in/x/"]
+    assert calls["n"] == 3 and "<table" in pg.html
+
+
+def test_core_fetch_gives_up_after_the_last_attempt(monkeypatch):
+    from ipo_watch import fetch
+    monkeypatch.setattr(fetch.urllib.request, "urlopen",
+                        lambda *a, **k: (_ for _ in ()).throw(OSError("down")))
+    monkeypatch.setattr(fetch.time, "sleep", lambda s: None)
+    try:
+        fetch.fetch_pages(["https://ipowatch.in/x/"])
+        assert False, "should have raised"
+    except fetch.FetchError as exc:
+        assert "down" in str(exc)
+
+
+def test_trend_falls_back_to_our_own_earlier_reports(tmp_path):
+    import json
+    from ipo_watch.enrich import enrich_ipo, load_local_history
+    for day, g in (("2026-10-13", "80"), ("2026-10-14", "86"), ("2026-10-15", "999")):
+        (tmp_path / f"ipo-watch-{day}-dataset.json").write_text(json.dumps(
+            {"run_date": day, "open": [{"name": "Acme Ltd", "gmp": g}], "upcoming": []}))
+    local = load_local_history(str(tmp_path), D)          # today's own file is ignored
+    assert [(d.day, str(g)) for d, g in local[norm_key("Acme")]] == [(13, "80"), (14, "86")]
+    ipo = mk("Acme", Decimal("91"), Decimal("271"))
+    ipo.gmp_url = "https://ipowatch.in/acme-ipo-gmp-grey-market-premium/"
+    problems = enrich_ipo(ipo, D, lambda url: None, local[norm_key("Acme")])
+    assert ipo.trend.status == "ok" and ipo.trend.text() == "▲ ₹5" and problems["trend"] is False
+    assert problems["detail"] is True        # facts have no fallback: omitted, with a note

@@ -77,6 +77,20 @@ def send_report(image_path: str, report_text: str) -> None:
                               "text": f"<pre>{html.escape(chunk, quote=False)}</pre>"})
 
 
+def send_alert(text: str) -> None:
+    """Send a short plain-text failure notice so a broken run is never silent.
+
+    Same rules as send_report: raises TelegramError on failure and the caller
+    must not let that change the run's exit code. The bot token is scrubbed
+    from the text in case an error message carried it.
+    """
+    if not configured():
+        raise TelegramError("TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set")
+    token = os.environ["TELEGRAM_BOT_TOKEN"]
+    text = text.replace(token, "***")[:900]
+    _post("sendMessage", {"chat_id": os.environ["TELEGRAM_CHAT_ID"], "text": text})
+
+
 def lookup_chat_id(bot_token: str) -> Optional[int]:
     """Return the chat id of whoever most recently messaged this bot.
 

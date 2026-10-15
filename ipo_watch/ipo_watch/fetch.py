@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 import re
 import ssl
+import time
 import urllib.request
 from dataclasses import dataclass
 from datetime import datetime
@@ -18,6 +19,10 @@ from urllib.parse import urlparse
 
 from .config import (CA_BUNDLE, CHROMIUM_PATH, HTTP_TIMEOUT_S, IST,
                      PAGE_TIMEOUT_MS, SETTLE_MS, USER_AGENT)
+
+
+# Waits between attempts: long enough to ride out a short throttle or proxy blip.
+RETRY_WAITS_S = (5, 15, 30)
 
 
 class FetchError(RuntimeError):
@@ -37,7 +42,8 @@ class Page:
         return self.fetched_at.astimezone(IST).strftime("%d %b %Y, %I:%M %p IST")
 
 
-def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None) -> dict[str, Page]:
+def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None,
+                timeout: Optional[float] = None, attempts: int = 4) -> dict[str, Page]:
     """Fetch each page over HTTPS and return its HTML.
 
     IPOWatch renders both tables server-side - the subscription table and the
@@ -61,14 +67,23 @@ def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None) -> dict[str
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-IN,en;q=0.9",
         })
-        try:
-            with urllib.request.urlopen(req, timeout=HTTP_TIMEOUT_S, context=ctx) as resp:
-                raw = resp.read()
-                status = resp.status
-        except Exception as exc:  # noqa: BLE001
-            raise FetchError(f"Could not fetch {url}: {exc}") from exc
-        if status != 200:
-            raise FetchError(f"{url} returned HTTP {status}")
+        raw = b""
+        for attempt in range(1, attempts + 1):
+            try:
+                with urllib.request.urlopen(req, timeout=timeout or HTTP_TIMEOUT_S, context=ctx) as resp:
+                    raw = resp.read()
+                    status = resp.status
+                if status != 200:
+                    raise FetchError(f"{url} returned HTTP {status}")
+                break
+            except Exception as exc:  # noqa: BLE001
+                # A dropped connection is common through proxies; retry before
+                # giving up, so one hiccup does not cost a whole day's report.
+                if attempt == attempts:
+                    if isinstance(exc, FetchError):
+                        raise
+                    raise FetchError(f"Could not fetch {url}: {exc}") from exc
+                time.sleep(RETRY_WAITS_S[min(attempt, len(RETRY_WAITS_S)) - 1])
 
         html = raw.decode("utf-8", errors="replace")
         if "<table" not in html.lower():

@@ -20,24 +20,41 @@ def _title(ipo: IPO) -> str:
     return f"*{name}*"
 
 
-def _open_block(ipo: IPO) -> str:
-    return (
-        f"{_title(ipo)}\n"
-        f"📅 {ipo.date_range_text}\n"
-        f"💰 Price: ₹{ipo.price_band_text}\n"
-        f"👥 Retail: {ipo.retail_text}\n"
-        f"📊 Total: {ipo.total_text}\n"
-        f"🟢 GMP: {ipo.gmp_text} | *{ipo.gmp_pct_text}*"
-    )
+def _price_line(ipo: IPO) -> str:
+    line = f"💰 Price: ₹{ipo.price_band_text}"
+    if ipo.min_invest_text and ipo.lot_shares:
+        line += f" | {ipo.min_invest_text} ({ipo.lot_shares} shares)"
+    return line
 
 
-def _upcoming_block(ipo: IPO) -> str:
-    return (
-        f"{_title(ipo)}\n"
-        f"📅 {ipo.date_range_text}\n"
-        f"💰 Price: ₹{ipo.price_band_text}\n"
-        f"🟢 GMP: {ipo.gmp_text} | *{ipo.gmp_pct_text}*"
-    )
+def _trend_line(ipo: IPO, today) -> str:
+    t = ipo.trend
+    if t is None:
+        return ""
+    if t.status == "new":
+        return "📈 GMP trend: New (first GMP today)"
+    if t.status != "ok":
+        return f"📈 GMP trend: {NOT_UPDATED}"
+    gone = f"₹{t.prev_gmp.normalize():f}" if t.prev_gmp is not None else ""
+    if t.direction == "flat":
+        return f"📈 GMP trend: ▬ No change {t.vs_text(today)} ({gone})"
+    return f"📈 GMP trend: {t.text()} {t.vs_text(today)} ({gone} → {ipo.gmp_text})"
+
+
+def _dates_line(ipo: IPO) -> str:
+    if not (ipo.allotment_text or ipo.listing_text):
+        return ""
+    return (f"🗓️ Allotment: {ipo.allotment_text or NOT_UPDATED}"
+            f" | Listing: {ipo.listing_text or NOT_UPDATED}")
+
+
+def _block(ipo: IPO, today, with_sub: bool) -> str:
+    lines = [_title(ipo), f"📅 {ipo.date_range_text}", _price_line(ipo)]
+    if with_sub:
+        lines += [f"👥 Retail: {ipo.retail_text}", f"📊 Total: {ipo.total_text}"]
+    lines.append(f"🟢 GMP: {ipo.gmp_text} | *{ipo.gmp_pct_text}*")
+    lines += [x for x in (_trend_line(ipo, today), _dates_line(ipo)) if x]
+    return "\n".join(lines)
 
 
 def build_report(ds: Dataset) -> str:
@@ -48,7 +65,7 @@ def build_report(ds: Dataset) -> str:
     L.append("")
     if ds.open_ipos:
         for ipo in ds.open_ipos:
-            L.append(_open_block(ipo))
+            L.append(_block(ipo, ds.run_date, True))
             L.append("")
     else:
         L += ["No Mainboard IPOs are open today.", ""]
@@ -57,7 +74,7 @@ def build_report(ds: Dataset) -> str:
     L.append("")
     if ds.upcoming_ipos:
         for ipo in ds.upcoming_ipos:
-            L.append(_upcoming_block(ipo))
+            L.append(_block(ipo, ds.run_date, False))
             L.append("")
     else:
         L += ["No Mainboard IPOs are scheduled yet.", ""]
@@ -78,7 +95,10 @@ def _ranking(ds: Dataset) -> str:
 
     for n, ipo in enumerate(ranked, 1):
         tag = " 🟢" if ipo.status.value == "Open" else " 🔵"
-        L.append(f"{n}. {ipo.name} — *{ipo.gmp_pct_text}* ({ipo.gmp_text}){tag}")
+        arrow = ""
+        if ipo.trend and ipo.trend.status == "ok":
+            arrow = f" {ipo.trend.text()}"
+        L.append(f"{n}. {ipo.name} — *{ipo.gmp_pct_text}* ({ipo.gmp_text}){tag}{arrow}")
 
     L.append("")
     top_gmp = next((i for i in ranked if i.gmp_pct is not None), None)

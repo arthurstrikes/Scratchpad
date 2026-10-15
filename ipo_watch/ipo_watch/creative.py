@@ -24,6 +24,10 @@ from .merge import Dataset, rank_by_gmp
 from .models import IPO
 
 CARD_W = 1080
+# WhatsApp crops very tall images in the chat thread, so the card is held to
+# 4:5 or squarer by stepping through denser layout tiers until it fits.
+MAX_H = 1350
+TIERS = (0, 1, 2)
 
 CSS = f"""
 :root{{
@@ -31,7 +35,13 @@ CSS = f"""
   --ink:#F5F5F5; --ink-2:#B0B0B0; --ink-3:#8A8A8A;
   --brand:#FF6B35; --brand-soft:#2A1810; --brand-fill:#C94A1A; --brand-fill-2:#9E3410;
   --good:#4CAF50; --bad:#FF4444;
+  --band-v:24px; --band-b:22px; --h1:44px; --when:60px; --gap:22px;
+  --pad:13px; --nm:28px; --sub:20px; --pct:52px; --kv:44px; --fine:17px;
 }}
+.t1{{--band-v:18px; --band-b:16px; --h1:38px; --when:50px; --gap:16px;
+    --pad:10px; --nm:26px; --sub:18px; --pct:46px; --kv:38px; --fine:16px}}
+.t2{{--band-v:14px; --band-b:12px; --h1:34px; --when:44px; --gap:12px;
+    --pad:7px; --nm:24px; --sub:17px; --pct:41px; --kv:34px; --fine:15px}}
 *{{margin:0;padding:0;box-sizing:border-box}}
 body{{width:{CARD_W}px;background:var(--bg);color:var(--ink);font-family:{FONT_STACK};
      -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums lining-nums}}
@@ -39,7 +49,7 @@ body{{width:{CARD_W}px;background:var(--bg);color:var(--ink);font-family:{FONT_S
 .num{{font-family:{DISPLAY_STACK};font-weight:400;line-height:1;letter-spacing:.5px}}
 
 /* ---------- signature: the orange band ---------- */
-.band{{position:relative;overflow:hidden;color:#fff;padding:24px 40px 22px;
+.band{{position:relative;overflow:hidden;color:#fff;padding:var(--band-v) 40px var(--band-b);
       background:linear-gradient(135deg,var(--brand-fill) 0%,var(--brand-fill-2) 100%);
       display:flex;justify-content:space-between;align-items:flex-end;gap:24px}}
 .band:after{{content:"";position:absolute;inset:0;opacity:.13;pointer-events:none;
@@ -47,16 +57,16 @@ body{{width:{CARD_W}px;background:var(--bg);color:var(--ink);font-family:{FONT_S
 .band>*{{position:relative;z-index:1}}
 .eyebrow{{font-size:14px;font-weight:700;letter-spacing:5px;text-transform:uppercase;
          opacity:.82;margin-bottom:10px}}
-h1{{font-size:44px;font-weight:700;line-height:1;letter-spacing:.3px}}
+h1{{font-size:var(--h1);font-weight:700;line-height:1;letter-spacing:.3px}}
 .when{{text-align:right;flex:none}}
-.when .num{{font-size:60px;display:block}}
+.when .num{{font-size:var(--when);display:block}}
 .when small{{display:block;font-size:15px;font-weight:700;letter-spacing:4px;
             text-transform:uppercase;opacity:.82;margin-top:6px}}
 
 main{{padding:4px 40px 0}}
 
 /* ---------- section headers ---------- */
-.sec-h{{display:flex;align-items:center;gap:12px;margin:22px 2px 10px}}
+.sec-h{{display:flex;align-items:center;gap:12px;margin:var(--gap) 2px 10px}}
 .sec-h h2{{font-size:16px;font-weight:500;letter-spacing:4.5px;text-transform:uppercase;
           color:var(--ink-3)}}
 .sec-h .dot{{width:11px;height:11px;border-radius:50%;flex:none}}
@@ -70,25 +80,36 @@ main{{padding:4px 40px 0}}
    Watch watchlist pattern. Keeps a full day near a square image. */
 .rows{{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden}}
 .row{{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:24px;
-     padding:13px 24px 13px 22px;border-top:1px solid var(--line);border-left:5px solid transparent}}
+     padding:var(--pad) 24px var(--pad) 22px;border-top:1px solid var(--line);border-left:5px solid transparent}}
 .row:first-child{{border-top:0}}
 .row.hot{{border-left-color:var(--brand)}}
 .nmrow{{display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-width:0}}
-.nm{{font-size:28px;font-weight:700;line-height:1.15;letter-spacing:.2px}}
+.nm{{font-size:var(--nm);font-weight:700;line-height:1.15;letter-spacing:.2px}}
 .flag{{font-size:12.5px;font-weight:700;letter-spacing:2.6px;text-transform:uppercase;
       color:var(--brand);border:1.5px solid currentColor;border-radius:3px;padding:5px 7px 4px}}
 .sub{{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 0;margin-top:5px;
-     font-size:20px;color:var(--ink-2)}}
+     font-size:var(--sub);color:var(--ink-2)}}
 .f{{display:inline-flex;align-items:baseline;gap:8px}}
 .f+.f:before{{content:"·";color:var(--ink-3);margin:0 14px}}
 .fl{{font-size:14px;font-weight:500;letter-spacing:2.6px;text-transform:uppercase;color:var(--ink-3)}}
 .fv{{font-weight:500;color:var(--ink)}}
 .fv.na{{color:var(--ink-3);font-weight:400;font-style:italic}}
-.gmp{{text-align:right;flex:none;display:flex;align-items:baseline;gap:12px}}
-.pct{{font-size:52px;color:var(--good);white-space:nowrap}}
+.gmp{{text-align:right;flex:none}}
+.pct{{display:block;font-size:var(--pct);color:var(--good);white-space:nowrap}}
 .pct.flat{{color:var(--ink-3)}}
 .pct.neg{{color:var(--bad)}}
+.gmp2{{display:flex;align-items:center;justify-content:flex-end;gap:11px;margin-top:3px}}
 .rs{{font-size:19px;font-weight:500;color:var(--ink-3);white-space:nowrap}}
+.tr{{font-size:19px;font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}}
+.tr.up{{color:var(--good)}} .tr.down{{color:var(--bad)}} .tr.flat{{color:var(--ink-3)}}
+.tr.new{{color:var(--brand);font-size:14px;letter-spacing:2.4px;text-transform:uppercase;
+        border:1.5px solid currentColor;border-radius:3px;padding:3px 6px 2px}}
+.tr.na{{color:var(--ink-3);font-weight:400;font-style:italic;font-size:16px}}
+svg.spark{{display:block;flex:none}}
+.fine{{display:flex;flex-wrap:wrap;gap:2px 0;margin-top:4px;font-size:var(--fine);color:var(--ink-3)}}
+.fine .f+.f:before{{margin:0 12px}}
+.fine .fl{{font-size:12.5px}}
+.fine .fv{{color:var(--ink-2);font-weight:500}}
 .empty{{background:var(--surface);border:1px dashed var(--line);border-radius:6px;
        padding:24px;text-align:center;color:var(--ink-3);font-size:19px}}
 
@@ -96,7 +117,7 @@ main{{padding:4px 40px 0}}
 .kpis{{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:22px}}
 .kpi{{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:13px 18px 12px}}
 .kpi .kl{{font-size:13.5px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:var(--ink-3)}}
-.kpi .kv{{font-size:44px;margin-top:8px;color:var(--ink)}}
+.kpi .kv{{font-size:var(--kv);margin-top:8px;color:var(--ink)}}
 .kpi .kv.good{{color:var(--good)}}
 .kpi .kn{{font-size:18px;font-weight:700;color:var(--ink-2);margin-top:6px;
          overflow:hidden;text-overflow:ellipsis;white-space:nowrap}}
@@ -130,6 +151,40 @@ def _pct_class(ipo: IPO) -> str:
     return "pct num" if ipo.gmp_pct > 0 else "pct num neg"
 
 
+_SPARK = {"up": "#4CAF50", "down": "#FF4444", "flat": "#8A8A8A"}
+
+
+def _spark(ipo: IPO) -> str:
+    """Tiny GMP line for the last days. Pure graphic: every number it is
+    drawn from is already in the dataset; no text, so nothing to verify."""
+    t = ipo.trend
+    if not t or t.status != "ok" or len(t.series) < 2:
+        return ""
+    vals = [float(v) for v in t.series]
+    lo, hi = min(vals), max(vals)
+    w, h, pad = 76, 28, 3
+    span = (hi - lo) or 1.0
+    pts = [(pad + i * (w - 2 * pad) / (len(vals) - 1),
+            h - pad - (v - lo) / span * (h - 2 * pad) if hi != lo else h / 2)
+           for i, v in enumerate(vals)]
+    col = _SPARK[t.direction or "flat"]
+    line = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+    lx, ly = pts[-1]
+    return (f'<svg class="spark" width="{w}" height="{h}" viewBox="0 0 {w} {h}">'
+            f'<polyline points="{line}" fill="none" stroke="{col}" stroke-width="2.6" '
+            f'stroke-linecap="round" stroke-linejoin="round"/>'
+            f'<circle cx="{lx:.1f}" cy="{ly:.1f}" r="3.6" fill="{col}"/></svg>')
+
+
+def _trend_chip(ipo: IPO, kid: str) -> str:
+    text = ipo.trend_text
+    if text is None:
+        return ""
+    t = ipo.trend
+    cls = "new" if t.status == "new" else (t.direction or "na")
+    return f'<span class="tr {cls}" data-verify="{kid}.trend">{_e(text)}</span>'
+
+
 def _row(ipo: IPO, idx: int, show_sub: bool) -> str:
     """One IPO as a two-line row: name above, its figures inline below."""
     kid = f"ipo{idx}"
@@ -143,16 +198,30 @@ def _row(ipo: IPO, idx: int, show_sub: bool) -> str:
     if show_sub:
         fields.append(_field("Retail", ipo.retail_text, f"{kid}.retail", ipo.retail_sub is None))
         fields.append(_field("Total", ipo.total_text, f"{kid}.total", ipo.total_sub is None))
+    elif ipo.min_invest_text:
+        fields.append(_field("", ipo.min_invest_text, f"{kid}.min", False))
+
+    fine = ""
+    if show_sub:
+        extra = []
+        if ipo.min_invest_text:
+            extra.append(_field("", ipo.min_invest_text, f"{kid}.min", False))
+        if ipo.allotment_text:
+            extra.append(_field("Allotment", ipo.allotment_text, f"{kid}.allot", False))
+        if ipo.listing_text:
+            extra.append(_field("Listing", ipo.listing_text, f"{kid}.list", False))
+        if extra:
+            fine = f'<div class="fine">{"".join(extra)}</div>'
 
     return f"""
     <div class="row{hot}">
       <div>
         <div class="nmrow"><span class="nm" data-verify="{kid}.name">{_e(ipo.name)}</span>{flag}</div>
-        <div class="sub">{"".join(fields)}</div>
+        <div class="sub">{"".join(fields)}</div>{fine}
       </div>
       <div class="gmp">
         <span class="{_pct_class(ipo)}" data-verify="{kid}.gmppct">{_e(ipo.gmp_pct_text)}</span>
-        <span class="rs">GMP <span data-verify="{kid}.gmp">{_e(ipo.gmp_text)}</span></span>
+        <div class="gmp2">{_spark(ipo)}<span class="rs">GMP <span data-verify="{kid}.gmp">{_e(ipo.gmp_text)}</span></span>{_trend_chip(ipo, kid)}</div>
       </div>
     </div>"""
 
@@ -187,7 +256,7 @@ def _leaders(ds: Dataset) -> str:
     </div>"""
 
 
-def build_html(ds: Dataset) -> str:
+def build_html(ds: Dataset, tier: int = 0) -> str:
     date_txt = ds.run_date.strftime("%d %b %Y") if ds.run_date else ""
 
     open_rows = [_row(i, n, True) for n, i in enumerate(ds.open_ipos)]
@@ -208,7 +277,7 @@ def build_html(ds: Dataset) -> str:
 
     return f"""<!doctype html><html><head><meta charset="utf-8">
 <style>{font_face_css()}{CSS}</style></head>
-<body><div class="sheet">
+<body><div class="sheet t{tier}">
   <div class="band">
     <div><div class="eyebrow">Daily update · Mainboard</div><h1>IPO Watch</h1></div>
     <div class="when"><span class="num">{_e(date_txt)}</span><small>5:00 PM IST</small></div>
@@ -226,20 +295,27 @@ def build_html(ds: Dataset) -> str:
 </div></body></html>"""
 
 
+_LAST: dict = {"tier": 0, "width": CARD_W, "height": 0}
+
+
+def last_render_info() -> dict:
+    """Layout tier and CSS-pixel size chosen by the most recent render."""
+    return dict(_LAST)
+
+
 def render_png(ds: Dataset, out_path: str, scale: int = 2) -> tuple[str, dict[str, str]]:
     """Render the creative and read every figure back out of the live DOM.
 
-    Returns (png_path, rendered) where `rendered` maps each data-verify key to
-    the text actually painted on the image. verify.py compares that against
-    the dataset before the PNG is accepted.
+    Tries the roomiest layout first and steps to denser tiers until the card
+    is no taller than 4:5 (MAX_H). Returns (png_path, rendered) where
+    `rendered` maps each data-verify key to the text actually painted on the
+    image. verify.py compares that against the dataset before the PNG is
+    accepted.
     """
     from playwright.sync_api import sync_playwright
 
-    html_doc = build_html(ds)
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
     html_path = os.path.splitext(out_path)[0] + ".html"
-    with open(html_path, "w", encoding="utf-8") as fh:
-        fh.write(html_doc)
 
     kwargs = {"args": ["--no-sandbox", "--disable-dev-shm-usage",
                        "--force-color-profile=srgb", "--font-render-hinting=none"]}
@@ -250,8 +326,15 @@ def render_png(ds: Dataset, out_path: str, scale: int = 2) -> tuple[str, dict[st
         browser = p.chromium.launch(**kwargs)
         page = browser.new_page(viewport={"width": CARD_W, "height": 800},
                                 device_scale_factor=scale)
-        page.set_content(html_doc, wait_until="load")
-        page.wait_for_timeout(400)
+        for tier in TIERS:
+            html_doc = build_html(ds, tier)
+            page.set_content(html_doc, wait_until="load")
+            page.wait_for_timeout(300)
+            height = page.eval_on_selector(".sheet", "e => Math.ceil(e.getBoundingClientRect().height)")
+            if height <= MAX_H or tier == TIERS[-1]:
+                break
+        with open(html_path, "w", encoding="utf-8") as fh:
+            fh.write(html_doc)
         rendered = page.eval_on_selector_all(
             "[data-verify]",
             "els => Object.fromEntries(els.map(e => [e.dataset.verify, e.textContent.trim()]))",
@@ -260,4 +343,5 @@ def render_png(ds: Dataset, out_path: str, scale: int = 2) -> tuple[str, dict[st
         # to its content instead of being padded out to the viewport height.
         page.locator(".sheet").screenshot(path=out_path)
         browser.close()
+    _LAST.update(tier=tier, width=CARD_W, height=height)
     return out_path, rendered

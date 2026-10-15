@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Optional
 
@@ -176,7 +176,8 @@ def build_dataset(
     # IPOWatch stamps each row rather than the page, so report the newest stamp
     # among the rows actually published, per source (rule 5.5).
     ds.subscription_timestamp = _qualify_stamp(_latest(
-        [i.prov.subscription_timestamp for i in ds.published]) or sub_ts, today)
+        [i.prov.subscription_timestamp for i in ds.published]) or sub_ts, today,
+        generated_at)
     ds.gmp_timestamp = _latest(
         [i.prov.gmp_timestamp for i in ds.published]) or gmp_ts
 
@@ -191,12 +192,25 @@ def build_dataset(
 _TIME_ONLY = re.compile(r"^\s*(\d{1,2}:\d{2})\s*$")
 
 
-def _qualify_stamp(stamp: Optional[str], today: date) -> Optional[str]:
-    """IPOWatch's subscription rows stamp a bare time; add the day it refers to."""
+def _qualify_stamp(stamp: Optional[str], today: date,
+                   now: Optional[datetime] = None) -> Optional[str]:
+    """IPOWatch's subscription rows stamp a bare time; add the day it refers to.
+
+    A stamp cannot be from the future: if the stamped time is later than the
+    time of this run, IPOWatch has not refreshed yet today and the figures are
+    from the previous day, so that is the date shown.
+    """
     if not stamp:
         return stamp
     m = _TIME_ONLY.match(stamp)
-    return f"{today.strftime('%d %b')}, {m.group(1)}" if m else stamp
+    if not m:
+        return stamp
+    day = today
+    if now is not None and now.date() == today:
+        hh, mm = (int(x) for x in m.group(1).split(":"))
+        if (hh, mm) > (now.hour, now.minute):
+            day = today - timedelta(days=1)
+    return f"{day.strftime('%d %b')}, {m.group(1)}"
 
 
 def _latest(stamps: list[Optional[str]]) -> Optional[str]:

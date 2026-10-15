@@ -10,8 +10,11 @@ from __future__ import annotations
 import re
 from datetime import date
 from typing import Iterable, Optional
+from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
+
+from .config import BASE_URL
 
 from .models import (Board, IPO, Provenance, Status, _MONTHS, classify_status,
                      parse_date, parse_price_band, to_decimal)
@@ -223,6 +226,7 @@ def parse_table(table, source_url: str, today: date) -> list[IPO]:
             total_sub=to_decimal(col("total")),
             row_updated=col("updated"),
             status_from_page=page_status is not None,
+            gmp_url=urljoin(BASE_URL + "/", href) if href else "",
             prov=Provenance(source_url=source_url),
         )
         out.append(ipo)
