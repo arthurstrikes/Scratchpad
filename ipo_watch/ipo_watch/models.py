@@ -13,7 +13,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
 from typing import Optional
 
-from .config import NOT_UPDATED, NOT_VERIFIED
+from .config import GMP_HIGHLIGHT_THRESHOLD_PCT, NOT_UPDATED, NOT_VERIFIED
 
 
 class Board(str, Enum):
@@ -143,7 +143,7 @@ class IPO:
     @property
     def is_hot(self) -> bool:
         pct = self.gmp_pct
-        return pct is not None and pct > Decimal("10")
+        return pct is not None and pct > Decimal(str(GMP_HIGHLIGHT_THRESHOLD_PCT))
 
     # ---------- display helpers ----------
 
@@ -173,6 +173,12 @@ class IPO:
     @property
     def listing_text(self) -> Optional[str]:
         return _d(self.listing_date) if self.listing_date else None
+
+    @property
+    def price_display(self) -> str:
+        """'₹271', or the plain 'Not updated' / 'Not verified' without a rupee sign."""
+        t = self.price_band_text
+        return t if t in (NOT_UPDATED, NOT_VERIFIED) else f"₹{t}"
 
     @property
     def date_range_text(self) -> str:

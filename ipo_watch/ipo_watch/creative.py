@@ -18,7 +18,7 @@ import html
 import os
 from typing import Optional
 
-from .config import CHROMIUM_PATH, SOURCE_NAME
+from .config import CHROMIUM_PATH, GMP_HIGHLIGHT_THRESHOLD_PCT, SOURCE_NAME
 from .fonts import DISPLAY_STACK, FONT_STACK, font_face_css
 from .merge import Dataset, rank_by_gmp
 from .models import IPO
@@ -194,7 +194,7 @@ def _row(ipo: IPO, idx: int, show_sub: bool) -> str:
 
     fields = [
         _field("", ipo.date_range_text, f"{kid}.dates", False),
-        _field("", f"₹{ipo.price_band_text}", f"{kid}.price", False),
+        _field("", ipo.price_display, f"{kid}.price", False),
     ]
     if show_sub:
         fields.append(_field("Retail", ipo.retail_text, f"{kid}.retail", ipo.retail_sub is None))
@@ -289,7 +289,7 @@ def build_html(ds: Dataset, tier: int = 0) -> str:
     {_leaders(ds)}
     <div class="ftr">
       {warn_html}
-      <div class="legend"><span>GMP = Grey Market Premium</span><span>GMP % on upper price band</span><span>GMP is unofficial and can change before listing</span></div>
+      <div class="legend"><span>GMP = Grey Market Premium</span><span>High GMP = above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%</span><span>GMP % on upper price band</span><span>GMP is unofficial and can change before listing</span></div>
       <div class="src"><div>Source: <b>{_e(SOURCE_NAME)}</b></div>{stamp_html}</div>
     </div>
   </main>

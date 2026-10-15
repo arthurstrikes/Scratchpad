@@ -36,6 +36,9 @@ SETTLE_MS = 2_500
 NOT_UPDATED = "Not updated"      # rule 5.6 - data not published yet
 NOT_VERIFIED = "Not verified"    # rule 5.10 - present but unconfirmable
 
-GMP_HIGHLIGHT_THRESHOLD_PCT = 10.0  # section 6: highlight GMP > 10%
+# The user's own rule (section 6 originally said 10%; changed to 25% on 15 Oct 2026
+# because with GMPs of 11-70% a 10% line flagged every IPO and told the reader nothing).
+# Strictly above this is flagged: the fire emoji in the text, the HIGH GMP tag and orange edge in the image.
+GMP_HIGHLIGHT_THRESHOLD_PCT = 25.0
 
 OUTPUT_DIR = os.environ.get("IPOWATCH_OUTPUT", "output")

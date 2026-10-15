@@ -345,6 +345,12 @@ WhatsApp crops very tall images in the chat thread. `creative.render_png`
 renders the roomiest of three density tiers (`TIERS`) that fits and the run
 log prints which one was used; an 8-IPO day lands near 1080x1250.
 
+**"High GMP" flag (fire emoji in the text, HIGH GMP tag and orange edge in the
+image): GMP % strictly above 25%**, from `config.GMP_HIGHLIGHT_THRESHOLD_PCT`, the
+single source of truth (`IPO.is_hot`). Changed from 10% on 15 Oct 2026 at the
+user's suggestion: GMPs run 11-70%, so a 10% line flagged every IPO and carried
+no information. The rule is printed in the text footer and the image legend.
+
 **Visual language, since 14 Oct 2026 at the user's request: the Loop / Inner
 Circle house style**, the same one the user's Loop and India Stock Watch apps
 use (both are Claude artifacts; India Stock Watch publishes the shared token
