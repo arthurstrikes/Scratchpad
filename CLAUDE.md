@@ -327,8 +327,10 @@ then fails the run. Never loosen that check.
 Design decisions the user has already signed off, do not undo without asking:
 two-line rows (not cards), no GMP ranking block in the image (it is in the
 text), no per-row comparison bars. Height is the priority - it is read on a
-phone. A realistic 8-IPO day should stay near a 1:1 aspect ratio (a 7-IPO
-day renders at 2160x2306).
+phone. **Held to 4:5 or squarer (`MAX_H = 1350` CSS px, so 2160x2700 max)**:
+WhatsApp crops very tall images in the chat thread. `creative.render_png`
+renders the roomiest of three density tiers (`TIERS`) that fits and the run
+log prints which one was used; an 8-IPO day lands near 1080x1250.
 
 **Visual language, since 14 Oct 2026 at the user's request: the Loop / Inner
 Circle house style**, the same one the user's Loop and India Stock Watch apps
@@ -340,6 +342,50 @@ for words and Bebas Neue for figures, 4-6px corners, colour for status only.
 Both fonts are subset and embedded from `assets/fonts/` (SIL OFL). Sizes are
 about 3x the apps' phone tokens because the PNG is 1080 CSS px wide. If the
 user's design system changes, re-read that token file rather than guessing.
+
+## Trend, key facts and the extra IPOWatch pages (added 15 Oct 2026)
+
+Each published IPO costs two extra reads, both on ipowatch.in (same source,
+`ipo_watch/enrich.py`):
+
+- its **GMP page** (`/<slug>-ipo-gmp-grey-market-premium/`, the link in the GMP
+  table row) holds a day-by-day GMP history. **The trend is computed by us**
+  from the rupee figures: today's published GMP minus the latest earlier day
+  that has a number, shown as `▲ ₹5` / `▼ ₹9` / `▬ ₹0` with a 7-day sparkline
+  and labelled `vs yesterday` or `vs 13 Oct` if a day is missing. IPOWatch's
+  own trend emoji and "gain" column are never read. `New` = history read fine
+  but nothing earlier; `Not updated` = unreadable.
+- its **detail page** (`/<slug>-ipo/`, found from a link on the GMP page)
+  gives retail minimum lot and amount, basis-of-allotment date and listing
+  date. The minimum investment is shown only if it equals shares x cap price
+  (otherwise hidden: present-but-unusable). Both pages are checked to be about
+  the right company (`page_is_about`) before anything is taken from them.
+
+Best-effort by design: a page that cannot be read leaves its fields empty and
+adds a plain "not updated" line under Data notes. It never aborts or delays
+the run (150 s total budget, 15 s per request). If IPOWatch's history page is
+unreadable the trend falls back to our own earlier reports in the output
+folder (`load_local_history`), which are numbers we already published.
+In the image, Min / Allotment / Listing / trend are all `data-verify`
+figures; `test_every_figure_drawn_on_the_image_is_checked_against_the_dataset`
+keeps the painted keys and `verify.expected_map` identical.
+
+**Failure notices:** if a run aborts (IPOWatch unreadable, layout change,
+image check failure, unexpected error) a short plain-text "could not run
+today, nothing was guessed" message goes to Telegram (`telegram.send_alert`,
+bot token scrubbed). It never changes the exit code.
+
+**Two bugs found while building this:**
+- The subscription stamp is a bare time (`17:41`) that we labelled as today.
+  Run at 2:25 PM it printed "15 Oct, 17:41" - that is yesterday evening's
+  refresh. A stamp later than the run time is now dated the previous day
+  (`merge._qualify_stamp`).
+- The core page fetch had no retry, so one dropped connection cost a whole
+  day's report. `fetch_pages` now retries up to 4 times, waiting 5, 15 then 30 seconds.
+- Heavy testing from the cloud sandbox (100+ requests to ipowatch.in in an
+  hour) made the egress proxy drop connections ("Connection reset by peer",
+  `ws_closed_mid_exchange`). Nightly load is only 18 requests; when testing,
+  run the live pipeline sparingly and use `--dataset` / fixtures otherwise.
 
 ## WhatsApp text format
 

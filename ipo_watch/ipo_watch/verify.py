@@ -25,8 +25,21 @@ class Mismatch:
 def expected_map(ds: Dataset) -> dict[str, str]:
     """The single source of truth for what the image must display."""
     out: dict[str, str] = {}
+
+    def extras(k: str, ipo, is_open: bool) -> None:
+        # Mirrors exactly what creative._row draws, from the same properties.
+        if ipo.trend_text is not None:
+            out[f"{k}.trend"] = ipo.trend_text
+        if ipo.min_invest_text:
+            out[f"{k}.min"] = ipo.min_invest_text
+        if is_open and ipo.allotment_text:
+            out[f"{k}.allot"] = ipo.allotment_text
+        if is_open and ipo.listing_text:
+            out[f"{k}.list"] = ipo.listing_text
+
     for idx, ipo in enumerate(ds.open_ipos):
         k = f"ipo{idx}"
+        extras(k, ipo, True)
         out[f"{k}.name"] = ipo.name
         out[f"{k}.gmp"] = ipo.gmp_text
         out[f"{k}.gmppct"] = ipo.gmp_pct_text
@@ -36,6 +49,7 @@ def expected_map(ds: Dataset) -> dict[str, str]:
         out[f"{k}.total"] = ipo.total_text
     for n, ipo in enumerate(ds.upcoming_ipos):
         k = f"ipo{len(ds.open_ipos) + n}"
+        extras(k, ipo, False)
         out[f"{k}.name"] = ipo.name
         out[f"{k}.gmp"] = ipo.gmp_text
         out[f"{k}.gmppct"] = ipo.gmp_pct_text

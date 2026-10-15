@@ -13,14 +13,16 @@ import argparse
 import json
 import os
 import sys
+import time
 from datetime import date, datetime
 from decimal import Decimal
 
 from .config import (GMP_URL, IST, OUTPUT_DIR, SOURCE_NAME, SUBSCRIPTION_URL)
-from .creative import render_png
+from .creative import last_render_info, render_png
+from .enrich import enrich_dataset
 from .fetch import FetchError, extract_page_timestamp, fetch_pages, load_fixture
 from .merge import Dataset, build_dataset
-from .models import Board, IPO, Provenance, Status, parse_date
+from .models import Board, IPO, Provenance, Status, Trend, parse_date
 from .parse import parse_page
 from .report import build_report
 from .share import build_share_page
@@ -32,7 +34,8 @@ def _log(msg: str) -> None:
     print(f"[ipo-watch] {msg}", flush=True)
 
 
-def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None) -> Dataset:
+def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
+            history_dir: str | None = None) -> Dataset:
     """Fetch + parse + merge into the final verified dataset."""
     if fixture_dir:
         sub = load_fixture(SUBSCRIPTION_URL, os.path.join(fixture_dir, "sub_sample.html"))
@@ -64,7 +67,45 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None) -> D
     )
     _log(f"open={len(ds.open_ipos)} upcoming={len(ds.upcoming_ipos)} "
          f"closed_retained={len(ds.recently_closed)} sme_excluded={len(ds.excluded_sme)}")
+
+    if not fixture_dir:
+        enrich_dataset(ds, today, _page_getter(snapshot_dir), history_dir=history_dir)
+        shown = sum(1 for i in ds.published if i.trend and i.trend.status in ("ok", "new"))
+        _log(f"enriched: GMP trend for {shown}/{len(ds.published)} IPOs, "
+             f"lot size for {sum(1 for i in ds.published if i.min_invest)}, "
+             f"key dates for {sum(1 for i in ds.published if i.allotment_date or i.listing_date)}")
     return ds
+
+
+ENRICH_BUDGET_S = 150      # all per-IPO pages together; the run never waits longer
+ENRICH_TIMEOUT_S = 15      # one request
+
+
+def _page_getter(snapshot_dir: str | None, budget_s: float = ENRICH_BUDGET_S):
+    """url -> html for the per-IPO pages. Retries a few times, gives up for
+    good once the overall time budget is spent, and never raises: the extras
+    are best-effort and must not delay or break the daily report."""
+    deadline = time.monotonic() + budget_s
+    state = {"announced": False}
+
+    def get(url: str) -> str | None:
+        for attempt in (1, 2, 3):
+            left = deadline - time.monotonic()
+            if left <= 1:
+                if not state["announced"]:
+                    state["announced"] = True
+                    _log(f"enrich: {budget_s:.0f}s time budget used up - skipping the rest")
+                return None
+            try:
+                return fetch_pages([url], snapshot_dir=snapshot_dir,
+                                   timeout=min(ENRICH_TIMEOUT_S, left), attempts=1)[url].html
+            except Exception as exc:  # noqa: BLE001
+                if attempt == 3:
+                    _log(f"enrich: could not read {url}: {exc}")
+                else:
+                    time.sleep(min(1.5 * attempt, max(0.0, left - 1)))
+        return None
+    return get
 
 
 def dataset_to_json(ds: Dataset) -> dict:
@@ -80,6 +121,18 @@ def dataset_to_json(ds: Dataset) -> dict:
             "retail_sub": str(i.retail_sub) if i.retail_sub is not None else None,
             "total_sub": str(i.total_sub) if i.total_sub is not None else None,
             "unverified": sorted(i.unverified_fields),
+            "gmp_url": i.gmp_url or None,
+            "trend": ({
+                "status": i.trend.status,
+                "prev_date": i.trend.prev_date.isoformat() if i.trend.prev_date else None,
+                "prev_gmp": str(i.trend.prev_gmp) if i.trend.prev_gmp is not None else None,
+                "change": str(i.trend.change) if i.trend.change is not None else None,
+                "series": [str(x) for x in i.trend.series],
+            } if i.trend else None),
+            "lot_shares": i.lot_shares,
+            "min_invest": str(i.min_invest) if i.min_invest is not None else None,
+            "allotment_date": i.allotment_date.isoformat() if i.allotment_date else None,
+            "listing_date": i.listing_date.isoformat() if i.listing_date else None,
         }
     return {
         "run_date": ds.run_date.isoformat() if ds.run_date else None,
@@ -101,8 +154,11 @@ def dataset_from_json(path: str) -> Dataset:
     with open(path, encoding="utf-8") as fh:
         raw = json.load(fh)
 
+    def dec_in(src: dict, k: str):
+        return Decimal(src[k]) if src.get(k) is not None else None
+
     def one(d: dict, status: Status) -> IPO:
-        dec = lambda k: Decimal(d[k]) if d.get(k) is not None else None  # noqa: E731
+        dec = lambda k: dec_in(d, k)  # noqa: E731
         ipo = IPO(
             name=d["name"], board=Board.MAINBOARD, status=status,
             open_date=parse_date(d.get("open_date")), close_date=parse_date(d.get("close_date")),
@@ -111,6 +167,17 @@ def dataset_from_json(path: str) -> Dataset:
             prov=Provenance(source_url=SOURCE_NAME),
         )
         ipo.unverified_fields = set(d.get("unverified") or [])
+        ipo.gmp_url = d.get("gmp_url") or ""
+        t = d.get("trend")
+        if t:
+            ipo.trend = Trend(
+                status=t["status"], prev_date=parse_date(t.get("prev_date")),
+                prev_gmp=dec_in(t, "prev_gmp"), change=dec_in(t, "change"),
+                series=[Decimal(x) for x in t.get("series") or []])
+        ipo.lot_shares = d.get("lot_shares")
+        ipo.min_invest = dec("min_invest")
+        ipo.allotment_date = parse_date(d.get("allotment_date"))
+        ipo.listing_date = parse_date(d.get("listing_date"))
         return ipo
 
     ds = Dataset(
@@ -148,7 +215,9 @@ def publish(ds: Dataset, outdir: str) -> dict[str, str]:
         _, rendered = render_png(ds, paths["image"])
         bad = check(ds, rendered)
         if not bad:
-            _log(f"image data check passed ({len(rendered)} figures verified)")
+            info = last_render_info()
+            _log(f"image data check passed ({len(rendered)} figures verified); "
+                 f"{info['width']}x{info['height']} px, layout tier {info['tier']}")
             break
         _log(f"image data check FAILED on attempt {attempt}:")
         for m in bad:
@@ -174,6 +243,23 @@ def publish(ds: Dataset, outdir: str) -> dict[str, str]:
     return paths
 
 
+def _alert(msg: str) -> None:
+    """Tell the user on Telegram that today's run failed. Never raises."""
+    if not telegram.configured():
+        return
+    try:
+        telegram.send_alert(msg)
+        _log("telegram  -> failure notice sent")
+    except telegram.TelegramError as exc:
+        _log(f"telegram  -> failure notice FAILED: {exc}")
+
+
+def _failure_text(today: date, reason: str) -> str:
+    return (f"⚠️ IPO Watch could not run on {today.strftime('%d %b %Y')}.\n"
+            "No report was sent and no numbers were guessed.\n\n"
+            f"Reason: {reason}")
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Daily Mainboard IPO Watch")
     ap.add_argument("--fixture-dir", help="replay saved IPOWatch HTML instead of fetching")
@@ -190,13 +276,25 @@ def main(argv: list[str] | None = None) -> int:
             ds.run_date = today if args.date else ds.run_date
         else:
             ds = collect(args.fixture_dir, today,
-                         snapshot_dir=os.path.join(args.outdir, "snapshots"))
+                         snapshot_dir=os.path.join(args.outdir, "snapshots"),
+                         history_dir=args.outdir)
     except FetchError as exc:
         _log(f"ABORTED: {exc}")
         _log("No report written. Nothing is ever published from unverified data.")
+        _alert(_failure_text(today, str(exc)))
         return 2
+    except Exception as exc:  # noqa: BLE001
+        _alert(_failure_text(today, f"unexpected error ({type(exc).__name__}: {exc})"))
+        raise
 
-    paths = publish(ds, args.outdir)
+    try:
+        paths = publish(ds, args.outdir)
+    except SystemExit as exc:
+        _alert(_failure_text(today, str(exc.code)))
+        raise
+    except Exception as exc:  # noqa: BLE001
+        _alert(_failure_text(today, f"unexpected error ({type(exc).__name__}: {exc})"))
+        raise
     print("\n" + "=" * 62 + "\n" + build_report(ds) + "=" * 62)
     for k, v in paths.items():
         _log(f"{k:8s} -> {v}")

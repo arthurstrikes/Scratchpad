@@ -40,6 +40,45 @@ class Provenance:
 
 
 @dataclass
+class Trend:
+    """How the published GMP moved against the previous day IPOWatch recorded.
+
+    Computed by us from IPOWatch's own per-IPO GMP history table (rupee
+    figures only - its trend emoji and "gain" column are never read).
+    status: "ok"          a previous numeric GMP exists
+            "new"         history was read fine but holds no earlier number
+            "unavailable" history could not be read today
+    """
+    status: str = "unavailable"
+    prev_date: Optional[date] = None
+    prev_gmp: Optional[Decimal] = None
+    change: Optional[Decimal] = None
+    series: list[Decimal] = field(default_factory=list)  # oldest -> newest
+
+    @property
+    def direction(self) -> Optional[str]:
+        if self.status != "ok" or self.change is None:
+            return None
+        return "up" if self.change > 0 else "down" if self.change < 0 else "flat"
+
+    def text(self) -> str:
+        if self.status == "new":
+            return "New"
+        d = self.direction
+        if d is None:
+            return NOT_UPDATED
+        arrow = {"up": "▲", "down": "▼", "flat": "▬"}[d]
+        return f"{arrow} ₹{_num(abs(self.change))}"
+
+    def vs_text(self, today: Optional[date]) -> str:
+        if self.prev_date is None:
+            return ""
+        if today and (today - self.prev_date).days == 1:
+            return "vs yesterday"
+        return f"vs {_d(self.prev_date)}"
+
+
+@dataclass
 class IPO:
     name: str
     board: Board = Board.UNKNOWN
@@ -61,6 +100,14 @@ class IPO:
     # True when IPOWatch printed the status itself rather than us deriving it
     # from dates. An explicit status always wins.
     status_from_page: bool = False
+
+    # ---- enrichment, read from IPOWatch's own per-IPO pages (enrich.py) ----
+    gmp_url: str = ""                         # the IPO's own GMP page
+    trend: Optional[Trend] = None
+    lot_shares: Optional[int] = None          # retail minimum lot, in shares
+    min_invest: Optional[Decimal] = None      # retail minimum application, rupees
+    allotment_date: Optional[date] = None
+    listing_date: Optional[date] = None
 
     prov: Provenance = field(default_factory=Provenance)
     # Set when a value existed but failed verification (rule 5.10).
@@ -109,6 +156,25 @@ class IPO:
         return f"{_num(self.price_min)}–{_num(self.price_max)}"
 
     @property
+    def trend_text(self) -> Optional[str]:
+        return self.trend.text() if self.trend else None
+
+    @property
+    def min_invest_text(self) -> Optional[str]:
+        """'Min ₹14,905' - only when the amount is known, else omitted."""
+        if self.min_invest is None:
+            return None
+        return f"Min ₹{_indian(self.min_invest)}"
+
+    @property
+    def allotment_text(self) -> Optional[str]:
+        return _d(self.allotment_date) if self.allotment_date else None
+
+    @property
+    def listing_text(self) -> Optional[str]:
+        return _d(self.listing_date) if self.listing_date else None
+
+    @property
     def date_range_text(self) -> str:
         if not self.open_date or not self.close_date:
             return NOT_VERIFIED
@@ -137,6 +203,21 @@ def _num(v: Decimal) -> str:
         d = d.to_integral_value()
     s = format(d, "f")
     return s
+
+
+def _indian(v: Decimal) -> str:
+    """Indian digit grouping: 1993765 -> 19,93,765."""
+    n = str(int(Decimal(v)))
+    if len(n) <= 3:
+        return n
+    head, tail = n[:-3], n[-3:]
+    parts = []
+    while len(head) > 2:
+        parts.insert(0, head[-2:])
+        head = head[:-2]
+    if head:
+        parts.insert(0, head)
+    return ",".join(parts + [tail])
 
 
 def _d(d: date) -> str:
