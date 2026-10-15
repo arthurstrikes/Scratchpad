@@ -79,6 +79,9 @@ def build_report(ds: Dataset) -> str:
     else:
         L += ["No Mainboard IPOs are scheduled yet.", ""]
 
+    if ds.recent_listings:
+        L.append(_recent_listings(ds))
+        L.append("")
     L.append(_ranking(ds))
     L.append("")
     L.append(_footer(ds))
@@ -167,3 +170,78 @@ def build_midday_report(ds: Dataset) -> Optional[str]:
     if ds.subscription_timestamp:
         L.append(f"🕒 Subscription data: {ds.subscription_timestamp}")
     return "\n".join(L) + "\n"
+
+
+# ------------------------------------------------------------ listing results
+
+def _listing_lines(r, compact: bool) -> list[str]:
+    head = f"*{r.name.upper()}*" + (f" - listed {r.listing_date.strftime('%d %b')}" if compact
+                                    else f" (NSE: {r.symbol})")
+    L = [head,
+         f"💰 Issue {r.issue_text} → Listed {r.open_text} | *{r.listing_gain_text}*"]
+    if compact:
+        L.append(f"📈 Day 1 close {r.close_text} ({r.day1_text} from open)")
+    else:
+        L += [f"📈 Day 1: Open {r.open_text} → Close {r.close_text} | *{r.day1_text}*",
+              f"📊 Close vs issue: {r.close_vs_issue_text}"]
+    if r.gmp_said_text:
+        gap = f" | Gap {r.gap_text}" if r.gap_text else ""
+        L.append(f"🎯 GMP said {r.gmp_said_text}{gap}")
+    return L
+
+
+def _recent_listings(ds: Dataset) -> str:
+    L = ["*🏁 RECENTLY LISTED*", ""]
+    for r in ds.recent_listings:
+        L += _listing_lines(r, compact=True) + [""]
+    L.append("_Prices from NSE. Gap = actual listing gain minus the GMP % we last reported._")
+    return "\n".join(L)
+
+
+def build_listing_report(results: list, run_date) -> str:
+    """The evening scorecard for IPOs that listed today."""
+    d = run_date.strftime("%d %b %Y") if run_date else ""
+    L = ["*🏁 LISTING DAY SCORECARD*", f"📅 {d} | NSE", ""]
+    for r in results:
+        L += _listing_lines(r, compact=False) + [""]
+    L.append("_Issue = NSE base price. Listing gain = issue to first-day open. "
+             "Day 1 = first-day open to close. Gap = listing gain minus the GMP % we last reported. "
+             "GMP is unofficial._")
+    L.append("Source: NSE (prices), IPOWatch (GMP shown before listing)")
+    notes = [n for r in results for n in r.notes]
+    if notes:
+        L += ["", "ℹ️ Data notes:"] + [f"• {n}" for n in notes]
+    return "\n".join(L) + "\n"
+
+
+CAPTION_LIMIT = 960          # Telegram allows 1024 characters on a photo caption
+
+
+def build_caption(ds: Dataset) -> str:
+    """Compact WhatsApp-ready summary to ride along with the image.
+
+    Telegram passes a photo's caption on when it is shared to another app, so
+    one share can carry the picture and these lines together. One line per
+    IPO, ranked by GMP %, trimmed to fit the caption limit.
+    """
+    d = ds.run_date.strftime("%d %b") if ds.run_date else ""
+    head = f"*📊 IPO Watch | {d}*"
+    tail = "_Full numbers in the image. GMP is unofficial._"
+    lines = []
+    for ipo in rank_by_gmp(ds):
+        dot = "🟢" if ipo.status.value == "Open" else "🔵"
+        arrow = f" {ipo.trend.text()}" if ipo.trend and ipo.trend.status == "ok" else ""
+        closing = " ⏰ closes today" if ipo in closing_today(ds) else ""
+        lines.append(f"{dot} {ipo.name} | *{ipo.gmp_pct_text}* ({ipo.gmp_text}){arrow}{closing}")
+    out = [head, ""]
+    used = len(head) + len(tail) + 4
+    shown = 0
+    for line in lines:
+        if used + len(line) + 1 > CAPTION_LIMIT:
+            break
+        out.append(line)
+        used += len(line) + 1
+        shown += 1
+    if shown < len(lines):
+        out.append(f"+{len(lines) - shown} more in the image")
+    return "\n".join(out + ["", tail])

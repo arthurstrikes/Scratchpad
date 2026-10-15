@@ -88,3 +88,26 @@ def check(ds: Dataset, rendered: dict[str, str]) -> list[Mismatch]:
         if key not in exp:
             bad.append(Mismatch(key, "<not in dataset>", rendered[key]))
     return bad
+
+
+def expected_listing_map(results: list) -> dict[str, str]:
+    """What the listing-day card must display, from the same properties it paints."""
+    out: dict[str, str] = {}
+    for i, r in enumerate(results):
+        k = f"l{i}"
+        out.update({f"{k}.name": r.name, f"{k}.symbol": r.symbol, f"{k}.issue": r.issue_text,
+                    f"{k}.open": r.open_text, f"{k}.close": r.close_text,
+                    f"{k}.gain": r.listing_gain_text, f"{k}.day1": r.day1_text})
+        if r.gmp_said_text:
+            out[f"{k}.gmp"] = r.gmp_said_text
+        if r.gap_text:
+            out[f"{k}.gap"] = r.gap_text
+    return out
+
+
+def check_listing(results: list, rendered: dict[str, str]) -> list[Mismatch]:
+    exp = expected_listing_map(results)
+    bad = [Mismatch(k, w, rendered.get(k, "<missing from image>"))
+           for k, w in exp.items() if _norm(rendered.get(k, "\0")) != _norm(w)]
+    bad += [Mismatch(k, "<not in dataset>", v) for k, v in rendered.items() if k not in exp]
+    return bad

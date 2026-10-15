@@ -47,6 +47,8 @@ class Dataset:
     generated_at: Optional[datetime] = None
     run_date: Optional[date] = None
     source_mode: str = "live"
+    # Listing results from the last few days (from NSE, via listing.py).
+    recent_listings: list = field(default_factory=list)
 
     @property
     def published(self) -> list[IPO]:

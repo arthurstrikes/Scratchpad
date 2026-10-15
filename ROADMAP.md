@@ -8,7 +8,7 @@ the rules and the technical history; this page holds the plan.
 (done, found, decided, still open). Dated entries, newest first. Nothing here
 is ever deleted, only marked done.
 
-Last updated: 15 Oct 2026 (evening).
+Last updated: 15 Oct 2026 (late).
 
 ---
 
@@ -35,6 +35,7 @@ Last updated: 15 Oct 2026 (evening).
 | 12 Oct | Audited the two routines; confirmed the 5 PM one is still blocked and cannot be paused from inside a session |
 | 14 Oct | Fixed the wrong "8:00 PM" label; new look in the Loop / Inner Circle style; WhatsApp bold; tap-to-copy block |
 | 15 Oct | **GMP trend with sparkline**, minimum investment, allotment + listing dates, image held to 4:5, Telegram failure notices, closing-day midday update, GitHub runner + watchdog (staged and **proven by a dry run**), history branch, compressed + more patient fetching. Tests 20 -> 56 |
+| 15 Oct (later) | **Listing-day scorecard** built and replayed on real NSE data (21 past listings matched, e.g. Nityas Gems listed +6.67% vs GMP 4.00%; Vishal Nirmiti -2.27% vs +9.09%). Compact photo caption. Tests 56 -> 68 |
 | since 16 Sep | Daily report delivered every day through the backup (about 30 days) |
 
 ## 3. Gaps and misses (honest list, including mine)
@@ -65,11 +66,11 @@ Last updated: 15 Oct 2026 (evening).
 | A1 | Add two GitHub secrets (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`): repo **Settings > Secrets and variables > Actions** | **You** | 3 minutes. I can walk you through it |
 | A2 | Run the GitHub workflow once with Telegram on and confirm it arrives | Me + you | A1 |
 | A3 | Go live: switch on the three schedules, retire the 5:05 PM backup, delete the dead 5:00 PM routine in the Routines list on claude.ai | Me (code) + **you** (the routine, I am blocked from it) | A2 and your yes |
-| A4 | Tell me how tonight's image looks in WhatsApp and whether tap-to-copy pastes with bold | **You** | Tonight's report |
-| A5 | Pick the trend baseline: IPOWatch's daily record (now) or "what I told you yesterday" | **You** | A choice |
-| A6 | Decide where listing-day results come from (IPOWatch if it has them, or another site) | **You** | A choice (touches the one-source rule) |
-| A7 | Say whether a second source may be used **only to flag disagreement** | **You** | A yes or no |
-| A8 | Do any of your recipients use Telegram? (decides the channel idea) | **You** | One line |
+| A4 | Tell me how tonight's image looks in WhatsApp, whether tap-to-copy pastes with bold, **and whether the photo's caption comes along when you share the photo from Telegram to WhatsApp** (decides step 2 in section 5b) | **You** | Tonight's report. You said you'll share after the 5:05 PM run |
+| A5 | ~~Pick the trend baseline~~ **Decided 15 Oct: keep IPOWatch's daily record** | done | |
+| A6 | ~~Where listing results come from~~ **Decided 15 Oct:** exchange data (NSE): issue price to first-day open, and separately first-day open to close. Built the same day | done | |
+| A7 | ~~Second source~~ **Decided 15 Oct (my call, you said numbers need not match):** NSE's official data is the independent check for listing facts; no second GMP website, because GMP sites differ by nature and a cross-check would add noise, not safety | done | |
+| A8 | Who receives the report (individuals or WhatsApp groups) and how many? Decides whether the WhatsApp Business route (5b, step 3) is worth it | **You** | One line |
 | A9 | Refresh `README.md`, `install_schedule.sh`, the test count in `CLAUDE.md` | Me | Nothing |
 
 ## 5. Innovation and automation backlog
@@ -90,7 +91,7 @@ Ordered by value for effort. "Needs" says what blocks it.
 ### More useful content
 | # | Idea | Value | Needs |
 |---|---|---|---|
-| I8 | **Listing-day scorecard:** actual listing gain next to the last GMP, then a running accuracy score for GMP | Turns the report from a snapshot into a learning loop; the most differentiating idea here | A6 |
+| I8 | **Listing-day scorecard** (done 15 Oct, matched 21 past listings): issue price to first-day open, first-day open to close, next to the GMP we last reported and the gap in points. Evening card + text; the daily report shows the last 3 days. Next: a running GMP accuracy score (I8b) | The most differentiating idea here | Evening schedule needs A1-A3 |
 | I9 | **Date reminders** ("allotment tomorrow", "lists tomorrow") | Small, high value; the dates are already collected | Me |
 | I10 | **Weekly Sunday summary** (week's listings vs GMP, subscription finals) | Useful recap | I5, I8 |
 | I11 | **Subscription momentum** (day-by-day retail multiple, last-day surge) | Shows demand building, not just a number | I5 |
@@ -99,11 +100,30 @@ Ordered by value for effort. "Needs" says what blocks it.
 ### Delivery and design
 | # | Idea | Value | Needs |
 |---|---|---|---|
-| I13 | One-IPO share cards (square, one IPO per image) for forwarding to individual contacts | Easier to forward one IPO | Your wish |
+| I13 | One-IPO share cards (square, one IPO per image) | Easier to forward one IPO | Your wish |
 | I14 | Hindi or other-language caption variant | Wider audience | Your audience (ask) |
 | I15 | Second source used **only** to flag disagreement | Catches a bad IPOWatch figure | A7 |
-| I16 | Telegram channel | Only if recipients use Telegram | A8 |
-| I17 | WhatsApp Business Cloud API (about Rs 60 a year) | The only compliant way to post to WhatsApp automatically | Previously **declined**; revisit only on your word |
+| I16 | Telegram channel | Only for recipients who use Telegram (see 5b) | A8 |
+| I17 | WhatsApp Business Cloud API (about Rs 60 a year for one message a day; more per recipient) | The only compliant way to post to WhatsApp automatically, to **individual opted-in numbers** (not groups) | Previously declined; see 5b step 3 |
+
+### 5b. Getting it into WhatsApp with less effort (smart options, in order)
+
+WhatsApp cannot be automated for groups, so the aim is fewer taps for you and
+nothing lost on the way:
+
+1. **Done 15 Oct: a compact summary now rides on the photo as its caption.**
+   If Telegram carries the caption across when you share the photo to WhatsApp
+   (I could not verify this from here and it may differ by phone; please test, A4), one long-press -> Share ->
+   WhatsApp sends the image **and** the summary together.
+2. **If the caption does not travel:** a small share page (the Web Share button
+   sends image + text together to WhatsApp in one tap), linked from the Telegram
+   message. It needs a public GitHub Pages page (your OK, and one setting
+   click from you). The page would hold only the day's public IPO figures.
+3. **Only if you want zero taps to a fixed list of people:** the WhatsApp
+   Business Cloud API. Individuals who have opted in, not groups; roughly
+   Rs 0.12-0.15 per message plus tax, a business phone number, Meta verification
+   and approved templates. Real effort, so only if the audience justifies it.
+4. A Telegram channel only helps recipients who already use Telegram.
 
 ## 6. Decisions log
 
@@ -115,6 +135,7 @@ Ordered by value for effort. "Needs" says what blocks it.
 | Standing | Only Mainboard, Open/Upcoming; SME excluded; QIB/NII never shown; GMP % computed by us; "Not updated" / "Not verified" wording; never guess a number |
 | 14 Oct | Creative follows the Loop / Inner Circle house style; text uses WhatsApp bold; report in a tap-to-copy block |
 | 15 Oct | "Take up all proposed changes"; GMP trend and direction is a priority. Image held to 4:5 (my call; one constant to change) |
+| 15 Oct | Trend baseline stays IPOWatch's daily record. Listing results come from NSE: issue to first-day open, and open to close separately. No second GMP website (numbers need not match); NSE is the independent check. **Scope change:** listing results are now published (the old rule was open/upcoming only) |
 
 ## 7. Platform facts worth remembering
 

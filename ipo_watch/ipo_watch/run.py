@@ -18,16 +18,20 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from .config import (GMP_URL, IST, OUTPUT_DIR, SOURCE_NAME, SUBSCRIPTION_URL)
-from .creative import last_render_info, render_png
+from .creative import last_render_info, render_listing_png, render_png
 from .enrich import enrich_dataset
 from .fetch import FetchError, extract_page_timestamp, fetch_pages, load_fixture
 from .merge import Dataset, build_dataset
 from .models import Board, IPO, Provenance, Status, Trend, parse_date
 from .parse import parse_page
-from .report import build_midday_report, build_report, closing_today
+from .listing import (BHAV_URL, ListingResult, find_results, fetch_equities, get_text, load_candidates,
+                      load_recent_results, make_bhav_getter, match_symbol, parse_bhav,
+                      result_path, save_result)
+from .report import (build_caption, build_listing_report, build_midday_report, build_report,
+                     closing_today)
 from .share import build_share_page
 from . import telegram
-from .verify import check
+from .verify import check, check_listing
 
 
 # "delivered" | "failed" | "not configured" - set by publish()/_midday(), read by main().
@@ -79,6 +83,10 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
         _log(f"enriched: GMP trend for {shown}/{len(ds.published)} IPOs, "
              f"lot size for {sum(1 for i in ds.published if i.min_invest)}, "
              f"key dates for {sum(1 for i in ds.published if i.allotment_date or i.listing_date)}")
+    if history_dir:
+        ds.recent_listings = load_recent_results(history_dir, today)
+        if ds.recent_listings:
+            _log(f"recently listed: {', '.join(r.name for r in ds.recent_listings)}")
     return ds
 
 
@@ -149,6 +157,7 @@ def dataset_to_json(ds: Dataset) -> dict:
         "upcoming": [one(i) for i in ds.upcoming_ipos],
         "recently_closed_internal": [one(i) for i in ds.recently_closed],
         "excluded_sme": ds.excluded_sme,
+        "recent_listings": [r.to_dict() for r in ds.recent_listings],
         "warnings": ds.warnings,
         "conflicts": [c.__dict__ for c in ds.conflicts],
     }
@@ -189,6 +198,7 @@ def dataset_from_json(path: str) -> Dataset:
         open_ipos=[one(d, Status.OPEN) for d in raw.get("open", [])],
         upcoming_ipos=[one(d, Status.UPCOMING) for d in raw.get("upcoming", [])],
         excluded_sme=raw.get("excluded_sme", []),
+        recent_listings=[ListingResult.from_dict(x) for x in raw.get("recent_listings", [])],
         warnings=raw.get("warnings", []),
         subscription_timestamp=raw.get("subscription_timestamp"),
         gmp_timestamp=raw.get("gmp_timestamp"),
@@ -238,7 +248,7 @@ def publish(ds: Dataset, outdir: str) -> dict[str, str]:
     # so failures here are logged plainly and never change the run's exit code.
     if telegram.configured():
         try:
-            telegram.send_report(paths["image"], build_report(ds))
+            telegram.send_report(paths["image"], build_report(ds), caption=build_caption(ds))
             TELEGRAM_RESULT["status"] = "delivered"
             _log("telegram  -> delivered")
         except telegram.TelegramError as exc:
@@ -275,6 +285,86 @@ def _midday(ds: Dataset, outdir: str) -> int:
     return 0
 
 
+LISTING_POLL_S = 60          # NSE publishes the day's prices some time after the close
+LISTING_POLL_MAX_S = 30 * 60
+
+
+def _listing_mode(args, today: date) -> int:
+    """Evening scorecard for IPOs we reported on that listed on NSE today."""
+    outdir = args.outdir
+    candidates = load_candidates(outdir, today)
+    equities = fetch_equities()
+    if not equities:
+        reason = "NSE's equity list could not be read"
+        _log(f"ABORTED: {reason}")
+        _alert(_failure_text(today, reason))
+        return 2
+    listing_today = [c for c in candidates
+                     if (eq := match_symbol(c, equities)) and eq["listing_date"] == today]
+    if not listing_today:
+        _log("listing: none of the IPOs we reported on lists on NSE today - nothing to send")
+        return 0
+    _log(f"listing: {', '.join(c.name for c in listing_today)} listed on NSE today")
+
+    url = BHAV_URL.format(d=today.strftime("%d%m%Y"))
+    waited, text = 0, get_text(url)
+    while text is None and waited < LISTING_POLL_MAX_S:
+        _log(f"listing: NSE has not published {today:%d %b} prices yet - waiting")
+        time.sleep(LISTING_POLL_S)
+        waited += LISTING_POLL_S
+        text = get_text(url)
+    if text is None:
+        reason = f"NSE had not published the {today:%d %b} price file after {waited // 60} minutes"
+        _log(f"ABORTED: {reason}")
+        _alert(_failure_text(today, reason))
+        return 2
+    todays = parse_bhav(text)
+    other = make_bhav_getter()
+    results = [r for r in find_results(candidates, equities,
+                                       lambda d: todays if d == today else other(d))
+               if r.listing_date == today]
+    if not args.force:
+        results = [r for r in results if not os.path.exists(result_path(outdir, r))]
+    if not results:
+        _log("listing: nothing new to send (already sent, or the listing could not be matched safely)")
+        return 0
+
+    report = build_listing_report(results, today)
+    os.makedirs(outdir, exist_ok=True)
+    png = os.path.join(outdir, f"ipo-watch-listing-{today:%Y-%m-%d}.png")
+    txt = os.path.join(outdir, f"ipo-watch-listing-{today:%Y-%m-%d}.txt")
+    for attempt in (1, 2):
+        _, rendered = render_listing_png(results, today, png)
+        bad = check_listing(results, rendered)
+        if not bad:
+            _log(f"listing image check passed ({len(rendered)} figures verified)")
+            break
+        _log(f"listing image check FAILED on attempt {attempt}: " + "; ".join(str(m) for m in bad))
+        if attempt == 2:
+            _alert(_failure_text(today, "the listing card did not match the data; not published"))
+            raise SystemExit("Listing image does not match the data; not publishing.")
+    with open(txt, "w", encoding="utf-8") as fh:
+        fh.write(report)
+
+    status = "not configured"
+    if telegram.configured():
+        try:
+            telegram.send_report(png, report, caption=f"🏁 Listing scorecard — {today:%d %b %Y}")
+            status = "delivered"
+            _log("telegram  -> delivered (listing)")
+        except telegram.TelegramError as exc:
+            status = "failed"
+            _log(f"telegram  -> FAILED: {exc}")
+    else:
+        _log("telegram  -> not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID unset)")
+    if status != "failed":                      # a failed send is retried by the next run
+        for r in results:
+            save_result(outdir, r)
+    print("\n" + "=" * 62 + "\n" + report + "=" * 62)
+    _log(f"listing  -> {txt}")
+    return 3 if (args.fail_on_telegram_error and status == "failed") else 0
+
+
 def _alert(msg: str) -> None:
     """Tell the user on Telegram that today's run failed. Never raises."""
     if not telegram.configured():
@@ -301,11 +391,23 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--fail-on-telegram-error", action="store_true",
                     help="exit 3 if Telegram is configured but delivery failed (for CI, so the "
                          "failure is visible instead of only logged)")
-    ap.add_argument("--mode", choices=("daily", "midday"), default="daily",
-                    help="midday = short text update for IPOs closing today (no image)")
+    ap.add_argument("--mode", choices=("daily", "midday", "listing"), default="daily",
+                    help="midday = short text update for IPOs closing today (no image); "
+                         "listing = evening scorecard for IPOs that listed on NSE today")
+    ap.add_argument("--force", action="store_true",
+                    help="listing mode: send again even if already sent")
     args = ap.parse_args(argv)
 
     today = date.fromisoformat(args.date) if args.date else datetime.now(IST).date()
+
+    if args.mode == "listing":
+        try:
+            return _listing_mode(args, today)
+        except SystemExit:
+            raise
+        except Exception as exc:  # noqa: BLE001
+            _alert(_failure_text(today, f"unexpected error ({type(exc).__name__}: {exc})"))
+            raise
 
     try:
         if args.dataset:
