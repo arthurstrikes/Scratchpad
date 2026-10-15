@@ -20,6 +20,7 @@ from typing import Optional
 
 from .config import CHROMIUM_PATH, GMP_HIGHLIGHT_THRESHOLD_PCT, SOURCE_NAME
 from .fonts import DISPLAY_STACK, FONT_STACK, font_face_css
+from .listing import strip_listings
 from .merge import Dataset, rank_by_gmp
 from .models import IPO
 
@@ -72,6 +73,19 @@ main{{padding:4px 40px 0}}
 .sec-h .dot{{width:11px;height:11px;border-radius:50%;flex:none}}
 .dot.open{{background:var(--good)}}
 .dot.up{{background:var(--brand)}}
+.dot.lst{{background:var(--ink-3)}}
+.lrow{{display:flex;align-items:center;gap:20px;padding:calc(var(--pad) - 3px) 24px calc(var(--pad) - 3px) 27px;
+      border-top:1px solid var(--line)}}
+.lrow:first-child{{border-top:0}}
+.lrow .lname{{flex:1;min-width:0;display:flex;align-items:center;gap:12px}}
+.lrow .nm{{font-size:calc(var(--nm) - 2px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.lrow .flag{{color:var(--ink-3);white-space:nowrap}}
+.lm{{display:flex;align-items:baseline;gap:8px;flex:none}}
+.lm .fl{{font-size:13px}}
+.sec-h.slim{{margin-top:calc(var(--gap) - 6px);margin-bottom:6px}}
+.sec-h.slim .num{{font-size:22px}}
+.sv{{font-size:34px}}
+.sv.up{{color:var(--good)}} .sv.down{{color:var(--bad)}} .sv.flat{{color:var(--ink-3)}} .sv.neutral{{color:var(--ink-2)}}
 .sec-h .rule{{flex:1;height:1px;background:var(--line)}}
 .sec-h .num{{font-size:30px;color:var(--ink-2)}}
 
@@ -257,12 +271,22 @@ def _leaders(ds: Dataset) -> str:
     </div>"""
 
 
-def build_html(ds: Dataset, tier: int = 0) -> str:
+def build_html(ds: Dataset, tier: int = 0, strip_rows: Optional[int] = None) -> str:
+    """strip_rows: how many Recently-listed rows to draw (None = all that qualify, 0 = none)."""
     date_txt = ds.run_date.strftime("%d %b %Y") if ds.run_date else ""
 
     open_rows = [_row(i, n, True) for n, i in enumerate(ds.open_ipos)]
     off = len(ds.open_ipos)
     up_rows = [_row(i, off + n, False) for n, i in enumerate(ds.upcoming_ipos)]
+
+    strip = strip_listings(ds.recent_listings, ds.run_date)
+    strip = strip if strip_rows is None else strip[:strip_rows]
+    strip_html = ""
+    if strip:
+        strip_html = (
+            '<div class="sec-h slim"><span class="dot lst"></span><h2>Recently listed · NSE</h2>'
+            f'<span class="rule"></span><span class="num">{len(strip)}</span></div>'
+            '<div class="rows">' + "".join(_strip_row(r, i) for i, r in enumerate(strip)) + "</div>")
 
     stamps = []
     if ds.subscription_timestamp:
@@ -286,14 +310,35 @@ def build_html(ds: Dataset, tier: int = 0) -> str:
   <main>
     {_section("Open now", "open", open_rows, "No Mainboard IPOs are open today.")}
     {_section("Upcoming", "up", up_rows, "No Mainboard IPOs are scheduled yet.")}
+    {strip_html}
     {_leaders(ds)}
     <div class="ftr">
       {warn_html}
-      <div class="legend"><span>GMP = Grey Market Premium</span><span>High GMP = above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%</span><span>GMP % on upper price band</span><span>GMP is unofficial and can change before listing</span></div>
+      <div class="legend"><span>GMP = Grey Market Premium</span><span>High GMP = above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%</span><span>GMP % on upper price band</span><span>GMP is unofficial and can change before listing</span>{"<span>Listed = issue to first-day open · Day 1 = open to close · GMP said = last reported</span>" if strip else ""}</div>
       <div class="src"><div>Source: <b>{_e(SOURCE_NAME)}</b></div>{stamp_html}</div>
     </div>
   </main>
 </div></body></html>"""
+
+
+def _sv_class(p) -> str:
+    return "flat" if p is None or p == 0 else ("up" if p > 0 else "down")
+
+
+def _strip_row(r, idx: int) -> str:
+    """One slim line per recent listing: name, date, listing gain, day 1, GMP said."""
+    k = f"rl{idx}"
+    gmp = (f'<div class="lm"><span class="fl">GMP said</span>'
+           f'<span class="sv neutral num" data-verify="{k}.gmp">{_e(r.gmp_said_pct_text)}</span></div>'
+           if r.gmp_said_pct_text else "")
+    return f"""
+    <div class="lrow">
+      <div class="lname"><span class="nm" data-verify="{k}.name">{_e(r.name)}</span>
+        <span class="flag" data-verify="{k}.date">{_e(r.listing_date.strftime("%d %b"))}</span></div>
+      <div class="lm"><span class="fl">Listed</span><span class="sv {_sv_class(r.listing_gain_pct)} num" data-verify="{k}.gain">{_e(r.listing_gain_text)}</span></div>
+      <div class="lm"><span class="fl">Day 1</span><span class="sv {_sv_class(r.day1_pct)} num" data-verify="{k}.day1">{_e(r.day1_text)}</span></div>
+      {gmp}
+    </div>"""
 
 
 def _listing_row(r, idx: int) -> str:
@@ -346,16 +391,20 @@ def build_listing_html(results: list, run_date, tier: int = 0) -> str:
 </div></body></html>"""
 
 
-_LAST: dict = {"tier": 0, "width": CARD_W, "height": 0}
+_LAST: dict = {"tier": 0, "width": CARD_W, "height": 0, "listings": 0}
 
 
 def last_render_info() -> dict:
-    """Layout tier and CSS-pixel size chosen by the most recent render."""
+    """Layout tier, CSS-pixel size and whether the listings strip made it in."""
     return dict(_LAST)
 
 
-def _render(html_for_tier, out_path: str, scale: int = 2) -> tuple[dict[str, str], int, int]:
-    """Render the roomiest tier that fits 4:5 and read every figure back from the DOM."""
+def _render(candidates, out_path: str, scale: int = 2):
+    """Render the first candidate that fits 4:5 (else the last, tightest one) and
+    read every figure back out of the live DOM.
+
+    `candidates` is a list of (meta, html_builder) in order of preference.
+    Returns (rendered, meta, height)."""
     from playwright.sync_api import sync_playwright
 
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
@@ -369,12 +418,12 @@ def _render(html_for_tier, out_path: str, scale: int = 2) -> tuple[dict[str, str
         browser = p.chromium.launch(**kwargs)
         page = browser.new_page(viewport={"width": CARD_W, "height": 800},
                                 device_scale_factor=scale)
-        for tier in TIERS:
-            html_doc = html_for_tier(tier)
+        for n, (meta, build) in enumerate(candidates):
+            html_doc = build()
             page.set_content(html_doc, wait_until="load")
             page.wait_for_timeout(300)
             height = page.eval_on_selector(".sheet", "e => Math.ceil(e.getBoundingClientRect().height)")
-            if height <= MAX_H or tier == TIERS[-1]:
+            if height <= MAX_H or n == len(candidates) - 1:
                 break
         with open(html_path, "w", encoding="utf-8") as fh:
             fh.write(html_doc)
@@ -386,22 +435,30 @@ def _render(html_for_tier, out_path: str, scale: int = 2) -> tuple[dict[str, str
         # to its content instead of being padded out to the viewport height.
         page.locator(".sheet").screenshot(path=out_path)
         browser.close()
-    return rendered, tier, height
+    return rendered, meta, height
 
 
 def render_png(ds: Dataset, out_path: str, scale: int = 2) -> tuple[str, dict[str, str]]:
     """Render the daily creative. Returns (png_path, rendered) where `rendered`
     maps each data-verify key to the text actually painted on the image;
-    verify.py compares that against the dataset before the PNG is accepted."""
-    rendered, tier, height = _render(lambda t: build_html(ds, t), out_path, scale)
-    _LAST.update(tier=tier, width=CARD_W, height=height)
+    verify.py compares that against the dataset before the PNG is accepted.
+
+    Preference order: roomiest layout tier with the Recently-listed strip, then
+    denser tiers with it, and only if none fits 4:5 the same tiers without it
+    (the listings are then still in the text report)."""
+    n_strip = len(strip_listings(ds.recent_listings, ds.run_date))
+    variants = [(n, t) for n in range(n_strip, 0, -1) for t in TIERS]
+    variants += [(0, t) for t in TIERS]
+    candidates = [((n, t), (lambda n=n, t=t: build_html(ds, t, n))) for n, t in variants]
+    rendered, (n, tier), height = _render(candidates, out_path, scale)
+    _LAST.update(tier=tier, width=CARD_W, height=height, listings=n)
     return out_path, rendered
 
 
 def render_listing_png(results: list, run_date, out_path: str,
                        scale: int = 2) -> tuple[str, dict[str, str]]:
     """Render the listing-day scorecard card (checked by verify.check_listing)."""
-    rendered, tier, height = _render(lambda t: build_listing_html(results, run_date, t),
-                                     out_path, scale)
-    _LAST.update(tier=tier, width=CARD_W, height=height)
+    candidates = [(t, (lambda t=t: build_listing_html(results, run_date, t))) for t in TIERS]
+    rendered, tier, height = _render(candidates, out_path, scale)
+    _LAST.update(tier=tier, width=CARD_W, height=height, listings=0)
     return out_path, rendered

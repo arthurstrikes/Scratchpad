@@ -37,6 +37,7 @@ Last updated: 15 Oct 2026 (late).
 | 15 Oct | **GMP trend with sparkline**, minimum investment, allotment + listing dates, image held to 4:5, Telegram failure notices, closing-day midday update, GitHub runner + watchdog (staged and **proven by a dry run**), history branch, compressed + more patient fetching. Tests 20 -> 56 |
 | 15 Oct (later) | **Listing-day scorecard** built and replayed on real NSE data (21 past listings matched, e.g. Nityas Gems listed +6.67% vs GMP 4.00%; Vishal Nirmiti -2.27% vs +9.09%). Compact photo caption. Tests 56 -> 68 |
 | 15 Oct (late) | Listing scorecard also **proven on GitHub's runner** (replayed 8 Oct, same result) |
+| 15 Oct (night) | Listing results now also in the **daily image** (slim strip: listing gain, day 1, GMP said; 3 rows down to 1 as space allows). High GMP flag raised to above 25%. Tests -> 72 |
 | since 16 Sep | Daily report delivered every day through the backup (about 30 days) |
 
 ## 3. Gaps and misses (honest list, including mine)
@@ -136,6 +137,7 @@ nothing lost on the way:
 | Standing | Only Mainboard, Open/Upcoming; SME excluded; QIB/NII never shown; GMP % computed by us; "Not updated" / "Not verified" wording; never guess a number |
 | 14 Oct | Creative follows the Loop / Inner Circle house style; text uses WhatsApp bold; report in a tap-to-copy block |
 | 15 Oct | "Take up all proposed changes"; GMP trend and direction is a priority. Image held to 4:5 (my call; one constant to change) |
+| 15 Oct | Listing results appear in the same daily creative as a slim strip (your yes to my suggestion); on a very full day it shrinks to one row, and to text only if even that cannot fit 4:5 |
 | 15 Oct | **High GMP flag raised from above 10% to above 25%** (your suggestion; I agreed: with GMPs of 11-70% the old line flagged every IPO). Rule printed in the legend |
 | 15 Oct | Trend baseline stays IPOWatch's daily record. Listing results come from NSE: issue to first-day open, and open to close separately. No second GMP website (numbers need not match); NSE is the independent check. **Scope change:** listing results are now published (the old rule was open/upcoming only) |
 

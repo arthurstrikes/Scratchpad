@@ -228,11 +228,14 @@ def publish(ds: Dataset, outdir: str) -> dict[str, str]:
     # Render, verify against the dataset, and re-render once on mismatch.
     for attempt in (1, 2):
         _, rendered = render_png(ds, paths["image"])
-        bad = check(ds, rendered)
+        info = last_render_info()
+        bad = check(ds, rendered, strip_rows=info["listings"])
         if not bad:
-            info = last_render_info()
             _log(f"image data check passed ({len(rendered)} figures verified); "
-                 f"{info['width']}x{info['height']} px, layout tier {info['tier']}")
+                 f"{info['width']}x{info['height']} px, layout tier {info['tier']}"
+                 + (f", {info['listings']} recently-listed row(s) in the image" if info["listings"] else
+                    (", recently-listed left to the text (no room at 4:5)"
+                     if ds.recent_listings else "")))
             break
         _log(f"image data check FAILED on attempt {attempt}:")
         for m in bad:

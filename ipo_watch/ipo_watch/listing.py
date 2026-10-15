@@ -133,6 +133,11 @@ class ListingResult:
         return f"₹{_num(self.last_gmp)} ({self.last_gmp_pct:.2f}%)"
 
     @property
+    def gmp_said_pct_text(self) -> Optional[str]:
+        """'4.00%' - the GMP % we last published, for the slim image row."""
+        return None if self.last_gmp_pct is None else f"{self.last_gmp_pct:.2f}%"
+
+    @property
     def gap_text(self) -> Optional[str]:
         g = self.gap_pts
         return None if g is None else (f"{g:+.2f} pts" if g != 0 else "0.00 pts")
@@ -355,3 +360,16 @@ def load_recent_results(directory: str, today: date, days: int = 3) -> list[List
         if r.listing_date and 0 <= (today - r.listing_date).days <= days:
             out.append(r)
     return sorted(out, key=lambda r: (r.listing_date, r.name), reverse=True)
+
+
+IMAGE_LISTING_DAYS = 2       # the daily image shows listings from the last two days
+IMAGE_LISTING_MAX = 3        # and at most this many rows (the text shows all of the last 3 days)
+
+
+def strip_listings(recent: list, run_date: Optional[date]) -> list:
+    """Which recent listings get a row in the daily image (newest first)."""
+    if not recent or run_date is None:
+        return []
+    rows = [r for r in recent if 0 <= (run_date - r.listing_date).days <= IMAGE_LISTING_DAYS]
+    rows.sort(key=lambda r: (r.listing_date, r.name), reverse=True)
+    return rows[:IMAGE_LISTING_MAX]
