@@ -99,6 +99,18 @@ Ordered by value for effort. "Needs" says what blocks it.
 | I11 | **Subscription momentum** (day-by-day retail multiple, last-day surge) | Shows demand building, not just a number | I5 |
 | I12 | **Big-move alert** (GMP jumps or falls sharply versus the morning) | Time-sensitive signal | Runner (I1) |
 
+### Next-wave ideas (added 15 Oct, night)
+| # | Idea | Value | Needs |
+|---|---|---|---|
+| I18 | **GMP accuracy scoreboard** in the scorecard and a weekly note: running average gap, how often GMP overstated, accuracy by GMP band. Backfill already possible (see section 5c) | Turns every listing into evidence about how far GMP can be trusted | Me; data exists |
+| I19 | **Date reminder lines** in the daily report: "allotment tomorrow", "lists tomorrow" | Small and high value; dates already collected | Me |
+| I20 | **GMP freshness stamp per IPO** ("GMP as of 12:10") from the IPO page's own update time | A stale number becomes visible instead of looking fresh | Me |
+| I21 | **Big-move alert:** message only when a GMP moves sharply against the morning (checked every 30-60 min on open days) | Time-sensitive; silent otherwise | GitHub live (A1-A3) |
+| I22 | **Subscription curve** per open IPO (day by day, last-day surge) from saved pages | Shows demand building, not just today's multiple | I5 (done) |
+| I23 | **One-link status page** (Loop style): last delivery, GMP trend per IPO, accuracy scoreboard | One place to look, no scrolling Telegram | Your OK; reads the `history` branch |
+| I24 | **Duplicate-aware backup:** the Claude-session backup first checks the `history` branch and skips if GitHub already delivered today | Lets both run safely during and after go-live; true standby | A1-A3 |
+| I25 | Hindi (or other language) caption variant | Wider audience | Your audience |
+
 ### Delivery and design
 | # | Idea | Value | Needs |
 |---|---|---|---|
@@ -107,6 +119,20 @@ Ordered by value for effort. "Needs" says what blocks it.
 | I15 | Second source used **only** to flag disagreement | Catches a bad IPOWatch figure | A7 |
 | I16 | Telegram channel | Only for recipients who use Telegram (see 5b) | A8 |
 | I17 | WhatsApp Business Cloud API (about Rs 60 a year for one message a day; more per recipient) | The only compliant way to post to WhatsApp automatically, to **individual opted-in numbers** (not groups) | Previously declined; see 5b step 3 |
+
+### 5c. Evidence so far: how far GMP missed (15 Oct, from NSE vs our saved reports)
+
+Small samples; read as direction, not proof. Not investment advice.
+
+- **21 listings matched** (28 Sep - 14 Oct): average listing gain +15.4%, median +4.7%;
+  14 listed above issue, 3 flat, 4 below. Open-to-close on day 1: average -0.4%,
+  closed lower than it opened in 11 of 21.
+- **10 of them have a GMP on record:** GMP said +15.2% on average, actual +15.1%,
+  but the *average miss per IPO was 13.1 points* and GMP overstated in 6 of 10.
+  GMP above 25% (2 IPOs): said +33.8%, actual +63.6%. GMP of 25% or less (8): said
+  +10.6%, actual +3.0%, 5 of 8 listed above issue.
+- Biggest misses: Orient Cables (+38.97 pts), Moneyview (+20.58), Acevector
+  (-17.75), German Green Steel (-15.83).
 
 ### 5b. Getting it into WhatsApp with less effort (smart options, in order)
 
