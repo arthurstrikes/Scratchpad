@@ -24,10 +24,14 @@ from .fetch import FetchError, extract_page_timestamp, fetch_pages, load_fixture
 from .merge import Dataset, build_dataset
 from .models import Board, IPO, Provenance, Status, Trend, parse_date
 from .parse import parse_page
-from .report import build_report
+from .report import build_midday_report, build_report, closing_today
 from .share import build_share_page
 from . import telegram
 from .verify import check
+
+
+# "delivered" | "failed" | "not configured" - set by publish()/_midday(), read by main().
+TELEGRAM_RESULT = {"status": "not configured"}
 
 
 def _log(msg: str) -> None:
@@ -35,7 +39,7 @@ def _log(msg: str) -> None:
 
 
 def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
-            history_dir: str | None = None) -> Dataset:
+            history_dir: str | None = None, enrich_only=None) -> Dataset:
     """Fetch + parse + merge into the final verified dataset."""
     if fixture_dir:
         sub = load_fixture(SUBSCRIPTION_URL, os.path.join(fixture_dir, "sub_sample.html"))
@@ -69,7 +73,8 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
          f"closed_retained={len(ds.recently_closed)} sme_excluded={len(ds.excluded_sme)}")
 
     if not fixture_dir:
-        enrich_dataset(ds, today, _page_getter(snapshot_dir), history_dir=history_dir)
+        enrich_dataset(ds, today, _page_getter(snapshot_dir), history_dir=history_dir,
+                       only=enrich_only)
         shown = sum(1 for i in ds.published if i.trend and i.trend.status in ("ok", "new"))
         _log(f"enriched: GMP trend for {shown}/{len(ds.published)} IPOs, "
              f"lot size for {sum(1 for i in ds.published if i.min_invest)}, "
@@ -234,13 +239,40 @@ def publish(ds: Dataset, outdir: str) -> dict[str, str]:
     if telegram.configured():
         try:
             telegram.send_report(paths["image"], build_report(ds))
+            TELEGRAM_RESULT["status"] = "delivered"
             _log("telegram  -> delivered")
         except telegram.TelegramError as exc:
+            TELEGRAM_RESULT["status"] = "failed"
             _log(f"telegram  -> FAILED: {exc}")
     else:
         _log("telegram  -> not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID unset)")
 
     return paths
+
+
+def _midday(ds: Dataset, outdir: str) -> int:
+    """Send the closing-day update, or say plainly that there is nothing to send."""
+    text = build_midday_report(ds)
+    if text is None:
+        _log("midday: no Mainboard IPO closes today - nothing to send")
+        return 0
+    os.makedirs(outdir, exist_ok=True)
+    path = os.path.join(outdir, f"ipo-watch-{ds.run_date:%Y-%m-%d}-midday.txt")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    if telegram.configured():
+        try:
+            telegram.send_text(text)
+            TELEGRAM_RESULT["status"] = "delivered"
+            _log("telegram  -> delivered (midday)")
+        except telegram.TelegramError as exc:
+            TELEGRAM_RESULT["status"] = "failed"
+            _log(f"telegram  -> FAILED: {exc}")
+    else:
+        _log("telegram  -> not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID unset)")
+    print("\n" + "=" * 62 + "\n" + text + "=" * 62)
+    _log(f"midday   -> {path} ({len(closing_today(ds))} IPO(s) closing today)")
+    return 0
 
 
 def _alert(msg: str) -> None:
@@ -266,6 +298,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--dataset", help="render from an existing reviewed dataset JSON")
     ap.add_argument("--outdir", default=OUTPUT_DIR)
     ap.add_argument("--date", help="override run date (YYYY-MM-DD)")
+    ap.add_argument("--fail-on-telegram-error", action="store_true",
+                    help="exit 3 if Telegram is configured but delivery failed (for CI, so the "
+                         "failure is visible instead of only logged)")
+    ap.add_argument("--mode", choices=("daily", "midday"), default="daily",
+                    help="midday = short text update for IPOs closing today (no image)")
     args = ap.parse_args(argv)
 
     today = date.fromisoformat(args.date) if args.date else datetime.now(IST).date()
@@ -277,7 +314,9 @@ def main(argv: list[str] | None = None) -> int:
         else:
             ds = collect(args.fixture_dir, today,
                          snapshot_dir=os.path.join(args.outdir, "snapshots"),
-                         history_dir=args.outdir)
+                         history_dir=args.outdir,
+                         enrich_only=((lambda i: i.close_date == today)
+                                      if args.mode == "midday" else None))
     except FetchError as exc:
         _log(f"ABORTED: {exc}")
         _log("No report written. Nothing is ever published from unverified data.")
@@ -286,6 +325,10 @@ def main(argv: list[str] | None = None) -> int:
     except Exception as exc:  # noqa: BLE001
         _alert(_failure_text(today, f"unexpected error ({type(exc).__name__}: {exc})"))
         raise
+
+    if args.mode == "midday":
+        rc = _midday(ds, args.outdir)
+        return 3 if (args.fail_on_telegram_error and TELEGRAM_RESULT["status"] == "failed") else rc
 
     try:
         paths = publish(ds, args.outdir)
@@ -298,6 +341,8 @@ def main(argv: list[str] | None = None) -> int:
     print("\n" + "=" * 62 + "\n" + build_report(ds) + "=" * 62)
     for k, v in paths.items():
         _log(f"{k:8s} -> {v}")
+    if args.fail_on_telegram_error and TELEGRAM_RESULT["status"] == "failed":
+        return 3
     return 0
 
 

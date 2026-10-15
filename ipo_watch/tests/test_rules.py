@@ -575,3 +575,45 @@ def test_trend_falls_back_to_our_own_earlier_reports(tmp_path):
     problems = enrich_ipo(ipo, D, lambda url: None, local[norm_key("Acme")])
     assert ipo.trend.status == "ok" and ipo.trend.text() == "▲ ₹5" and problems["trend"] is False
     assert problems["detail"] is True        # facts have no fallback: omitted, with a note
+
+
+# --- closing-day midday update ----------------------------------------------
+
+def _closing_ds():
+    from datetime import datetime
+    from ipo_watch.config import IST
+    closing = mk("Closes Today", Decimal("20"), Decimal("100"), retail=Decimal("2.5"),
+                 total=Decimal("3"), o=date(2026, 10, 13), c=D)
+    later = mk("Closes Friday", Decimal("5"), Decimal("100"), retail=Decimal("1"),
+               total=Decimal("1"), o=date(2026, 10, 14), c=date(2026, 10, 16))
+    for i in (closing, later):
+        i.price_min = None
+    return build_dataset([], [closing, later], D, generated_at=datetime(2026, 10, 15, 14, 0, tzinfo=IST))
+
+
+def test_midday_report_covers_only_ipos_closing_today():
+    from ipo_watch.report import build_midday_report
+    out = build_midday_report(_closing_ds())
+    assert "CLOSING TODAY" in out and "CLOSES TODAY" in out and "CLOSES FRIDAY" not in out
+    assert "👥 Retail: 2.5x" in out and "📊 Total: 3x" in out
+    assert "📅 15 Oct 2026 | 2:00 PM IST" in out
+    assert "QIB" not in out and "NII" not in out
+
+
+def test_midday_sends_nothing_when_no_ipo_closes_today():
+    from ipo_watch.report import build_midday_report
+    ds = build_dataset([], [mk("Opens Later", Decimal("5"), Decimal("100"),
+                               o=date(2026, 10, 20), c=date(2026, 10, 22))], D)
+    assert build_midday_report(ds) is None
+
+
+def test_midday_mode_delivers_text_only(monkeypatch, tmp_path):
+    from ipo_watch import run, telegram
+    sent = []
+    monkeypatch.setattr(telegram, "configured", lambda: True)
+    monkeypatch.setattr(telegram, "send_text", lambda t: sent.append(t))
+    monkeypatch.setattr(run, "collect", lambda *a, **k: _closing_ds())
+    monkeypatch.setattr(run, "publish", lambda *a, **k: (_ for _ in ()).throw(AssertionError("no image at midday")))
+    assert run.main(["--mode", "midday", "--outdir", str(tmp_path), "--date", "2026-10-15"]) == 0
+    assert len(sent) == 1 and "CLOSES TODAY" in sent[0]
+    assert (tmp_path / "ipo-watch-2026-10-15-midday.txt").exists()

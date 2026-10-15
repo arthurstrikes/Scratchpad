@@ -1,0 +1,37 @@
+# "Nothing arrived" alarm. Shortly after the daily run is due, checks that a
+# scheduled run of "Daily IPO Watch" succeeded today and, if not, sends one
+# plain Telegram message so a silent day is never mistaken for a quiet one.
+#
+# Manual-only for now, like the other workflows; scheduled once go-live is
+# confirmed. Needs the same two secrets.
+name: IPO Watch watchdog
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Did today's scheduled report go out?
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          today=$(date -u +%F)
+          ok=$(gh run list -R "$GITHUB_REPOSITORY" --workflow "Daily IPO Watch" \
+                 --event schedule --status success --created ">=${today}" \
+                 --json databaseId --jq length)
+          echo "successful scheduled runs today: ${ok}"
+          if [ "${ok}" = "0" ]; then
+            [ -n "$TOKEN" ] && [ -n "$CHAT" ] || { echo "Telegram secrets missing"; exit 1; }
+            curl -sS --max-time 20 "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+              --data-urlencode "chat_id=${CHAT}" \
+              --data-urlencode "text=⚠️ IPO Watch: no report was delivered today. Check ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions" >/dev/null
+            exit 1
+          fi

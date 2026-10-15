@@ -138,3 +138,32 @@ def _footer(ds: Dataset) -> str:
         L += [f"• {c.ipo} {c.field_name}: kept {c.kept}, dropped {c.discarded} — {c.reason}"
               for c in ds.conflicts]
     return "\n".join(L)
+
+
+def closing_today(ds: Dataset) -> list[IPO]:
+    """Open Mainboard IPOs whose last day to bid is the run date."""
+    return [i for i in ds.open_ipos if i.close_date and i.close_date == ds.run_date]
+
+
+def build_midday_report(ds: Dataset) -> Optional[str]:
+    """Short mid-afternoon update for IPOs closing today; None when none are."""
+    closing = closing_today(ds)
+    if not closing:
+        return None
+    d = ds.run_date.strftime("%d %b %Y") if ds.run_date else ""
+    when = ds.generated_at.strftime("%I:%M %p").lstrip("0") if ds.generated_at else ""
+    L = ["*⏰ CLOSING TODAY: SUBSCRIPTION UPDATE*", f"📅 {d} | {when} IST".replace(" |  IST", ""), ""]
+    for ipo in closing:
+        L.append(_title(ipo))
+        L.append(f"👥 Retail: {ipo.retail_text}")
+        L.append(f"📊 Total: {ipo.total_text}")
+        L.append(f"🟢 GMP: {ipo.gmp_text} | *{ipo.gmp_pct_text}*")
+        tl = _trend_line(ipo, ds.run_date)
+        if tl:
+            L.append(tl)
+        L.append("")
+    L.append("_Final numbers follow in the 5:00 PM update._")
+    L.append(f"Source: {SOURCE_NAME}")
+    if ds.subscription_timestamp:
+        L.append(f"🕒 Subscription data: {ds.subscription_timestamp}")
+    return "\n".join(L) + "\n"

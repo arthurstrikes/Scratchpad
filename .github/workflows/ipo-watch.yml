@@ -50,7 +50,7 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ (github.event_name != 'workflow_dispatch' || inputs.send_telegram) && secrets.TELEGRAM_BOT_TOKEN || '' }}
           TELEGRAM_CHAT_ID: ${{ (github.event_name != 'workflow_dispatch' || inputs.send_telegram) && secrets.TELEGRAM_CHAT_ID || '' }}
-        run: python -m ipo_watch.run --outdir output
+        run: python -m ipo_watch.run --outdir output --fail-on-telegram-error
 
       - name: Keep the output for inspection
         if: always()
