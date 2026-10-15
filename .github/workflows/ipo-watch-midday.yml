@@ -39,6 +39,15 @@ jobs:
           cache: pip
           cache-dependency-path: ipo_watch/requirements.txt
 
+      - name: Restore earlier reports (used as the GMP trend fallback)
+        continue-on-error: true
+        run: |
+          mkdir -p ipo_watch/output
+          if git ls-remote --exit-code --heads origin history >/dev/null 2>&1; then
+            git fetch -q --depth=1 origin history
+            git archive FETCH_HEAD | tar -x -C ipo_watch/output
+          fi
+
       - name: Install dependencies
         working-directory: ipo_watch
         run: |

@@ -534,6 +534,7 @@ def test_core_fetch_retries_a_dropped_connection_then_succeeds(monkeypatch):
 
     class Resp:
         status = 200
+        headers = {}
         def read(self): return b"<table><tr><td>ok</td></tr></table>"
         def __enter__(self): return self
         def __exit__(self, *a): return False
@@ -617,3 +618,25 @@ def test_midday_mode_delivers_text_only(monkeypatch, tmp_path):
     assert run.main(["--mode", "midday", "--outdir", str(tmp_path), "--date", "2026-10-15"]) == 0
     assert len(sent) == 1 and "CLOSES TODAY" in sent[0]
     assert (tmp_path / "ipo-watch-2026-10-15-midday.txt").exists()
+
+
+def test_core_fetch_decodes_gzip_pages(monkeypatch):
+    import gzip as _gz
+    from ipo_watch import fetch
+    body = _gz.compress(b"<table><tr><td>zipped</td></tr></table>")
+    seen = {}
+
+    class Resp:
+        status = 200
+        headers = {"Content-Encoding": "gzip"}
+        def read(self): return body
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+
+    def fake(req, timeout=None, context=None):
+        seen["accept"] = req.get_header("Accept-encoding")
+        return Resp()
+
+    monkeypatch.setattr(fetch.urllib.request, "urlopen", fake)
+    pg = fetch.fetch_pages(["https://ipowatch.in/x/"])["https://ipowatch.in/x/"]
+    assert "zipped" in pg.html and seen["accept"] == "gzip"

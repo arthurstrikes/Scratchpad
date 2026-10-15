@@ -3,7 +3,11 @@
 A recurring 5:00 PM IST workflow that reads IPOWatch, verifies the numbers,
 and produces a WhatsApp-shareable IPO update. Code lives in `ipo_watch/`.
 
-**If you are a fresh session picking this up, read this whole file first.**
+**If you are a fresh session picking this up, read this whole file first, then
+`ROADMAP.md`** (the living plan: achievements, gaps and misses, open actions with
+owners, the innovation and automation backlog, and the decisions log). Update
+`ROADMAP.md` in the same change whenever something is finished, found, decided
+or left open - the user asked for that to be kept current.
 
 ## Run it
 
@@ -12,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # 20 rule tests
+python3 -m pytest tests/ -q              # rule + behaviour tests (56 at 15 Oct 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -392,6 +396,35 @@ bot token scrubbed). It never changes the exit code.
   hour) made the egress proxy drop connections ("Connection reset by peer",
   `ws_closed_mid_exchange`). Nightly load is only 18 requests; when testing,
   run the live pipeline sparingly and use `--dataset` / fixtures otherwise.
+
+## GitHub Actions runner (built 15 Oct 2026, staged - not yet the live engine)
+
+Three workflows in `.github/workflows/`, all **manual-only** (`workflow_dispatch`)
+so nothing is ever sent twice while the old path is still live:
+
+- `ipo-watch.yml` - the daily run (`--fail-on-telegram-error`). Restores earlier
+  reports from the `history` branch before running, saves the new dataset + text
+  back to it after a *real* send (never after a dry run), uploads the output as a
+  14-day artifact, and Telegrams a notice if setup fails before the pipeline starts.
+- `ipo-watch-midday.yml` - the closing-day update (`--mode midday`).
+- `ipo-watch-watchdog.yml` - after the daily run is due, Telegrams "no report was
+  delivered today" if no *scheduled* run succeeded today.
+
+**Proven on 15 Oct:** a manual dry run on GitHub's runners fetched IPOWatch,
+rendered the image and passed the image check. **Not yet tested:** the Telegram
+send from GitHub. It needs two repository secrets, which only the user can add
+(Settings > Secrets and variables > Actions): `TELEGRAM_BOT_TOKEN` and
+`TELEGRAM_CHAT_ID`. Go-live plan (ask the user first, it changes delivery and
+schedule): add secrets -> one manual run with `send_telegram` on -> add the cron
+lines (`30 11 * * *` daily, `30 8 * * *` midday, `55 11 * * *` watchdog, all UTC)
+-> retire the 5:05 PM backup trigger -> user deletes the dead 5:00 PM routine in
+the Routines list. The `history` branch holds only IPO figures and daily text
+(seeded 15 Oct with 28 Sep - 14 Oct); never put secrets or personal data in it.
+
+IPOWatch was slow on 15 Oct (main pages 27 s, per-IPO pages timing out from both
+the sandbox and GitHub). Mitigations now in place: gzip requests (about 5x
+smaller), 30 s per extra page within a 300 s budget, 4 retries on the core pages,
+and the trend falls back to our own saved reports (`history` branch).
 
 ## WhatsApp text format
 
