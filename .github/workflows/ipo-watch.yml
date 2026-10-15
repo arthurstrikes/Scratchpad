@@ -19,7 +19,7 @@ on:
         default: false
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ipo-watch
@@ -38,6 +38,15 @@ jobs:
           cache: pip
           cache-dependency-path: ipo_watch/requirements.txt
 
+      - name: Restore earlier reports (used as the GMP trend fallback)
+        continue-on-error: true
+        run: |
+          mkdir -p ipo_watch/output
+          if git ls-remote --exit-code --heads origin history >/dev/null 2>&1; then
+            git fetch -q --depth=1 origin history
+            git archive FETCH_HEAD | tar -x -C ipo_watch/output
+          fi
+
       - name: Install dependencies
         working-directory: ipo_watch
         run: |
@@ -51,6 +60,28 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ (github.event_name != 'workflow_dispatch' || inputs.send_telegram) && secrets.TELEGRAM_BOT_TOKEN || '' }}
           TELEGRAM_CHAT_ID: ${{ (github.event_name != 'workflow_dispatch' || inputs.send_telegram) && secrets.TELEGRAM_CHAT_ID || '' }}
         run: python -m ipo_watch.run --outdir output --fail-on-telegram-error
+
+      # Only real sends are recorded, so a manual dry run never writes history.
+      - name: Save today's result to the history branch
+        if: steps.run.outcome == 'success' && (github.event_name != 'workflow_dispatch' || inputs.send_telegram)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          url="https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          d=$(mktemp -d)
+          if ! git clone -q --depth 1 --branch history "$url" "$d" 2>/dev/null; then
+            git init -q "$d"; git -C "$d" checkout -q -b history; git -C "$d" remote add origin "$url"
+          fi
+          cp ipo_watch/output/ipo-watch-*-dataset.json ipo_watch/output/ipo-watch-*.txt "$d"/
+          cd "$d"
+          git config user.name "ipo-watch[bot]"
+          git config user.email "ipo-watch@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -q -m "History: $(date -u +%F)"
+          git push -q origin history
 
       - name: Keep the output for inspection
         if: always()

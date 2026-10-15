@@ -7,6 +7,7 @@ bytes it came from.
 """
 from __future__ import annotations
 
+import gzip
 import os
 import re
 import ssl
@@ -66,6 +67,9 @@ def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None,
             "User-Agent": USER_AGENT,
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Accept-Language": "en-IN,en;q=0.9",
+            # IPOWatch pages are ~600 KB of HTML; compressed they are about a
+            # fifth of that, which matters when the site is slow.
+            "Accept-Encoding": "gzip",
         })
         raw = b""
         for attempt in range(1, attempts + 1):
@@ -73,6 +77,8 @@ def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None,
                 with urllib.request.urlopen(req, timeout=timeout or HTTP_TIMEOUT_S, context=ctx) as resp:
                     raw = resp.read()
                     status = resp.status
+                    if (resp.headers.get("Content-Encoding") or "").lower() == "gzip":
+                        raw = gzip.decompress(raw)
                 if status != 200:
                     raise FetchError(f"{url} returned HTTP {status}")
                 break

@@ -82,8 +82,8 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
     return ds
 
 
-ENRICH_BUDGET_S = 150      # all per-IPO pages together; the run never waits longer
-ENRICH_TIMEOUT_S = 15      # one request
+ENRICH_BUDGET_S = 300      # all per-IPO pages together; the run never waits longer
+ENRICH_TIMEOUT_S = 30      # one request
 
 
 def _page_getter(snapshot_dir: str | None, budget_s: float = ENRICH_BUDGET_S):
