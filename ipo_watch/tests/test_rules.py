@@ -43,9 +43,21 @@ def test_gmp_pct_is_computed_not_copied():
     assert ipo.gmp_pct == Decimal("14.29")           # 18/126 = 14.2857 -> 14.29
 
 
-def test_highlight_threshold_is_strictly_above_10pct():
-    assert mk("X", Decimal("10"), Decimal("100")).is_hot is False
-    assert mk("X", Decimal("11"), Decimal("100")).is_hot is True
+def test_highlight_threshold_is_strictly_above_25pct():
+    assert mk("X", Decimal("25"), Decimal("100")).is_hot is False    # exactly 25% is not flagged
+    assert mk("X", Decimal("26"), Decimal("100")).is_hot is True
+    assert mk("X", Decimal("12"), Decimal("100")).is_hot is False    # the old 10% line no longer flags
+
+
+def test_only_high_gmp_rows_carry_the_flag_in_text_and_image():
+    from ipo_watch.creative import build_html
+    ds = build_dataset([], [mk("Hot Co", Decimal("40"), Decimal("100")),
+                            mk("Mild Co", Decimal("15"), Decimal("100"))], TODAY)
+    out = build_report(ds)
+    assert "🔥 HOT CO" in out and "🔥 MILD CO" not in out and "*MILD CO*" in out
+    html = build_html(ds)
+    assert html.count('class="flag">High GMP') == 1
+    assert "Flag = GMP above 25%" in out and "High GMP = above 25%" in html
 
 
 # --- Section 5: accuracy rules ---------------------------------------------
@@ -818,3 +830,15 @@ def test_photo_caption_is_compact_ranked_and_within_telegram_limit():
     small = build_caption(build_dataset([], [mk("Acme", Decimal("5"), Decimal("100"),
                                                 o=date(2026, 10, 13), c=D)], D))
     assert "⏰ closes today" in small and "more in the image" not in small
+
+
+def test_missing_price_band_has_no_rupee_sign_anywhere():
+    import re
+    from ipo_watch.creative import build_html
+    ipo = mk("No Band Co", Decimal("5"), None)
+    ipo.price_min = None
+    ds = build_dataset([], [ipo], TODAY)
+    assert ipo.price_display == "Not updated"
+    assert "₹Not" not in build_report(ds) and "₹Not" not in build_html(ds)
+    assert expected_map(ds)["ipo0.price"] == "Not updated"
+    assert mk("Has Band", Decimal("5"), Decimal("100")).price_display == "₹1–100"

@@ -44,7 +44,7 @@ def expected_map(ds: Dataset) -> dict[str, str]:
         out[f"{k}.gmp"] = ipo.gmp_text
         out[f"{k}.gmppct"] = ipo.gmp_pct_text
         out[f"{k}.dates"] = ipo.date_range_text
-        out[f"{k}.price"] = f"₹{ipo.price_band_text}"
+        out[f"{k}.price"] = ipo.price_display
         out[f"{k}.retail"] = ipo.retail_text
         out[f"{k}.total"] = ipo.total_text
     for n, ipo in enumerate(ds.upcoming_ipos):
@@ -54,7 +54,7 @@ def expected_map(ds: Dataset) -> dict[str, str]:
         out[f"{k}.gmp"] = ipo.gmp_text
         out[f"{k}.gmppct"] = ipo.gmp_pct_text
         out[f"{k}.dates"] = ipo.date_range_text
-        out[f"{k}.price"] = f"₹{ipo.price_band_text}"
+        out[f"{k}.price"] = ipo.price_display
 
     ranked = rank_by_gmp(ds)
     top_gmp = next((i for i in ranked if i.gmp_pct is not None), None)

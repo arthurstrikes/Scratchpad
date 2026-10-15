@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from .config import NOT_UPDATED, SOURCE_NAME
+from .config import GMP_HIGHLIGHT_THRESHOLD_PCT, NOT_UPDATED, SOURCE_NAME
 from .merge import Dataset, leader, rank_by_gmp
 from .models import IPO
 
@@ -15,13 +15,13 @@ HOT = "🔥"
 
 
 def _title(ipo: IPO) -> str:
-    """Name line; GMP above 10% is flagged (section 6)."""
+    """Name line; GMP above the highlight threshold (config) is flagged."""
     name = f"{HOT} {ipo.name.upper()}" if ipo.is_hot else ipo.name.upper()
     return f"*{name}*"
 
 
 def _price_line(ipo: IPO) -> str:
-    line = f"💰 Price: ₹{ipo.price_band_text}"
+    line = f"💰 Price: {ipo.price_display}"
     if ipo.min_invest_text and ipo.lot_shares:
         line += f" | {ipo.min_invest_text} ({ipo.lot_shares} shares)"
     return line
@@ -121,6 +121,7 @@ def _footer(ds: Dataset) -> str:
     L = [
         "📌 _GMP = Grey Market Premium_",
         "📈 _GMP % calculated on upper price band_",
+        f"🔥 _Flag = GMP above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%_",
         "⚠️ _GMP is unofficial and can change before listing._",
         f"Source: {SOURCE_NAME}",
     ]

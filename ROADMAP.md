@@ -136,6 +136,7 @@ nothing lost on the way:
 | Standing | Only Mainboard, Open/Upcoming; SME excluded; QIB/NII never shown; GMP % computed by us; "Not updated" / "Not verified" wording; never guess a number |
 | 14 Oct | Creative follows the Loop / Inner Circle house style; text uses WhatsApp bold; report in a tap-to-copy block |
 | 15 Oct | "Take up all proposed changes"; GMP trend and direction is a priority. Image held to 4:5 (my call; one constant to change) |
+| 15 Oct | **High GMP flag raised from above 10% to above 25%** (your suggestion; I agreed: with GMPs of 11-70% the old line flagged every IPO). Rule printed in the legend |
 | 15 Oct | Trend baseline stays IPOWatch's daily record. Listing results come from NSE: issue to first-day open, and open to close separately. No second GMP website (numbers need not match); NSE is the independent check. **Scope change:** listing results are now published (the old rule was open/upcoming only) |
 
 ## 6b. Scheduled follow-ups (so nothing depends on memory)
