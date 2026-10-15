@@ -400,7 +400,7 @@ def test_telegram_lookup_chat_id_reads_latest_update(monkeypatch):
 
 # --- GMP trend, key facts, 4:5 fit, alerts (added 15 Oct 2026) --------------
 
-from ipo_watch.enrich import (compute_trend, page_is_about, parse_detail_facts,
+from ipo_watch.enrich import (compute_trend, find_detail_url, page_is_about, parse_detail_facts,
                               parse_gmp_history)
 from ipo_watch.models import Trend, _indian
 
@@ -879,3 +879,11 @@ def test_strip_figures_are_painted_and_verified_exactly_when_shown():
     assert "Recently listed" in build_html(ds, 0) and "Recently listed" not in build_html(ds, 0, 0)
     bad = dict(expected_map(ds)); bad["rl0.gain"] = "+99.00%"
     assert any(m.key == "rl0.gain" for m in check(ds, bad))
+
+
+def test_detail_page_found_via_ipo_details_button_when_slug_differs():
+    gmp = ('<a href="/tonbo-imaging-india-ipo/">IPO Details</a>'
+           '<a href="/tonbo-imaging-ipo-review-by-dilip-davda/">Review</a>')
+    url = find_detail_url(gmp, "Tonbo Imaging",
+                          "https://ipowatch.in/tonbo-imaging-ipo-gmp-grey-market-premium/")
+    assert url.endswith("/tonbo-imaging-india-ipo/")

@@ -177,6 +177,13 @@ def find_detail_url(gmp_page_html: str, name: str, gmp_url: str) -> str:
             continue
         if _DETAIL_HREF.match(u.path) and norm_key(a.get_text(" ", strip=True)) == key:
             return f"{BASE_URL}/{u.path.strip('/')}/"
+    # The page's own "IPO Details" button: the company's real detail page, even
+    # when its slug differs from the GMP page's (Tonbo: tonbo-imaging-india-ipo).
+    for a in soup.find_all("a", href=True):
+        u = urlparse(a["href"])
+        if (u.netloc in ("", "ipowatch.in", "www.ipowatch.in") and _DETAIL_HREF.match(u.path)
+                and a.get_text(" ", strip=True).lower() == "ipo details"):
+            return f"{BASE_URL}/{u.path.strip('/')}/"
     slug = urlparse(gmp_url).path.strip("/")
     derived = re.sub(r"-ipo-gmp.*$", "-ipo", slug)
     return f"{BASE_URL}/{derived}/" if derived.endswith("-ipo") else ""

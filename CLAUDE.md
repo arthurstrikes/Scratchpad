@@ -374,7 +374,7 @@ Each published IPO costs two extra reads, both on ipowatch.in (same source,
   and labelled `vs yesterday` or `vs 13 Oct` if a day is missing. IPOWatch's
   own trend emoji and "gain" column are never read. `New` = history read fine
   but nothing earlier; `Not updated` = unreadable.
-- its **detail page** (`/<slug>-ipo/`, found from a link on the GMP page)
+- its **detail page** (found from the GMP page's own "IPO Details" button, else a link naming the company, else a guessed slug; Tonbo's was `tonbo-imaging-india-ipo`, not `-ipo`, which silently redirected to the GMP page and lost the lot size on 15 Oct)
   gives retail minimum lot and amount, basis-of-allotment date and listing
   date. The minimum investment is shown only if it equals shares x cap price
   (otherwise hidden: present-but-unusable). Both pages are checked to be about
