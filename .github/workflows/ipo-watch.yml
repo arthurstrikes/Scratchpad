@@ -74,7 +74,7 @@ jobs:
           if ! git clone -q --depth 1 --branch history "$url" "$d" 2>/dev/null; then
             git init -q "$d"; git -C "$d" checkout -q -b history; git -C "$d" remote add origin "$url"
           fi
-          cp ipo_watch/output/ipo-watch-*-dataset.json ipo_watch/output/ipo-watch-*.txt "$d"/
+          cp ipo_watch/output/ipo-watch-*-dataset.json ipo_watch/output/ipo-watch-*.txt ipo_watch/output/ipo-watch-listing-*.json "$d"/ 2>/dev/null || cp ipo_watch/output/ipo-watch-*-dataset.json ipo_watch/output/ipo-watch-*.txt "$d"/
           cd "$d"
           git config user.name "ipo-watch[bot]"
           git config user.email "ipo-watch@users.noreply.github.com"

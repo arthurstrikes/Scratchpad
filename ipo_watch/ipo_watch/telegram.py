@@ -42,7 +42,7 @@ def configured() -> bool:
     return bool(os.environ.get("TELEGRAM_BOT_TOKEN") and os.environ.get("TELEGRAM_CHAT_ID"))
 
 
-def send_report(image_path: str, report_text: str) -> None:
+def send_report(image_path: str, report_text: str, caption: Optional[str] = None) -> None:
     """Send the creative as a photo, then the full report as its own message.
 
     The report is sent as a separate message rather than a photo caption
@@ -65,7 +65,7 @@ def send_report(image_path: str, report_text: str) -> None:
     with open(image_path, "rb") as fh:
         image_bytes = fh.read()
 
-    _post("sendPhoto", {"chat_id": chat_id, "caption": f"\U0001F4CA IPO Watch — {date_label}"},
+    _post("sendPhoto", {"chat_id": chat_id, "caption": caption or f"\U0001F4CA IPO Watch — {date_label}"},
           files={"photo": (os.path.basename(image_path), image_bytes, "image/png")})
 
     # The report goes inside a <pre> block: one tap on it in Telegram copies

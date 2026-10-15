@@ -106,6 +106,7 @@ main{{padding:4px 40px 0}}
         border:1.5px solid currentColor;border-radius:3px;padding:3px 6px 2px}}
 .tr.na{{color:var(--ink-3);font-weight:400;font-style:italic;font-size:16px}}
 svg.spark{{display:block;flex:none}}
+.lab{{display:block;font-size:13px;font-weight:500;letter-spacing:3px;text-transform:uppercase;color:var(--ink-3);margin-bottom:2px}}
 .fine{{display:flex;flex-wrap:wrap;gap:2px 0;margin-top:4px;font-size:var(--fine);color:var(--ink-3)}}
 .fine .f+.f:before{{margin:0 12px}}
 .fine .fl{{font-size:12.5px}}
@@ -295,6 +296,56 @@ def build_html(ds: Dataset, tier: int = 0) -> str:
 </div></body></html>"""
 
 
+def _listing_row(r, idx: int) -> str:
+    k = f"l{idx}"
+    gain = r.listing_gain_pct
+    gcls = "pct num flat" if gain is None or gain == 0 else ("pct num" if gain > 0 else "pct num neg")
+    d1 = r.day1_pct
+    dcls = "flat" if d1 is None or d1 == 0 else ("up" if d1 > 0 else "down")
+    fine = ""
+    if r.gmp_said_text:
+        extra = [_field("GMP said", r.gmp_said_text, f"{k}.gmp", False)]
+        if r.gap_text:
+            extra.append(_field("Gap", r.gap_text, f"{k}.gap", False))
+        fine = f'<div class="fine">{"".join(extra)}</div>'
+    return f"""
+    <div class="row">
+      <div>
+        <div class="nmrow"><span class="nm" data-verify="{k}.name">{_e(r.name)}</span>
+          <span class="flag" data-verify="{k}.symbol">{_e(r.symbol)}</span></div>
+        <div class="sub">{_field("Issue", r.issue_text, f"{k}.issue", False)}{_field("Open", r.open_text, f"{k}.open", False)}{_field("Close", r.close_text, f"{k}.close", False)}</div>{fine}
+      </div>
+      <div class="gmp">
+        <span class="lab">At listing</span>
+        <span class="{gcls}" data-verify="{k}.gain">{_e(r.listing_gain_text)}</span>
+        <div class="gmp2"><span class="rs">DAY 1</span><span class="tr {dcls}" data-verify="{k}.day1">{_e(r.day1_text)}</span></div>
+      </div>
+    </div>"""
+
+
+def build_listing_html(results: list, run_date, tier: int = 0) -> str:
+    """The listing-day scorecard card, in the same house style as the daily image."""
+    date_txt = run_date.strftime("%d %b %Y") if run_date else ""
+    rows = "".join(_listing_row(r, i) for i, r in enumerate(results))
+    return f"""<!doctype html><html><head><meta charset="utf-8">
+<style>{font_face_css()}{CSS}</style></head>
+<body><div class="sheet t{tier}">
+  <div class="band">
+    <div><div class="eyebrow">Listing day · NSE</div><h1>Listing Scorecard</h1></div>
+    <div class="when"><span class="num">{_e(date_txt)}</span><small>Actual vs GMP</small></div>
+  </div>
+  <main>
+    <div class="sec-h"><span class="dot open"></span><h2>Listed today</h2><span class="rule"></span><span class="num">{len(results)}</span></div>
+    <div class="rows">{rows}</div>
+    <div class="ftr">
+      <div class="legend"><span>Issue = NSE base price</span><span>Listing gain = issue to first-day open</span><span>Day 1 = open to close</span></div>
+      <div class="legend"><span>Gap = listing gain minus the GMP % last reported</span><span>GMP is unofficial</span></div>
+      <div class="src"><div>Prices: <b>NSE</b> · GMP: <b>{_e(SOURCE_NAME)}</b></div><div></div></div>
+    </div>
+  </main>
+</div></body></html>"""
+
+
 _LAST: dict = {"tier": 0, "width": CARD_W, "height": 0}
 
 
@@ -303,20 +354,12 @@ def last_render_info() -> dict:
     return dict(_LAST)
 
 
-def render_png(ds: Dataset, out_path: str, scale: int = 2) -> tuple[str, dict[str, str]]:
-    """Render the creative and read every figure back out of the live DOM.
-
-    Tries the roomiest layout first and steps to denser tiers until the card
-    is no taller than 4:5 (MAX_H). Returns (png_path, rendered) where
-    `rendered` maps each data-verify key to the text actually painted on the
-    image. verify.py compares that against the dataset before the PNG is
-    accepted.
-    """
+def _render(html_for_tier, out_path: str, scale: int = 2) -> tuple[dict[str, str], int, int]:
+    """Render the roomiest tier that fits 4:5 and read every figure back from the DOM."""
     from playwright.sync_api import sync_playwright
 
     os.makedirs(os.path.dirname(out_path) or ".", exist_ok=True)
     html_path = os.path.splitext(out_path)[0] + ".html"
-
     kwargs = {"args": ["--no-sandbox", "--disable-dev-shm-usage",
                        "--force-color-profile=srgb", "--font-render-hinting=none"]}
     if CHROMIUM_PATH and os.path.exists(CHROMIUM_PATH):
@@ -327,7 +370,7 @@ def render_png(ds: Dataset, out_path: str, scale: int = 2) -> tuple[str, dict[st
         page = browser.new_page(viewport={"width": CARD_W, "height": 800},
                                 device_scale_factor=scale)
         for tier in TIERS:
-            html_doc = build_html(ds, tier)
+            html_doc = html_for_tier(tier)
             page.set_content(html_doc, wait_until="load")
             page.wait_for_timeout(300)
             height = page.eval_on_selector(".sheet", "e => Math.ceil(e.getBoundingClientRect().height)")
@@ -339,9 +382,26 @@ def render_png(ds: Dataset, out_path: str, scale: int = 2) -> tuple[str, dict[st
             "[data-verify]",
             "els => Object.fromEntries(els.map(e => [e.dataset.verify, e.textContent.trim()]))",
         )
-        # Shoot the sheet element, not the page: the creative then crops exactly
+        # Shoot the sheet element, not the page: the card then crops exactly
         # to its content instead of being padded out to the viewport height.
         page.locator(".sheet").screenshot(path=out_path)
         browser.close()
+    return rendered, tier, height
+
+
+def render_png(ds: Dataset, out_path: str, scale: int = 2) -> tuple[str, dict[str, str]]:
+    """Render the daily creative. Returns (png_path, rendered) where `rendered`
+    maps each data-verify key to the text actually painted on the image;
+    verify.py compares that against the dataset before the PNG is accepted."""
+    rendered, tier, height = _render(lambda t: build_html(ds, t), out_path, scale)
+    _LAST.update(tier=tier, width=CARD_W, height=height)
+    return out_path, rendered
+
+
+def render_listing_png(results: list, run_date, out_path: str,
+                       scale: int = 2) -> tuple[str, dict[str, str]]:
+    """Render the listing-day scorecard card (checked by verify.check_listing)."""
+    rendered, tier, height = _render(lambda t: build_listing_html(results, run_date, t),
+                                     out_path, scale)
     _LAST.update(tier=tier, width=CARD_W, height=height)
     return out_path, rendered

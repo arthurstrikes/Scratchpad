@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (56 at 15 Oct 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (68 at 15 Oct 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -281,6 +281,9 @@ These come from the user and are enforced by tests in `tests/test_rules.py`:
 
 - Only **Mainboard** IPOs that are **Open** or **Upcoming** are published.
   SME is excluded; closed IPOs are kept in the dataset for validation only.
+  **One deliberate exception, added 15 Oct 2026 at the user's request:** the
+  *listing result* of an IPO we reported on (from NSE, see "Listing scorecard")
+  is published, in the daily "Recently listed" lines and the evening scorecard.
 - **QIB and NII are never shown.** The parser drops those columns.
 - **GMP % is always computed** as `GMP / upper price band * 100`, half-up to
   2dp. Never copy IPOWatch's "estimated listing gain".
@@ -407,6 +410,7 @@ so nothing is ever sent twice while the old path is still live:
   back to it after a *real* send (never after a dry run), uploads the output as a
   14-day artifact, and Telegrams a notice if setup fails before the pipeline starts.
 - `ipo-watch-midday.yml` - the closing-day update (`--mode midday`).
+- `ipo-watch-listing.yml` - the evening listing scorecard (see below).
 - `ipo-watch-watchdog.yml` - after the daily run is due, Telegrams "no report was
   delivered today" if no *scheduled* run succeeded today.
 
@@ -425,6 +429,48 @@ IPOWatch was slow on 15 Oct (main pages 27 s, per-IPO pages timing out from both
 the sandbox and GitHub). Mitigations now in place: gzip requests (about 5x
 smaller), 30 s per extra page within a 300 s budget, 4 retries on the core pages,
 and the trend falls back to our own saved reports (`history` branch).
+
+## Listing scorecard (built 15 Oct 2026, `ipo_watch/listing.py`)
+
+What the IPO actually did, next to what GMP said. Source is **NSE's own public
+files**, not a grey-market site: `EQUITY_L.csv` (symbol, name, DATE OF LISTING)
+and `sec_bhavdata_full_<ddmmyyyy>.csv` (on a listing day `PREV_CLOSE` is the
+exchange base price = the issue price; `OPEN_PRICE`, `CLOSE_PRICE`). The user
+specified: **listing gain = issue price to first-day open; separately first-day
+open to close.** Also shown: close vs issue, the last GMP we reported
+(read back from our own saved reports, so exact), and the gap in points.
+
+- **Candidates are only IPOs we ourselves reported** (our saved datasets), so a
+  demerger or re-listing sharing a date (e.g. Lancer, 14 Oct) is never taken for
+  an IPO. Matching is by normalised name inside 14 days after the IPO closed:
+  exact first, else a *unique* prefix (Nityas Gems -> Nityas Gems and Jewellery
+  Limited); ambiguity is skipped, never guessed. The exchange price must be
+  within 15% of IPOWatch's cap price, and any difference is noted on the card.
+  The same company under two spellings is reported once, keeping the one with a GMP.
+- Formats: whole rupees as `Rs80`, otherwise two decimals (`Rs83.99`); percentages
+  signed, two decimals, half-up, computed by us.
+- `--mode listing` (evening): finds IPOs listing today, **waits up to 30 minutes
+  for NSE to publish the day's file** (it appears well after the close; a file for
+  "today" returns 404 until then), renders and verifies the card
+  (`verify.check_listing`, same strict figure check as the daily image), sends
+  image + text, and saves `ipo-watch-listing-<SYMBOL>.json` so it is never sent
+  twice (`--force` to resend, `--date` to replay). A failed send is not saved,
+  so the next run retries. The daily report's "Recently listed" lines come from
+  those saved files (last 3 days), text only; the image is unchanged (4:5 cap).
+- Replayed on 8 Oct: Nityas Gems issue 75, open 80 (+6.67%), close 83.99 (+4.99%
+  on the day) vs GMP 4.00%; Vishal Nirmiti issue 220, open 215 (-2.27%), close
+  204.25 (-5.00%) vs GMP 9.09%. Across 21 past listings the gap between GMP and
+  the real listing gain was often 10-40 points: the reason this exists.
+- `ipo-watch-listing.yml` is the GitHub workflow (manual-only like the others;
+  planned weekday cron `30 13 * * 1-5` UTC = 7:00 PM IST).
+
+## Photo caption
+
+The photo now carries a compact WhatsApp-ready summary as its caption
+(`report.build_caption`, one line per IPO ranked by GMP %, trimmed to fit
+Telegram's 1024 characters). If Telegram passes the caption on when the photo
+is shared to WhatsApp, one share carries image and summary together. Not yet
+confirmed on the user's phone (ROADMAP A4).
 
 ## WhatsApp text format
 

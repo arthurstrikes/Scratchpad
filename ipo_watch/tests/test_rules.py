@@ -640,3 +640,181 @@ def test_core_fetch_decodes_gzip_pages(monkeypatch):
     monkeypatch.setattr(fetch.urllib.request, "urlopen", fake)
     pg = fetch.fetch_pages(["https://ipowatch.in/x/"])["https://ipowatch.in/x/"]
     assert "zipped" in pg.html and seen["accept"] == "gzip"
+
+
+# --- listing-day scorecard (NSE data), recent listings, photo caption -------
+
+from ipo_watch import listing as L
+
+EQUITY_CSV = (
+    "SYMBOL,NAME OF COMPANY, SERIES, DATE OF LISTING, PAID UP VALUE, MARKET LOT, ISIN NUMBER, FACE VALUE\n"
+    "NITYAS,Nityas Gems and Jewellery Limited,BE,08-OCT-2026,5,1,INE0000000001,5\n"
+    "VNL,Vishal Nirmiti Limited,BE,08-OCT-2026,10,1,INE0000000002,10\n"
+    "LANCER,Lancer Container Lines Limited,EQ,14-OCT-2026,5,1,INE0000000003,5\n"
+    "OLDCO,Old Company Limited,EQ,06-OCT-2008,5,1,INE0000000004,5\n")
+BHAV_CSV = (
+    "SYMBOL, SERIES, DATE1, PREV_CLOSE, OPEN_PRICE, HIGH_PRICE, LOW_PRICE, LAST_PRICE, CLOSE_PRICE, AVG_PRICE, TTL_TRD_QNTY, TURNOVER_LACS, NO_OF_TRADES, DELIV_QTY, DELIV_PER\n"
+    "NITYAS, BE, 08-Oct-2026, 75.00, 80.00, 84.00, 77.00, 84.00, 83.99, 80.94, 7703838, 6235.19, 22306, -, -\n"
+    "VNL, BE, 08-Oct-2026, 220.00, 215.00, 215.00, 204.25, 204.25, 204.25, 213.63, 647931, 1384.15, 4372, -, -\n"
+    "LANCER, EQ, 14-Oct-2026, 10.78, 11.00, 11.50, 10.90, 11.20, 11.11, 11.19, 514886, 57.60, 3205, 177764, 34.52\n")
+LD = date(2026, 10, 8)
+
+
+def _cands():
+    return [L.Candidate("Nityas Gems", date(2026, 10, 5), Decimal("75"), Decimal("3"), Decimal("4.00"), date(2026, 10, 5)),
+            L.Candidate("Vishal Nirmiti", date(2026, 10, 5), Decimal("220"), Decimal("20"), Decimal("9.09"), date(2026, 10, 5))]
+
+
+def _results():
+    eq = L.parse_equity_list(EQUITY_CSV)
+    bh = L.parse_bhav(BHAV_CSV)
+    return L.find_results(_cands(), eq, lambda d: bh)
+
+
+def test_nse_files_parse_despite_padded_headers_and_dashes():
+    eq = L.parse_equity_list(EQUITY_CSV)
+    assert {e["symbol"] for e in eq} >= {"NITYAS", "VNL"} and eq[0]["listing_date"] == LD
+    bh = L.parse_bhav(BHAV_CSV)
+    assert bh["NITYAS"]["prev_close"] == Decimal("75.00") and bh["VNL"]["close"] == Decimal("204.25")
+
+
+def test_listing_maths_matches_the_real_8_oct_results():
+    r = {x.symbol: x for x in _results()}
+    n, v = r["NITYAS"], r["VNL"]
+    assert (n.listing_gain_text, n.day1_text, n.close_vs_issue_text) == ("+6.67%", "+4.99%", "+11.99%")
+    assert (v.listing_gain_text, v.day1_text, v.close_vs_issue_text) == ("-2.27%", "-5.00%", "-7.16%")
+    assert n.gmp_said_text == "₹3 (4.00%)" and n.gap_text == "+2.67 pts"
+    assert v.gap_text == "-11.36 pts"
+    assert n.close_text == "₹83.99" and n.open_text == "₹80" and v.issue_text == "₹220"
+
+
+def test_listing_match_prefers_exact_then_unique_prefix_and_never_guesses():
+    eq = L.parse_equity_list(EQUITY_CSV)
+    assert L.match_symbol(_cands()[1], eq)["symbol"] == "VNL"          # exact after noise words
+    assert L.match_symbol(_cands()[0], eq)["symbol"] == "NITYAS"       # unique prefix
+    two = eq + [{"symbol": "NITYAS2", "name": "Nityas Gems Two Limited", "series": "EQ",
+                 "listing_date": LD}]
+    assert L.match_symbol(_cands()[0], two) is None                    # ambiguous -> skip
+    late = L.Candidate("Vishal Nirmiti", date(2026, 9, 1))
+    assert L.match_symbol(late, eq) is None                            # listed outside the window
+
+
+def test_a_relisting_with_a_very_different_price_is_not_taken_for_the_ipo():
+    eq = L.parse_equity_list(EQUITY_CSV)
+    c = L.Candidate("Lancer Container Lines", date(2026, 10, 12), cap_price=Decimal("100"))
+    bh = L.parse_bhav(BHAV_CSV)
+    assert L.build_result(c, L.match_symbol(c, eq), bh) is None        # 10.78 vs cap 100
+
+
+def test_exchange_price_differing_from_cap_is_used_and_noted():
+    eq = L.parse_equity_list(EQUITY_CSV)
+    c = L.Candidate("Vishal Nirmiti", date(2026, 10, 5), cap_price=Decimal("225"))
+    r = L.build_result(c, L.match_symbol(c, eq), L.parse_bhav(BHAV_CSV))
+    assert r.issue_price == Decimal("220") and "differs from IPOWatch" in r.notes[0]
+
+
+def test_same_company_under_two_spellings_is_reported_once_keeping_the_gmp():
+    eq = L.parse_equity_list(EQUITY_CSV)
+    bh = L.parse_bhav(BHAV_CSV)
+    plain = L.Candidate("Vishal Nirmiti", date(2026, 10, 5), Decimal("220"))
+    rich = L.Candidate("Vishal Nirmiti Ltd", date(2026, 10, 5), Decimal("220"), Decimal("20"), Decimal("9.09"))
+    out = L.find_results([plain, rich], eq, lambda d: bh)
+    assert len(out) == 1 and out[0].last_gmp == Decimal("20")
+
+
+def test_candidates_come_from_our_own_saved_reports(tmp_path):
+    import json
+    def write(day, gmp):
+        (tmp_path / f"ipo-watch-{day}-dataset.json").write_text(json.dumps({
+            "run_date": day,
+            "open": [{"name": "Acme", "close_date": "2026-10-05", "price_max": "100",
+                      "gmp": gmp, "gmp_pct": gmp}],
+            "upcoming": [], "recently_closed_internal": []}))
+    write("2026-10-03", "10"); write("2026-10-05", "12"); write("2026-10-20", "99")   # future: ignored
+    c = L.load_candidates(str(tmp_path), date(2026, 10, 8))
+    assert len(c) == 1 and c[0].last_gmp == Decimal("12") and c[0].cap_price == Decimal("100")
+
+
+def test_listing_card_paints_exactly_the_figures_that_are_verified():
+    import re
+    from ipo_watch.creative import build_listing_html
+    from ipo_watch.verify import check_listing, expected_listing_map
+    res = _results()
+    painted = set(re.findall(r'data-verify="([^"]+)"', build_listing_html(res, LD)))
+    assert painted == set(expected_listing_map(res))
+    assert check_listing(res, dict(expected_listing_map(res))) == []
+    bad = dict(expected_listing_map(res)); bad["l0.gain"] = "+9.99%"
+    assert any(m.key == "l0.gain" for m in check_listing(res, bad))
+
+
+def test_listing_report_text_and_daily_recent_listings_section():
+    from ipo_watch.report import build_listing_report
+    res = _results()
+    txt = build_listing_report(res, LD)
+    assert "*🏁 LISTING DAY SCORECARD*" in txt
+    assert "💰 Issue ₹75 → Listed ₹80 | *+6.67%*" in txt
+    assert "📈 Day 1: Open ₹80 → Close ₹83.99 | *+4.99%*" in txt
+    assert "🎯 GMP said ₹3 (4.00%) | Gap +2.67 pts" in txt
+    ds = build_dataset([], [mk("Acme", Decimal("5"), Decimal("100"))], date(2026, 10, 9))
+    assert "RECENTLY LISTED" not in build_report(ds)
+    ds.recent_listings = res
+    out = build_report(ds)
+    assert "*🏁 RECENTLY LISTED*" in out and "listed 08 Oct" in out
+    assert out.index("RECENTLY LISTED") < out.index("CURRENT GMP RANKING")
+
+
+def _patch_listing_world(monkeypatch, run, sent, polls):
+    from ipo_watch import telegram
+    from ipo_watch.verify import expected_listing_map
+    monkeypatch.setattr(run, "fetch_equities", lambda: L.parse_equity_list(EQUITY_CSV))
+    def text(url):
+        polls.append(url)
+        return None if len(polls) < 3 else BHAV_CSV          # NSE publishes on the 3rd look
+    monkeypatch.setattr(run, "get_text", text)
+    monkeypatch.setattr(run.time, "sleep", lambda s: None)
+    monkeypatch.setattr(run, "render_listing_png", lambda rs, d, path: (path, expected_listing_map(rs)))
+    monkeypatch.setattr(telegram, "configured", lambda: True)
+    monkeypatch.setattr(telegram, "send_report", lambda png, text, caption=None: sent.append((text, caption)))
+
+
+def test_listing_mode_waits_for_nse_sends_once_and_remembers(monkeypatch, tmp_path):
+    import json
+    from ipo_watch import run
+    for day in ("2026-10-03", "2026-10-05"):
+        (tmp_path / f"ipo-watch-{day}-dataset.json").write_text(json.dumps({
+            "run_date": day, "upcoming": [], "recently_closed_internal": [],
+            "open": [{"name": "Vishal Nirmiti", "close_date": "2026-10-05", "price_max": "220",
+                      "gmp": "20", "gmp_pct": "9.09"},
+                     {"name": "Nityas Gems", "close_date": "2026-10-05", "price_max": "75",
+                      "gmp": "3", "gmp_pct": "4.00"}]}))
+    sent, polls = [], []
+    _patch_listing_world(monkeypatch, run, sent, polls)
+    argv = ["--mode", "listing", "--date", "2026-10-08", "--outdir", str(tmp_path)]
+    assert run.main(argv) == 0
+    assert len(polls) == 3 and len(sent) == 1                          # waited, then sent once
+    assert "VISHAL NIRMITI" in sent[0][0] and "Listing scorecard" in sent[0][1]
+    assert (tmp_path / "ipo-watch-listing-VNL.json").exists()
+    assert run.main(argv) == 0 and len(sent) == 1                      # remembered: not sent twice
+    assert run.main(argv + ["--force"]) == 0 and len(sent) == 2        # unless forced
+
+
+def test_listing_mode_is_quiet_when_nothing_lists_today(monkeypatch, tmp_path):
+    from ipo_watch import run
+    sent, polls = [], []
+    _patch_listing_world(monkeypatch, run, sent, polls)
+    assert run.main(["--mode", "listing", "--date", "2026-10-09", "--outdir", str(tmp_path)]) == 0
+    assert sent == [] and polls == []
+
+
+def test_photo_caption_is_compact_ranked_and_within_telegram_limit():
+    from ipo_watch.report import build_caption
+    ipos = [mk(f"Company number {i}", Decimal(i), Decimal("100"), o=date(2026, 10, 13), c=date(2026, 10, 16))
+            for i in range(1, 41)]
+    ds = build_dataset([], ipos, D)
+    cap = build_caption(ds)
+    assert len(cap) <= 1024 and cap.startswith("*📊 IPO Watch | 15 Oct*")
+    assert cap.index("Company number 40") < cap.index("Company number 39")   # ranked by GMP %
+    assert "more in the image" in cap
+    small = build_caption(build_dataset([], [mk("Acme", Decimal("5"), Decimal("100"),
+                                                o=date(2026, 10, 13), c=D)], D))
+    assert "⏰ closes today" in small and "more in the image" not in small
