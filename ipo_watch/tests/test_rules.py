@@ -842,3 +842,40 @@ def test_missing_price_band_has_no_rupee_sign_anywhere():
     assert "₹Not" not in build_report(ds) and "₹Not" not in build_html(ds)
     assert expected_map(ds)["ipo0.price"] == "Not updated"
     assert mk("Has Band", Decimal("5"), Decimal("100")).price_display == "₹1–100"
+
+
+# --- Recently listed strip in the daily image --------------------------------
+
+def _listed(name, symbol, day):
+    return L.ListingResult(name=name, symbol=symbol, series="EQ", listing_date=date(2026, 10, day),
+                           issue_price=Decimal("100"), open_price=Decimal("110"),
+                           close_price=Decimal("104.5"), last_gmp=Decimal("8"),
+                           last_gmp_pct=Decimal("8.00"))
+
+
+def test_image_strip_shows_only_the_last_two_days_newest_first_and_at_most_three():
+    rs = [_listed("A", "A", 13), _listed("B", "B", 14), _listed("C", "C", 15), _listed("D", "D", 15),
+          _listed("Old", "OLD", 11)]
+    got = [r.name for r in L.strip_listings(rs, date(2026, 10, 15))]
+    assert got == ["D", "C", "B"]                     # newest first, cap 3; the 13th is 2 days old but cut by the cap
+    assert [r.name for r in L.strip_listings(rs[:1], date(2026, 10, 15))] == ["A"]
+    assert L.strip_listings([_listed("Old", "OLD", 11)], date(2026, 10, 15)) == []   # 4 days old
+    assert L.strip_listings([], date(2026, 10, 15)) == []
+
+
+def test_strip_figures_are_painted_and_verified_exactly_when_shown():
+    import re
+    from ipo_watch.creative import build_html
+    ds = build_dataset([], [_rich()], D)
+    ds.recent_listings = [_listed("Fresh Listing", "FRESH", 14), _listed("Newer Listing", "NEWER", 15)]
+    keys = lambda html: set(re.findall(r'data-verify="([^"]+)"', html))  # noqa: E731
+    all_rows = keys(build_html(ds, 0))
+    assert all_rows == set(expected_map(ds))
+    assert {"rl0.name", "rl0.date", "rl0.gain", "rl0.day1", "rl0.gmp", "rl1.name"} <= all_rows
+    one_row = keys(build_html(ds, 0, 1))                 # shrunk to fit: only the newest row
+    assert one_row == set(expected_map(ds, 1)) and "rl1.name" not in one_row
+    no_rows = keys(build_html(ds, 0, 0))
+    assert no_rows == set(expected_map(ds, 0)) and not any(k.startswith("rl") for k in no_rows)
+    assert "Recently listed" in build_html(ds, 0) and "Recently listed" not in build_html(ds, 0, 0)
+    bad = dict(expected_map(ds)); bad["rl0.gain"] = "+99.00%"
+    assert any(m.key == "rl0.gain" for m in check(ds, bad))

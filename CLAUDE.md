@@ -462,7 +462,14 @@ open to close.** Also shown: close vs issue, the last GMP we reported
   image + text, and saves `ipo-watch-listing-<SYMBOL>.json` so it is never sent
   twice (`--force` to resend, `--date` to replay). A failed send is not saved,
   so the next run retries. The daily report's "Recently listed" lines come from
-  those saved files (last 3 days), text only; the image is unchanged (4:5 cap).
+  those saved files (last 3 days) in the text. **The daily image also carries a
+  slim "Recently listed · NSE" strip (added 15 Oct at the user's request):** the
+  last 2 days' listings, newest first, up to 3 one-line rows showing listing
+  gain, day 1 and the GMP % we said (exact prices stay in the text and the
+  evening card). `creative.render_png` tries 3 rows -> 2 -> 1 across the density
+  tiers and only drops the strip if even one row cannot fit 4:5 (the log says
+  which); the strip's figures are `data-verify` keys (`rl<i>.*`,
+  `verify.expected_strip_map`), passed through `check(..., strip_rows=n)`.
 - Replayed on 8 Oct: Nityas Gems issue 75, open 80 (+6.67%), close 83.99 (+4.99%
   on the day) vs GMP 4.00%; Vishal Nirmiti issue 220, open 215 (-2.27%), close
   204.25 (-5.00%) vs GMP 9.09%. Across 21 past listings the gap between GMP and

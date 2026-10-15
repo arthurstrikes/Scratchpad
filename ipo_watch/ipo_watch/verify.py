@@ -8,7 +8,9 @@ publishing an image that disagrees with the report.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
+from .listing import strip_listings
 from .merge import Dataset, leader, rank_by_gmp
 
 
@@ -22,7 +24,7 @@ class Mismatch:
         return f"{self.key}: expected {self.expected!r}, image shows {self.actual!r}"
 
 
-def expected_map(ds: Dataset) -> dict[str, str]:
+def expected_map(ds: Dataset, strip_rows: Optional[int] = None) -> dict[str, str]:
     """The single source of truth for what the image must display."""
     out: dict[str, str] = {}
 
@@ -56,6 +58,8 @@ def expected_map(ds: Dataset) -> dict[str, str]:
         out[f"{k}.dates"] = ipo.date_range_text
         out[f"{k}.price"] = ipo.price_display
 
+    out.update(expected_strip_map(strip_listings(ds.recent_listings, ds.run_date)[:strip_rows]))
+
     ranked = rank_by_gmp(ds)
     top_gmp = next((i for i in ranked if i.gmp_pct is not None), None)
     top_ret, top_tot = leader(ds, "retail_sub"), leader(ds, "total_sub")
@@ -75,8 +79,8 @@ def _norm(s: str) -> str:
     return " ".join(str(s).split()).replace("–", "–").replace("—", "–")
 
 
-def check(ds: Dataset, rendered: dict[str, str]) -> list[Mismatch]:
-    exp = expected_map(ds)
+def check(ds: Dataset, rendered: dict[str, str], strip_rows: Optional[int] = None) -> list[Mismatch]:
+    exp = expected_map(ds, strip_rows)
     bad: list[Mismatch] = []
     for key, want in exp.items():
         got = rendered.get(key)
@@ -102,6 +106,18 @@ def expected_listing_map(results: list) -> dict[str, str]:
             out[f"{k}.gmp"] = r.gmp_said_text
         if r.gap_text:
             out[f"{k}.gap"] = r.gap_text
+    return out
+
+
+def expected_strip_map(results: list) -> dict[str, str]:
+    """The slim 'Recently listed' rows in the daily image."""
+    out: dict[str, str] = {}
+    for i, r in enumerate(results):
+        k = f"rl{i}"
+        out.update({f"{k}.name": r.name, f"{k}.date": r.listing_date.strftime("%d %b"),
+                    f"{k}.gain": r.listing_gain_text, f"{k}.day1": r.day1_text})
+        if r.gmp_said_pct_text:
+            out[f"{k}.gmp"] = r.gmp_said_pct_text
     return out
 
 
