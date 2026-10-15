@@ -887,3 +887,17 @@ def test_detail_page_found_via_ipo_details_button_when_slug_differs():
     url = find_detail_url(gmp, "Tonbo Imaging",
                           "https://ipowatch.in/tonbo-imaging-ipo-gmp-grey-market-premium/")
     assert url.endswith("/tonbo-imaging-india-ipo/")
+
+
+def test_missing_minimum_investment_is_flagged_in_data_notes():
+    from ipo_watch.enrich import enrich_dataset
+    from ipo_watch.merge import Dataset
+    a = mk("Alpha Co", Decimal("10"), Decimal("100"))
+    a.gmp_url = "https://ipowatch.in/alpha-co-ipo-gmp-grey-market-premium/"
+    ds = Dataset(open_ipos=[a])
+    gmp = ("<h1>Alpha Co IPO GMP</h1><table><tr><th>Date</th><th>IPO GMP</th></tr></table>"
+           "<a href='/alpha-co-ipo/'>IPO Details</a>")
+    detail = "<h1>Alpha Co IPO Date</h1><table><tr><td>Basis of Allotment:</td><td>October 21, 2026</td></tr></table>"
+    pages = {a.gmp_url: gmp, "https://ipowatch.in/alpha-co-ipo/": detail}
+    enrich_dataset(ds, date(2026, 10, 15), pages.get)
+    assert any("Minimum investment not available for: Alpha Co" in w for w in ds.warnings)

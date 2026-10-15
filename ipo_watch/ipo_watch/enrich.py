@@ -234,6 +234,11 @@ def enrich_dataset(ds: Dataset, today: date, get: Fetcher, workers: int = 1,
             lambda i: enrich_ipo(i, today, get, local.get(norm_key(i.name))), ipos))
     no_trend = [i.name for i, p in zip(ipos, results) if p["trend"]]
     no_detail = [i.name for i, p in zip(ipos, results) if p["detail"]]
+    no_min = [i.name for i, p in zip(ipos, results)
+              if not p["detail"] and i.min_invest is None]
+    if no_min:
+        ds.warnings.append("Minimum investment not available for: " + ", ".join(no_min)
+                           + " (not found on IPOWatch, or did not equal shares x cap price)")
     if no_trend:
         ds.warnings.append("GMP trend not updated for: " + ", ".join(no_trend)
                            + " (IPOWatch page could not be read)")
