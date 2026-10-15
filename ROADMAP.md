@@ -143,7 +143,10 @@ nothing lost on the way:
    If Telegram carries the caption across when you share the photo to WhatsApp
    (I could not verify this from here and it may differ by phone; please test, A4), one long-press -> Share ->
    WhatsApp sends the image **and** the summary together.
-2. **If the caption does not travel:** a small share page (the Web Share button
+   **Tested 15 Oct by the user: the image shares straight to WhatsApp, the caption
+   does NOT travel; the text has to be copied separately (A4 answered).** So step 2
+   below is the live question.
+2. **The caption does not travel:** a small share page (the Web Share button
    sends image + text together to WhatsApp in one tap), linked from the Telegram
    message. It needs a public GitHub Pages page (your OK, and one setting
    click from you). The page would hold only the day's public IPO figures.
