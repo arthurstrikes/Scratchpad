@@ -521,6 +521,12 @@ are not published, so a "Closed - awaiting listing" section needs the user's yes
 where, who) and the GitHub secrets steps. `ROADMAP.md` section 0 says where we
 left off; section 5d is the UI/UX and user-empathy backlog. Keep both current.
 
+**Blocked 18 Oct (go-live paused):** the first real GitHub send failed with HTTP 403 from
+IPOWatch; the browser fallback in `fetch.fetch_pages` then got a reduced page (15
+subscription rows, 0 GMP rows). The run now aborts unless both pages parse. The two
+repository secrets are in and the Telegram path from GitHub works. Do not add the cron
+lines until a dry run on GitHub parses the full pages. The session backup stays the engine.
+
 ## Photo caption
 
 The photo now carries a compact WhatsApp-ready summary as its caption

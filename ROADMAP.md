@@ -20,7 +20,7 @@ interactive session, which runs `python3 -m ipo_watch.run --outdir output` from 
 **Capture the whole run log to a file** (`> /tmp/run.log`) - on 16 Oct the Telegram line was lost by piping to `tail`.
 The 5:00 PM routine is still dead (classifier) and only the user can delete it in the Routines list.
 
-**Waiting on the user:** (1) add the two GitHub secrets, say "done" (A1, step-by-step in `EXPLAINER.md` and chat);
+**GitHub secrets: DONE 18 Oct** (Telegram send from GitHub proven; failure notice arrived). **Go-live is PAUSED**: IPOWatch returned 403 / a reduced page to GitHub's runners on 18 Oct (G24). Re-test with a dry run (`ipo-watch.yml`, `send_telegram` false) on later days; go live only after a dry run parses ~290 subscription rows and the GMP rows. **Waiting on the user:**
 (2) their yes to the open proposals (G17 closed-awaiting-listing section; cash-for-lots, upgrade 4).
 **Then:** dispatch the daily workflow once with `send_telegram` on, confirm arrival, add the cron lines
 (daily `30 11 * * *`, midday `30 8 * * *`, watchdog `55 11 * * *`, listing `30 13 * * 1-5`, weekly `30 12 * * 0`, all UTC),
@@ -94,6 +94,7 @@ UI/UX and user empathy to drive choices; never investment advice.
 | G20 | IPOWatch does not refresh subscription on weekends, so Sat/Sun reports repeat Friday's multiples | Looks fresh, is not | Now visible: the new subscription-change tag reads "no change"; the stamp is in the footer |
 | G21 | I lost the Telegram result line on 16 Oct by piping the run log through `tail` | Could not confirm delivery to the user | Process fix: always save the whole log to a file |
 | G22 | GMP track record rests on only 10 listings with a GMP on record (our reports began 28 Sep) | Small sample | Text states the real count; shown only from 5 upward; grows daily |
+| G24 | **First real GitHub send (18 Oct) failed: IPOWatch answered GitHub's runner with HTTP 403.** The failure notice reached Telegram (so the secrets work). After the browser fallback the page loaded but was a reduced one (15 subscription rows instead of ~290, no GMP rows), and the run still produced a report full of "Not updated" | GitHub cannot be the main engine while IPOWatch treats its runners as bots; and a half-empty report must never be sent | Run now aborts unless **both** pages parse (fix 18 Oct). Browser fallback kept. Retry GitHub dry runs in a day or two; if still blocked, the session backup stays the engine (go-live paused) |
 | G23 | The photo caption does not travel to WhatsApp (tested by the user 15 Oct) | Image and text stay two steps | Answered A4. Options in 5b; caption kept simple |
 | G16 | On 15 Oct IPOWatch's extra pages timed out, so the first GitHub dry run showed "GMP trend: Not updated" for most IPOs | The design degrades honestly, but a real send would look thin | Mitigations shipped (see G13); re-check on the next live run |
 
