@@ -366,6 +366,7 @@ def load_recent_results(directory: str, today: date, days: int = 3) -> list[List
 # ------------------------------------------------------- GMP track record
 
 RECORD_LISTINGS = 25         # the track record looks at the most recent listings
+RECORD_CLOSE_PTS = Decimal("10")   # "close call": listing within this many points of the GMP
 RECORD_MIN_LISTINGS = 5      # nothing is said until this many listings are on record
 RECORD_MIN_WITH_GMP = 5      # the GMP-miss figure needs this many with a GMP on record
 
@@ -395,6 +396,7 @@ class TrackRecord:
     n_gmp: int                          # listings where we had published a GMP
     avg_miss: Optional[Decimal]         # average |listing gain - GMP %|, points
     over: int                           # GMP was higher than the real gain
+    close: int = 0                      # listed within RECORD_CLOSE_PTS points of the GMP
 
     @property
     def title(self) -> str:
@@ -408,25 +410,27 @@ class TrackRecord:
     def day1_text(self) -> Optional[str]:
         return None if self.avg_day1 is None else _signed(self.avg_day1, 1)
     @property
+    def acc_text(self) -> Optional[str]:
+        """'4 of 10': listings that landed within 10 points of the GMP."""
+        return None if self.avg_miss is None else f"{self.close} of {self.n_gmp}"
+    @property
+    def acc_note(self) -> Optional[str]:
+        return None if self.avg_miss is None else f"within {RECORD_CLOSE_PTS} pts of GMP"
+    @property
     def miss_text(self) -> Optional[str]:
         return None if self.avg_miss is None else f"{self.avg_miss} pts"
-    @property
-    def miss_note(self) -> Optional[str]:
-        if self.avg_miss is None:
-            return None
-        return f"{self.n_gmp} with GMP · too high in {self.over}"
 
     def to_dict(self) -> dict:
         s = lambda v: str(v) if v is not None else None  # noqa: E731
         return {"n": self.n, "avg_gain": s(self.avg_gain), "up": self.up,
                 "avg_day1": s(self.avg_day1), "n_gmp": self.n_gmp,
-                "avg_miss": s(self.avg_miss), "over": self.over}
+                "avg_miss": s(self.avg_miss), "over": self.over, "close": self.close}
 
     @classmethod
     def from_dict(cls, d: dict) -> "TrackRecord":
         dec = lambda k: Decimal(d[k]) if d.get(k) is not None else None  # noqa: E731
         return cls(n=d["n"], avg_gain=dec("avg_gain"), up=d["up"], avg_day1=dec("avg_day1"),
-                   n_gmp=d["n_gmp"], avg_miss=dec("avg_miss"), over=d["over"])
+                   n_gmp=d["n_gmp"], avg_miss=dec("avg_miss"), over=d["over"], close=d.get("close", 0))
 
 
 def track_record(results: list, limit: int = RECORD_LISTINGS) -> Optional[TrackRecord]:
@@ -447,7 +451,8 @@ def track_record(results: list, limit: int = RECORD_LISTINGS) -> Optional[TrackR
         up=sum(1 for r in recent if r.listing_gain_pct > 0),
         avg_day1=avg(day1) if day1 else None, n_gmp=len(gap),
         avg_miss=avg([abs(g) for g in gap]) if len(gap) >= RECORD_MIN_WITH_GMP else None,
-        over=sum(1 for g in gap if g < 0))
+        over=sum(1 for g in gap if g < 0),
+        close=sum(1 for g in gap if abs(g) <= RECORD_CLOSE_PTS))
 
 
 def backfill_results(directory: str, today: date, equities: list[dict],

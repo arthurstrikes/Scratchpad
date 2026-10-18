@@ -224,13 +224,15 @@ def _chg_class(text: str) -> str:
     return "up" if text.startswith("▲") else "down" if text.startswith("▼") else "flat"
 
 
-def _retail_field(ipo: IPO, kid: str, today) -> str:
-    chg = ipo.sub_change_text("retail", today)
-    extra = (f'<span class="chg {_chg_class(chg)}" data-verify="{kid}.retail_chg">{_e(chg)}</span>'
+def _sub_field(ipo: IPO, kid: str, which: str) -> str:
+    """Retail or Total with its change since our last report, only when meaningful."""
+    chg = ipo.sub_change_short(which)
+    extra = (f'<span class="chg {_chg_class(chg)}" data-verify="{kid}.{which}_chg">{_e(chg)}</span>'
              if chg else "")
-    cls = "fv na" if ipo.retail_sub is None else "fv"
-    return (f'<span class="f"><span class="fl">Retail</span>'
-            f'<span class="{cls}" data-verify="{kid}.retail">{_e(ipo.retail_text)}</span>{extra}</span>')
+    na = (ipo.retail_sub if which == "retail" else ipo.total_sub) is None
+    return (f'<span class="f"><span class="fl">{which.title()}</span>'
+            f'<span class="{"fv na" if na else "fv"}" data-verify="{kid}.{which}">'
+            f'{_e(ipo.retail_text if which == "retail" else ipo.total_text)}</span>{extra}</span>')
 
 
 def _row(ipo: IPO, idx: int, show_sub: bool, today=None) -> str:
@@ -248,8 +250,8 @@ def _row(ipo: IPO, idx: int, show_sub: bool, today=None) -> str:
         _field("", ipo.price_display, f"{kid}.price", False),
     ]
     if show_sub:
-        fields.append(_retail_field(ipo, kid, today))
-        fields.append(_field("Total", ipo.total_text, f"{kid}.total", ipo.total_sub is None))
+        fields.append(_sub_field(ipo, kid, "retail"))
+        fields.append(_sub_field(ipo, kid, "total"))
     elif ipo.min_invest_text:
         fields.append(_field("", ipo.min_invest_text, f"{kid}.min", False))
 
@@ -281,6 +283,7 @@ def _row(ipo: IPO, idx: int, show_sub: bool, today=None) -> str:
 def _await_row(ipo: IPO, idx: int) -> str:
     k = f"aw{idx}"
     fields = [_field("", f"Closed {ipo.close_date.strftime('%d %b')}", f"{k}.closed", False),
+              _field("Issue", ipo.price_display, f"{k}.price", False),
               _field("Retail", ipo.retail_text, f"{k}.retail", ipo.retail_sub is None),
               _field("Total", ipo.total_text, f"{k}.total", ipo.total_sub is None)]
     dates = []
@@ -315,7 +318,7 @@ def _track_tiles(tr) -> str:
       {tile("Avg listing gain", tr.gain_text, "issue price → first-day open", "trk.gain", sign(tr.gain_text))}
       {tile("Opened above issue", tr.up_text, "listings that gained on day one", "trk.up")}
       {tile("Avg first day", tr.day1_text, "open → close", "trk.day1", sign(tr.day1_text or ""))}
-      {tile("GMP vs reality", tr.miss_text, tr.miss_note or "", "trk.miss") if tr.miss_text else ""}
+      {tile("GMP accuracy", tr.acc_text, tr.acc_note or "", "trk.acc") if tr.acc_text else ""}
     </div>"""
 
 

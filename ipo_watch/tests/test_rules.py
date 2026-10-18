@@ -42,9 +42,10 @@ def test_gmp_pct_display_is_whole_from_ten_up_and_two_decimals_below():
     assert mk("X", Decimal("9996"), Decimal("100000")).gmp_pct_text == "10%"  # 9.996 -> 10.00 -> 10%
 
 
-def test_high_gmp_flag_follows_the_displayed_figure():
-    assert mk("X", Decimal("2540"), Decimal("10000")).is_hot is False   # 25.40 shows "25%"
-    assert mk("X", Decimal("2550"), Decimal("10000")).is_hot is True    # 25.50 shows "26%"
+def test_high_gmp_flag_uses_the_exact_value_not_the_rounded_display():
+    ipo = mk("X", Decimal("2540"), Decimal("10000"))      # 25.40%
+    assert ipo.gmp_pct_text == "25%" and ipo.is_hot is True   # above 25 -> flagged, though shown "25%"
+    assert mk("X", Decimal("2500"), Decimal("10000")).is_hot is False   # exactly 25 is not flagged
 
 
 def test_zero_gmp_renders_zero_not_blank():          # rule 5.7
@@ -949,17 +950,29 @@ def test_urgency_label_only_for_today_and_tomorrow():
     assert mk("U").closes_label(t) is None                            # not Open: no label
 
 
-def test_subscription_change_is_computed_from_our_own_previous_figure():
+def test_subscription_change_shows_only_meaningful_moves():
     t = date(2026, 10, 18)
     up = _open("A", date(2026, 10, 19), Decimal("7.14"), Decimal("5.24"))
     assert up.sub_change_text("retail", t) == "▲ from 5.24x"
+    assert up.sub_change_short("retail") == "▲ 1.9x"
     down = _open("A", date(2026, 10, 19), Decimal("1"), Decimal("2"))
-    assert down.sub_change_text("retail", t) == "▼ from 2x"
-    same = _open("A", date(2026, 10, 19), Decimal("3"), Decimal("3"))
-    assert same.sub_change_text("retail", t) == "▬ no change"
-    assert _open("A", date(2026, 10, 19), Decimal("3")).sub_change_text("retail", t) is None
+    assert down.sub_change_text("retail", t) == "▼ from 2x" and down.sub_change_short("retail") == "▼ 1x"
+    # noise is hidden: under 0.1x, or under 5% of the earlier figure, or unchanged
+    assert _open("A", date(2026, 10, 19), Decimal("0.37"), Decimal("0.31")).sub_change_text("retail", t) is None
+    assert _open("A", date(2026, 10, 19), Decimal("131.73"), Decimal("130.88")).sub_change_short("retail") is None
+    assert _open("A", date(2026, 10, 19), Decimal("3"), Decimal("3")).sub_change_text("retail", t) is None
+    assert _open("A", date(2026, 10, 19), Decimal("3")).sub_change_text("retail", t) is None   # no earlier figure
     old = _open("A", date(2026, 10, 19), Decimal("3"), Decimal("2"), prev_date=date(2026, 10, 15))
     assert old.sub_change_text("retail", t) == "▲ from 2x on 15 Oct"
+
+
+def test_total_subscription_gets_the_same_meaningful_change_rule():
+    t = date(2026, 10, 18)
+    i = _open("A", date(2026, 10, 19), Decimal("3"))
+    i.total_sub, i.prev_total, i.prev_total_date = Decimal("9"), Decimal("6"), date(2026, 10, 17)
+    assert i.sub_change_text("total", t) == "▲ from 6x" and i.sub_change_short("total") == "▲ 3x"
+    i.total_sub = Decimal("6.05")
+    assert i.sub_change_short("total") is None
 
 
 def test_weekend_keeps_showing_the_last_move(tmp_path):
@@ -1005,7 +1018,7 @@ def test_track_record_averages_the_latest_25_listings():
     tr = track_record(rs)
     assert tr.n == 25 and tr.title == "GMP track record · last 25 listings"
     assert (tr.gain_text, tr.up_text, tr.day1_text) == ("+10.0%", "25 of 25", "-10.0%")
-    assert (tr.miss_text, tr.miss_note) == ("10.0 pts", "25 with GMP · too high in 25")
+    assert (tr.miss_text, tr.acc_text, tr.acc_note) == ("10.0 pts", "25 of 25", "within 10 pts of GMP")
 
 
 def test_track_record_needs_enough_listings_and_gmp_miss_needs_enough_gmps():

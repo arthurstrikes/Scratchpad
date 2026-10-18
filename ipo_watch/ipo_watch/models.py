@@ -151,8 +151,9 @@ class IPO:
     @property
     def is_hot(self) -> bool:
         pct = self.gmp_pct
-        # Judged on the figure the reader sees, so "26%" is flagged and "25%" is not.
-        return pct is not None and pct_shown(pct) > Decimal(str(GMP_HIGHLIGHT_THRESHOLD_PCT))
+        # Judged on the exact computed GMP %, not the rounded display: 25.4% is
+        # above 25% and is flagged even though it is shown as "25%".
+        return pct is not None and pct > Decimal(str(GMP_HIGHLIGHT_THRESHOLD_PCT))
 
     # ---------- display helpers ----------
 
@@ -202,21 +203,39 @@ class IPO:
             return NOT_VERIFIED if which in self.unverified_fields else NOT_UPDATED
         return f"{_num(val)}x"
 
-    def sub_change_text(self, which: str, today: Optional[date]) -> Optional[str]:
-        """'▲ from 5.24x' - subscription against our previous report. None when
-        either figure is missing (never guessed). A date is added when the
-        previous report was not yesterday's."""
+    def sub_delta(self, which: str) -> Optional[Decimal]:
+        """Change in subscription against our earlier report, only when it is
+        worth a reader's attention: at least 0.1x AND at least 5% of the earlier
+        figure. Smaller moves are noise and show nothing. None when either
+        figure is missing (never guessed)."""
         now = self.retail_sub if which == "retail" else self.total_sub
         was = self.prev_retail if which == "retail" else self.prev_total
-        when = self.prev_retail_date if which == "retail" else self.prev_total_date
         if now is None or was is None:
             return None
-        if now == was:
-            return "▬ no change"
-        text = f"{'▲' if now > was else '▼'} from {_num(was)}x"
+        delta = now - was
+        if abs(delta) < SUB_MIN_ABS or (was != 0 and abs(delta) / was < SUB_MIN_REL):
+            return None
+        return delta
+
+    def sub_change_text(self, which: str, today: Optional[date]) -> Optional[str]:
+        """'▲ from 5.24x' (text report). A date is added when the earlier
+        report was not yesterday's."""
+        delta = self.sub_delta(which)
+        if delta is None:
+            return None
+        now = self.retail_sub if which == "retail" else self.total_sub
+        when = self.prev_retail_date if which == "retail" else self.prev_total_date
+        text = f"{'▲' if delta > 0 else '▼'} from {_num(now - delta)}x"
         if when and today and (today - when).days > 1:
             text += f" on {_d(when)}"
         return text
+
+    def sub_change_short(self, which: str) -> Optional[str]:
+        """'▲ 1.9x' - the same move, compact, for the image."""
+        delta = self.sub_delta(which)
+        if delta is None:
+            return None
+        return f"{'▲' if delta > 0 else '▼'} {_num(abs(delta))}x"
 
     def closes_label(self, today: Optional[date]) -> Optional[str]:
         """'Closes today' / 'Closes tomorrow' for an open IPO; nothing further out."""
@@ -234,6 +253,10 @@ class IPO:
     @property
     def total_text(self) -> str:
         return self.sub_text("total")
+
+
+SUB_MIN_ABS = Decimal("0.1")     # smallest subscription move worth showing, in times (x)
+SUB_MIN_REL = Decimal("0.05")    # ...and as a share of the earlier figure
 
 
 def pct_shown(p: Decimal) -> Decimal:
