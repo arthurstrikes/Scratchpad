@@ -1012,3 +1012,21 @@ def test_weekly_wrap_lists_this_weeks_listings_and_what_is_coming():
     assert "GMP track record, x." in text
     assert "None of the IPOs we covered listed this week." in build_weekly_report(
         date(2026, 10, 18), [], None, None)
+
+
+def test_a_403_from_ipowatch_falls_back_to_a_real_browser(monkeypatch):
+    import urllib.error
+    from ipo_watch import fetch
+    calls = {"browser": 0}
+
+    def deny(*a, **k):
+        raise urllib.error.HTTPError("https://ipowatch.in/x/", 403, "Forbidden", {}, None)
+
+    def browser(urls, snapshot_dir=None):
+        calls["browser"] += 1
+        return {u: fetch.Page(url=u, html="<table></table>", fetched_at=fetch.datetime.now()) for u in urls}
+
+    monkeypatch.setattr(fetch.urllib.request, "urlopen", deny)
+    monkeypatch.setattr(fetch, "render_pages", browser)
+    got = fetch.fetch_pages(["https://ipowatch.in/x/"], attempts=4)
+    assert calls["browser"] == 1 and "<table" in got["https://ipowatch.in/x/"].html
