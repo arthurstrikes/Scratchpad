@@ -84,7 +84,7 @@ A **secret** is a password-like value GitHub keeps hidden. The robot needs two
 so it can send to *your* Telegram:
 
 1. `TELEGRAM_BOT_TOKEN`: the bot's key. You get it from **@BotFather** on Telegram (the same one already used for the daily report).
-2. `TELEGRAM_CHAT_ID`: your chat number, `8521825324`.
+2. `TELEGRAM_CHAT_ID`: your own Telegram chat number (Claude will tell you it in the chat).
 
 **Steps (phone browser or computer):**
 
@@ -93,7 +93,7 @@ so it can send to *your* Telegram:
 3. On the left (or in the menu) choose **Secrets and variables**, then **Actions**.
 4. Tap **New repository secret**.
 5. Name: `TELEGRAM_BOT_TOKEN`. Secret: paste the token. Tap **Add secret**.
-6. Tap **New repository secret** again. Name: `TELEGRAM_CHAT_ID`. Secret: `8521825324`. Tap **Add secret**.
+6. Tap **New repository secret** again. Name: `TELEGRAM_CHAT_ID`. Secret: your chat number. Tap **Add secret**.
 7. Tell Claude "done". **Do not paste the token into the chat.** Claude never needs to see it.
 
 If you do not have the token any more: in Telegram, message **@BotFather**, send `/mybots`, choose your bot, then **API Token**.
