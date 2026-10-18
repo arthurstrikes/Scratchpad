@@ -34,12 +34,13 @@ def expected_map(ds: Dataset, strip_rows: Optional[int] = None) -> dict[str, str
         out["trk.gain"], out["trk.up"] = tr.gain_text, tr.up_text
         if tr.day1_text:
             out["trk.day1"] = tr.day1_text
-        if tr.miss_text:
-            out["trk.miss"] = tr.miss_text
+        if tr.acc_text:
+            out["trk.acc"] = tr.acc_text
     for n, ipo in enumerate(ds.awaiting):
         k = f"aw{n}"
         out.update({f"{k}.name": ipo.name, f"{k}.gmppct": ipo.gmp_pct_text, f"{k}.gmp": ipo.gmp_text,
                     f"{k}.closed": f"Closed {ipo.close_date.strftime('%d %b')}",
+                    f"{k}.price": ipo.price_display,
                     f"{k}.retail": ipo.retail_text, f"{k}.total": ipo.total_text})
         if ipo.allotment_text:
             out[f"{k}.allot"] = ipo.allotment_text
@@ -53,9 +54,10 @@ def expected_map(ds: Dataset, strip_rows: Optional[int] = None) -> dict[str, str
         if ipo.min_invest_text:
             out[f"{k}.min"] = ipo.min_invest_text
         if is_open:
-            chg = ipo.sub_change_text("retail", ds.run_date)
-            if chg:
-                out[f"{k}.retail_chg"] = chg
+            for which in ("retail", "total"):
+                chg = ipo.sub_change_short(which)
+                if chg:
+                    out[f"{k}.{which}_chg"] = chg
             closes = ipo.closes_label(ds.run_date)
             if closes:
                 out[f"{k}.closes"] = closes

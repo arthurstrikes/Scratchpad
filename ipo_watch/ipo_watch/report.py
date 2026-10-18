@@ -133,7 +133,7 @@ def _awaiting(ds: Dataset) -> str:
     L = [f"*🕓 CLOSED, AWAITING LISTING* (GMP above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%)", ""]
     for ipo in ds.awaiting:
         L += [_title(ipo),
-              f"📅 Closed {_d(ipo.close_date)}",
+              f"📅 Closed {_d(ipo.close_date)} | 💰 Issue price: {ipo.price_display}",
               f"👥 Final subscription: Retail {ipo.retail_text} | Total {ipo.total_text}",
               f"🟢 GMP: {ipo.gmp_text} | *{ipo.gmp_pct_text}*",
               f"🗓️ Allotment: {ipo.allotment_text or NOT_UPDATED} | Listing: {ipo.listing_text or NOT_UPDATED}",
@@ -148,8 +148,9 @@ def track_block(tr) -> str:
          f"✅ Opened above issue price: *{tr.up_text}*"]
     if tr.day1_text:
         L.append(f"🕘 Average first day (open to close): *{tr.day1_text}*")
-    if tr.miss_text:
-        L.append(f"🎯 GMP vs reality: off by *{tr.miss_text}* on average ({tr.miss_note})")
+    if tr.acc_text:
+        L.append(f"🎯 GMP accuracy: listed within {tr.acc_note.split()[1]} points of GMP in "
+                 f"*{tr.acc_text}* (average miss {tr.miss_text}; GMP was too high in {tr.over})")
     L.append("_Listing gain = issue price to first-day open, from NSE._")
     return "\n".join(L)
 

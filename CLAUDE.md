@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (87 at 18 Oct 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (88 at 18 Oct 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -299,8 +299,9 @@ These come from the user and are enforced by tests in `tests/test_rules.py`:
 - **GMP % is always computed** as `GMP / upper price band * 100`, half-up to
   2dp. Never copy IPOWatch's "estimated listing gain". **Display (user's request,
   18 Oct 2026): shown as a whole number from 10% up (`75%`), two decimals below 10
-  (`4.36%`)** via `models.pct_display`; the High GMP flag follows the displayed
-  figure (25.4% shows "25%" and is not flagged). Listing-scorecard percentages
+  (`4.36%`)** via `models.pct_display`; the High GMP flag uses the **exact**
+  value, not the rounded display (25.4% is above 25%, so it is flagged even though it
+  shows "25%"; user's call, 18 Oct). Listing-scorecard percentages
   and the gap in points keep two decimals (they are arithmetic evidence).
 - Missing number -> `Not updated`. Present but unusable -> `Not verified`.
   GMP of zero -> `0.00%`, never blank.
@@ -527,7 +528,7 @@ are not published, so a "Closed - awaiting listing" section needs the user's yes
 above); (b) urgency tags are **only for IPOs closing today or tomorrow** and use a
 filled amber pill (solid = today, soft = tomorrow), deliberately unlike the outlined
 orange High GMP tag; the "N days left" label was dropped; (c) **weekend / stale
-subscription:** the change baseline is the latest earlier figure that *differs* from
+subscription** (the "no change" wording below was replaced by the meaningful-move rule): the change baseline is the latest earlier figure that *differs* from
 today's (`enrich.attach_prev_subscription`), so Sat/Sun keep showing Friday's move
 ("▲ from 5.24x on 16 Oct") instead of "no change"; (d) **GMP track record** is now
 a scoreboard (`listing.TrackRecord`: average listing gain, opened above issue, average
@@ -537,6 +538,17 @@ via `--mode backfill`, which also tops up from Mainboard IPOs on IPOWatch's
 subscription page that closed before our reports began (those have NSE prices but no
 GMP on record, so they count in the averages, not in the GMP-vs-reality figure);
 (e) the awaiting-listing section above. Image keys: `aw<i>.*`, `trk.*`.
+
+**Second revision, 18 Oct (user feedback, later the same evening):** (1) the High GMP
+flag is on the exact value (above); (2) **subscription change is shown only when it is
+meaningful** - at least 0.1x *and* at least 5% of the earlier figure (`models.SUB_MIN_ABS`,
+`SUB_MIN_REL`, `IPO.sub_delta`); smaller moves, and "no change", show nothing; the rule
+applies to **both Retail and Total**; the image shows the size of the move ("▲ 1.9x",
+keys `ipoN.retail_chg`/`ipoN.total_chg`), the text shows "▲ from 5.24x" (plus "on 16 Oct"
+if the earlier report was not yesterday's); (3) the track record's fourth tile is now
+**GMP accuracy** ("5 of 10 - within 10 pts of GMP", `TrackRecord.close`, key `trk.acc`)
+instead of the abstract average gap; the average miss and "GMP too high in N" stay in the
+text; (4) the awaiting-listing rows show the **issue price** (`aw<i>.price`).
 
 ## Plain-language guide and living plan
 
