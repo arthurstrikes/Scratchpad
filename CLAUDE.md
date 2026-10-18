@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (82 at 18 Oct 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (87 at 18 Oct 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -291,9 +291,17 @@ These come from the user and are enforced by tests in `tests/test_rules.py`:
   **One deliberate exception, added 15 Oct 2026 at the user's request:** the
   *listing result* of an IPO we reported on (from NSE, see "Listing scorecard")
   is published, in the daily "Recently listed" lines and the evening scorecard.
+  **Second exception, 18 Oct 2026 (user: "only for IPOs which closed with GMP above
+  25%"):** a **"Closed - awaiting listing"** section shows closed, not-yet-listed
+  Mainboard IPOs whose GMP is above the High GMP line, with final subscription,
+  GMP and allotment/listing dates (`enrich.find_awaiting`, `Dataset.awaiting`).
 - **QIB and NII are never shown.** The parser drops those columns.
 - **GMP % is always computed** as `GMP / upper price band * 100`, half-up to
-  2dp. Never copy IPOWatch's "estimated listing gain".
+  2dp. Never copy IPOWatch's "estimated listing gain". **Display (user's request,
+  18 Oct 2026): shown as a whole number from 10% up (`75%`), two decimals below 10
+  (`4.36%`)** via `models.pct_display`; the High GMP flag follows the displayed
+  figure (25.4% shows "25%" and is not flagged). Listing-scorecard percentages
+  and the gap in points keep two decimals (they are arithmetic evidence).
 - Missing number -> `Not updated`. Present but unusable -> `Not verified`.
   GMP of zero -> `0.00%`, never blank.
 - Subscription and GMP timestamps are tracked and displayed **separately**.
@@ -514,6 +522,21 @@ falling back to IPOWatch's row only for days we have no report.
 **Known gap (G17, ask the user):** an IPO that has closed but not yet listed
 (HD Fire Protect, 15-20 Oct) is in no report in between. Rule 1 says closed IPOs
 are not published, so a "Closed - awaiting listing" section needs the user's yes.
+
+**Revised 18 Oct (user feedback, same evening):** (a) GMP % displayed rounded (rule
+above); (b) urgency tags are **only for IPOs closing today or tomorrow** and use a
+filled amber pill (solid = today, soft = tomorrow), deliberately unlike the outlined
+orange High GMP tag; the "N days left" label was dropped; (c) **weekend / stale
+subscription:** the change baseline is the latest earlier figure that *differs* from
+today's (`enrich.attach_prev_subscription`), so Sat/Sun keep showing Friday's move
+("▲ from 5.24x on 16 Oct") instead of "no change"; (d) **GMP track record** is now
+a scoreboard (`listing.TrackRecord`: average listing gain, opened above issue, average
+first day, GMP-vs-reality in points with how many had a GMP) over the last 25
+listings, in the text and as four tiles in the image (`trk.*` keys). It reached 25
+via `--mode backfill`, which also tops up from Mainboard IPOs on IPOWatch's
+subscription page that closed before our reports began (those have NSE prices but no
+GMP on record, so they count in the averages, not in the GMP-vs-reality figure);
+(e) the awaiting-listing section above. Image keys: `aw<i>.*`, `trk.*`.
 
 ## Plain-language guide and living plan
 

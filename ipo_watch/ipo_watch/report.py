@@ -70,6 +70,8 @@ def glance_text(ds: Dataset) -> str:
     else:
         parts.append("none open")
     parts.append(f"{n_up} upcoming" if n_up else "none upcoming")
+    if ds.awaiting:
+        parts.append(f"{len(ds.awaiting)} awaiting listing")
     hot = sum(1 for i in ds.published if i.is_hot)
     parts.append(f"{hot} above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}% GMP" if hot
                  else f"none above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}% GMP")
@@ -111,13 +113,45 @@ def build_report(ds: Dataset) -> str:
     else:
         L += ["No Mainboard IPOs are scheduled yet.", ""]
 
+    if ds.awaiting:
+        L.append(_awaiting(ds))
+        L.append("")
     if ds.recent_listings:
         L.append(_recent_listings(ds))
         L.append("")
     L.append(_ranking(ds))
     L.append("")
+    if ds.track_record:
+        L.append(track_block(ds.track_record))
+        L.append("")
     L.append(_footer(ds))
     return "\n".join(L).rstrip() + "\n"
+
+
+def _awaiting(ds: Dataset) -> str:
+    """Closed IPOs with a High GMP that have not listed yet (user's rule, 18 Oct)."""
+    L = [f"*🕓 CLOSED, AWAITING LISTING* (GMP above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%)", ""]
+    for ipo in ds.awaiting:
+        L += [_title(ipo),
+              f"📅 Closed {_d(ipo.close_date)}",
+              f"👥 Final subscription: Retail {ipo.retail_text} | Total {ipo.total_text}",
+              f"🟢 GMP: {ipo.gmp_text} | *{ipo.gmp_pct_text}*",
+              f"🗓️ Allotment: {ipo.allotment_text or NOT_UPDATED} | Listing: {ipo.listing_text or NOT_UPDATED}",
+              ""]
+    return "\n".join(L).rstrip()
+
+
+def track_block(tr) -> str:
+    """The GMP track record as a small scoreboard (also drawn in the image)."""
+    L = [f"*📊 {tr.title.upper()}*", "",
+         f"📈 Average listing gain: *{tr.gain_text}*",
+         f"✅ Opened above issue price: *{tr.up_text}*"]
+    if tr.day1_text:
+        L.append(f"🕘 Average first day (open to close): *{tr.day1_text}*")
+    if tr.miss_text:
+        L.append(f"🎯 GMP vs reality: off by *{tr.miss_text}* on average ({tr.miss_note})")
+    L.append("_Listing gain = issue price to first-day open, from NSE._")
+    return "\n".join(L)
 
 
 def _ranking(ds: Dataset) -> str:
@@ -158,8 +192,6 @@ def _footer(ds: Dataset) -> str:
         "⚠️ _GMP is unofficial and can change before listing._",
         f"Source: {SOURCE_NAME}",
     ]
-    if ds.track_record:
-        L.append(f"🎯 _{ds.track_record}_")
     stamps = []
     if ds.subscription_timestamp:
         stamps.append(f"Subscription data: {ds.subscription_timestamp}")
@@ -254,6 +286,8 @@ def _coming_line(ipo: IPO) -> str:
     bits = []
     if ipo.status.value == "Open":
         bits.append(f"bidding closes {_d(ipo.close_date)}" if ipo.close_date else "bidding open")
+    elif ipo.status.value == "Closed":
+        bits.append(f"closed {_d(ipo.close_date)}")
     else:
         bits.append(f"opens {_d(ipo.open_date)}" if ipo.open_date else "dates awaited")
         if ipo.close_date:
@@ -283,17 +317,18 @@ def build_weekly_report(week_end: date, listed: list, ds: Optional[Dataset],
         L.append("None of the IPOs we covered listed this week.")
     L.append("")
     L.append("*🔜 COMING UP*")
-    if ds is not None and ds.published:
+    coming = (ds.published + ds.awaiting) if ds is not None else []
+    if coming:
         when = ds.run_date.strftime("%d %b") if ds.run_date else ""
         L.append(f"_From our {when} update._")
         L.append("")
-        for ipo in ds.published:
+        for ipo in coming:
             L.append(_coming_line(ipo))
     else:
         L += ["", "Nothing open or announced in our latest update."]
     L.append("")
     if track:
-        L.append(f"🎯 _{track}_")
+        L += [track_block(track), ""]
     L += ["⚠️ _GMP is unofficial and can change before listing._",
           f"Source: NSE (prices), {SOURCE_NAME} (GMP and dates)"]
     return "\n".join(L) + "\n"
