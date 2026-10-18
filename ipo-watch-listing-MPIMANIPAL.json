@@ -1,0 +1,14 @@
+{
+  "name": "Manipal Payment",
+  "symbol": "MPIMANIPAL",
+  "series": "EQ",
+  "listing_date": "2026-09-17",
+  "issue_price": "339.00",
+  "open_price": "330.00",
+  "close_price": "345.15",
+  "cap_price": null,
+  "last_gmp": null,
+  "last_gmp_pct": null,
+  "last_gmp_date": null,
+  "notes": []
+}
