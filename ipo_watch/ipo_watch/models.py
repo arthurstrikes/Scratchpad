@@ -109,6 +109,11 @@ class IPO:
     allotment_date: Optional[date] = None
     listing_date: Optional[date] = None
 
+    # Subscription as shown in our own previous report (enrich.attach_prev_subscription).
+    prev_retail: Optional[Decimal] = None
+    prev_total: Optional[Decimal] = None
+    prev_sub_date: Optional[date] = None
+
     prov: Provenance = field(default_factory=Provenance)
     # Set when a value existed but failed verification (rule 5.10).
     unverified_fields: set[str] = field(default_factory=set)
@@ -192,6 +197,31 @@ class IPO:
         if val is None:
             return NOT_VERIFIED if which in self.unverified_fields else NOT_UPDATED
         return f"{_num(val)}x"
+
+    def sub_change_text(self, which: str, today: Optional[date]) -> Optional[str]:
+        """'▲ from 5.24x' - subscription against our previous report. None when
+        either figure is missing (never guessed). A date is added when the
+        previous report was not yesterday's."""
+        now = self.retail_sub if which == "retail" else self.total_sub
+        was = self.prev_retail if which == "retail" else self.prev_total
+        if now is None or was is None:
+            return None
+        if now == was:
+            text = "▬ no change"
+        else:
+            text = f"{'▲' if now > was else '▼'} from {_num(was)}x"
+        if self.prev_sub_date and today and (today - self.prev_sub_date).days > 1:
+            text += f" (as on {_d(self.prev_sub_date)})"
+        return text
+
+    def closes_label(self, today: Optional[date]) -> Optional[str]:
+        """'Closes today' / 'Closes tomorrow' / '3 days left' for an open IPO."""
+        if self.status != Status.OPEN or not self.close_date or not today:
+            return None
+        n = (self.close_date - today).days
+        if n < 0:
+            return None
+        return "Closes today" if n == 0 else "Closes tomorrow" if n == 1 else f"{n} days left"
 
     @property
     def retail_text(self) -> str:

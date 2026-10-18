@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (68 at 15 Oct 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (82 at 18 Oct 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -24,6 +24,13 @@ python3 -m pytest tests/ -q              # rule + behaviour tests (68 at 15 Oct 
 today; prints "nothing to send" and exits 0 on any other day). `--fail-on-telegram-error`
 makes a failed Telegram delivery exit 3 instead of only being logged (used by
 the GitHub workflows so a failure is visible).
+
+More modes (added 18 Oct): `--mode weekly` is the Sunday wrap (text only: this week's
+listings vs the GMP we reported, plus what is open or upcoming, plus the track
+record); `--mode backfill` saves a result for every past listing of an IPO we
+reported (sends nothing) so the GMP track record has data. **Always redirect the
+daily run's whole log to a file** (`> /tmp/run.log 2>&1`) - on 16 Oct the Telegram
+result line was lost by piping through `tail`.
 
 Chromium is preinstalled at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`;
 `config.CHROMIUM_PATH` points there and `IPOWATCH_CHROMIUM` overrides it.
@@ -477,13 +484,51 @@ open to close.** Also shown: close vs issue, the last GMP we reported
 - `ipo-watch-listing.yml` is the GitHub workflow (manual-only like the others;
   planned weekday cron `30 13 * * 1-5` UTC = 7:00 PM IST).
 
+## Decision aids and the weekly wrap (added 18 Oct 2026)
+
+The user approved "all" of: (1) **closing tag** - `IPO.closes_label(today)` gives
+"Closes today / Closes tomorrow / N days left" for open IPOs, shown in the text
+date line and as a chip in the image (`ipoN.closes`); (2) **glance line** -
+`report.glance_text(ds)`, counts only ("4 open (4 close tomorrow) · 2 upcoming ·
+1 above 25% GMP"), top of the text and under the image band (`glance`);
+(3) **subscription change** - `IPO.sub_change_text()` compares retail/total with
+our own previous report (`enrich.attach_prev_subscription`, stored as
+`prev_retail/prev_total/prev_sub_date` in the dataset JSON); text shows both,
+the image shows retail (`ipoN.retail_chg`); "▬ no change" appears on stale days
+(IPOWatch does not refresh on weekends); (5) **GMP track record** -
+`listing.track_record_text()` over the most recent **25** listings, counting only
+those with a GMP we reported; needs at least 5, else it says nothing; gap =
+listing gain minus GMP %, so negative = GMP was higher than reality; shown in the
+text footer and the image footer (`track`); (6) **weekly wrap** -
+`report.build_weekly_report`, `--mode weekly`, `ipo-watch-weekly.yml` (manual-only,
+planned cron `30 12 * * 0`). Upgrade 4 (cash for 1-3 lots) was not requested.
+All painted figures are `data-verify` keys covered by `verify.expected_map`.
+The track record reads `ipo-watch-listing-<SYMBOL>.json` files (from the evening
+scorecard or `--mode backfill`); they also live on the `history` branch.
+
+**Trend baseline changed 18 Oct (user: yes):** IPOWatch revises old rows of its own
+per-IPO GMP table after we publish, so "vs yesterday" now uses the figure *we*
+published for any day we have a report for (`enrich.overlay_published`),
+falling back to IPOWatch's row only for days we have no report.
+
+**Known gap (G17, ask the user):** an IPO that has closed but not yet listed
+(HD Fire Protect, 15-20 Oct) is in no report in between. Rule 1 says closed IPOs
+are not published, so a "Closed - awaiting listing" section needs the user's yes.
+
+## Plain-language guide and living plan
+
+`EXPLAINER.md` explains the whole project in simple words (what, why, how, when,
+where, who) and the GitHub secrets steps. `ROADMAP.md` section 0 says where we
+left off; section 5d is the UI/UX and user-empathy backlog. Keep both current.
+
 ## Photo caption
 
 The photo now carries a compact WhatsApp-ready summary as its caption
 (`report.build_caption`, one line per IPO ranked by GMP %, trimmed to fit
-Telegram's 1024 characters). If Telegram passes the caption on when the photo
-is shared to WhatsApp, one share carries image and summary together. Not yet
-confirmed on the user's phone (ROADMAP A4).
+Telegram's 1024 characters). **Tested by the user 15 Oct: the image shares
+straight to WhatsApp but the caption does NOT come along; the text has to be
+copied separately** (ROADMAP A4 answered). The caption is therefore only a
+convenience inside Telegram.
 
 ## WhatsApp text format
 

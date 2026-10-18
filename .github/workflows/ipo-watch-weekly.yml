@@ -1,0 +1,67 @@
+# Sunday wrap: what listed this week (NSE prices next to the GMP we reported)
+# and what is open or upcoming. Text only, no browser needed.
+#
+# Manual-only for now (workflow_dispatch). The Sunday schedule (planned
+# `30 12 * * 0` UTC = 6:00 PM IST) is added in a separate, deliberate change
+# once the Telegram secrets are in place and one manual run has been confirmed.
+#
+# Secrets (repo Settings > Secrets and variables > Actions):
+#   TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+name: IPO Watch weekly wrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      send_telegram:
+        description: "Send to Telegram (needs the two secrets)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ipo-watch-weekly
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ipo_watch/requirements.txt
+
+      - name: Restore earlier reports and listing results
+        continue-on-error: true
+        run: |
+          mkdir -p ipo_watch/output
+          if git ls-remote --exit-code --heads origin history >/dev/null 2>&1; then
+            git fetch -q --depth=1 origin history
+            git archive FETCH_HEAD | tar -x -C ipo_watch/output
+          fi
+
+      - name: Install dependencies
+        working-directory: ipo_watch
+        run: pip install -r requirements.txt
+
+      - name: Run the weekly wrap
+        working-directory: ipo_watch
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ (github.event_name != 'workflow_dispatch' || inputs.send_telegram) && secrets.TELEGRAM_BOT_TOKEN || '' }}
+          TELEGRAM_CHAT_ID: ${{ (github.event_name != 'workflow_dispatch' || inputs.send_telegram) && secrets.TELEGRAM_CHAT_ID || '' }}
+        run: python -m ipo_watch.run --mode weekly --outdir output --fail-on-telegram-error
+
+      - name: Keep the output for inspection
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipo-watch-weekly-output
+          path: ipo_watch/output/ipo-watch-*-weekly.txt
+          retention-days: 14
+          if-no-files-found: ignore

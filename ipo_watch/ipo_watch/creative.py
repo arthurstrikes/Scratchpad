@@ -22,6 +22,7 @@ from .config import CHROMIUM_PATH, GMP_HIGHLIGHT_THRESHOLD_PCT, SOURCE_NAME
 from .fonts import DISPLAY_STACK, FONT_STACK, font_face_css
 from .listing import strip_listings
 from .merge import Dataset, rank_by_gmp
+from .report import glance_text
 from .models import IPO
 
 CARD_W = 1080
@@ -99,6 +100,12 @@ main{{padding:4px 40px 0}}
 .row.hot{{border-left-color:var(--brand)}}
 .nmrow{{display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-width:0}}
 .nm{{font-size:var(--nm);font-weight:700;line-height:1.15;letter-spacing:.2px}}
+.flag.close{{color:var(--ink-2)}}
+.flag.close.soon{{color:var(--brand);background:var(--brand-soft)}}
+.chg{{font-size:calc(var(--sub) - 3px);font-weight:700;white-space:nowrap}}
+.chg.up{{color:var(--good)}} .chg.down{{color:var(--bad)}} .chg.flat{{color:var(--ink-3)}}
+.glance{{font-size:20px;font-weight:500;color:var(--ink-2);padding:14px 2px 0;letter-spacing:.2px}}
+.track{{font-size:15px;color:var(--ink-3);line-height:1.5;margin-bottom:10px;font-style:italic}}
 .flag{{font-size:12.5px;font-weight:700;letter-spacing:2.6px;text-transform:uppercase;
       color:var(--brand);border:1.5px solid currentColor;border-radius:3px;padding:5px 7px 4px}}
 .sub{{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 0;margin-top:5px;
@@ -200,18 +207,35 @@ def _trend_chip(ipo: IPO, kid: str) -> str:
     return f'<span class="tr {cls}" data-verify="{kid}.trend">{_e(text)}</span>'
 
 
-def _row(ipo: IPO, idx: int, show_sub: bool) -> str:
+def _chg_class(text: str) -> str:
+    return "up" if text.startswith("▲") else "down" if text.startswith("▼") else "flat"
+
+
+def _retail_field(ipo: IPO, kid: str, today) -> str:
+    chg = ipo.sub_change_text("retail", today)
+    extra = (f'<span class="chg {_chg_class(chg)}" data-verify="{kid}.retail_chg">{_e(chg)}</span>'
+             if chg else "")
+    cls = "fv na" if ipo.retail_sub is None else "fv"
+    return (f'<span class="f"><span class="fl">Retail</span>'
+            f'<span class="{cls}" data-verify="{kid}.retail">{_e(ipo.retail_text)}</span>{extra}</span>')
+
+
+def _row(ipo: IPO, idx: int, show_sub: bool, today=None) -> str:
     """One IPO as a two-line row: name above, its figures inline below."""
     kid = f"ipo{idx}"
     hot = " hot" if ipo.is_hot else ""
     flag = '<span class="flag">High GMP</span>' if ipo.is_hot else ""
+    closes = ipo.closes_label(today)
+    if closes:
+        soon = " soon" if closes in ("Closes today", "Closes tomorrow") else ""
+        flag += f'<span class="flag close{soon}" data-verify="{kid}.closes">{_e(closes)}</span>'
 
     fields = [
         _field("", ipo.date_range_text, f"{kid}.dates", False),
         _field("", ipo.price_display, f"{kid}.price", False),
     ]
     if show_sub:
-        fields.append(_field("Retail", ipo.retail_text, f"{kid}.retail", ipo.retail_sub is None))
+        fields.append(_retail_field(ipo, kid, today))
         fields.append(_field("Total", ipo.total_text, f"{kid}.total", ipo.total_sub is None))
     elif ipo.min_invest_text:
         fields.append(_field("", ipo.min_invest_text, f"{kid}.min", False))
@@ -275,9 +299,9 @@ def build_html(ds: Dataset, tier: int = 0, strip_rows: Optional[int] = None) -> 
     """strip_rows: how many Recently-listed rows to draw (None = all that qualify, 0 = none)."""
     date_txt = ds.run_date.strftime("%d %b %Y") if ds.run_date else ""
 
-    open_rows = [_row(i, n, True) for n, i in enumerate(ds.open_ipos)]
+    open_rows = [_row(i, n, True, ds.run_date) for n, i in enumerate(ds.open_ipos)]
     off = len(ds.open_ipos)
-    up_rows = [_row(i, off + n, False) for n, i in enumerate(ds.upcoming_ipos)]
+    up_rows = [_row(i, off + n, False, ds.run_date) for n, i in enumerate(ds.upcoming_ipos)]
 
     strip = strip_listings(ds.recent_listings, ds.run_date)
     strip = strip if strip_rows is None else strip[:strip_rows]
@@ -300,6 +324,9 @@ def build_html(ds: Dataset, tier: int = 0, strip_rows: Optional[int] = None) -> 
         items = "<br>".join(_e(w) for w in ds.warnings[:4])
         warn_html = f'<div class="warn">{items}</div>'
 
+    track_html = (f'<div class="track" data-verify="track">{_e(ds.track_record)}</div>'
+                  if ds.track_record else "")
+
     return f"""<!doctype html><html><head><meta charset="utf-8">
 <style>{font_face_css()}{CSS}</style></head>
 <body><div class="sheet t{tier}">
@@ -308,13 +335,15 @@ def build_html(ds: Dataset, tier: int = 0, strip_rows: Optional[int] = None) -> 
     <div class="when"><span class="num">{_e(date_txt)}</span><small>5:00 PM IST</small></div>
   </div>
   <main>
+    <div class="glance" data-verify="glance">{_e(glance_text(ds))}</div>
     {_section("Open now", "open", open_rows, "No Mainboard IPOs are open today.")}
     {_section("Upcoming", "up", up_rows, "No Mainboard IPOs are scheduled yet.")}
     {strip_html}
     {_leaders(ds)}
     <div class="ftr">
       {warn_html}
-      <div class="legend"><span>GMP = Grey Market Premium</span><span>High GMP = above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%</span><span>GMP % on upper price band</span><span>GMP is unofficial and can change before listing</span>{"<span>Listed = issue to first-day open · Day 1 = open to close · GMP said = last reported</span>" if strip else ""}</div>
+      {track_html}
+      <div class="legend"><span>GMP = Grey Market Premium</span><span>High GMP = above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%</span><span>▲/▼ = change since our previous update</span><span>GMP % on upper price band</span><span>GMP is unofficial and can change before listing</span>{"<span>Listed = issue to first-day open · Day 1 = open to close · GMP said = last reported</span>" if strip else ""}</div>
       <div class="src"><div>Source: <b>{_e(SOURCE_NAME)}</b></div>{stamp_html}</div>
     </div>
   </main>
