@@ -49,6 +49,9 @@ class Dataset:
     source_mode: str = "live"
     # Listing results from the last few days (from NSE, via listing.py).
     recent_listings: list = field(default_factory=list)
+    # One plain sentence on how far GMP has been from real listing gains
+    # (listing.track_record_text); None until there is enough history.
+    track_record: Optional[str] = None
 
     @property
     def published(self) -> list[IPO]:

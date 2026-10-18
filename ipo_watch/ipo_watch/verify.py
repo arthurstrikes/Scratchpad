@@ -12,6 +12,7 @@ from typing import Optional
 
 from .listing import strip_listings
 from .merge import Dataset, leader, rank_by_gmp
+from .report import glance_text
 
 
 @dataclass
@@ -26,7 +27,9 @@ class Mismatch:
 
 def expected_map(ds: Dataset, strip_rows: Optional[int] = None) -> dict[str, str]:
     """The single source of truth for what the image must display."""
-    out: dict[str, str] = {}
+    out: dict[str, str] = {"glance": glance_text(ds)}
+    if ds.track_record:
+        out["track"] = ds.track_record
 
     def extras(k: str, ipo, is_open: bool) -> None:
         # Mirrors exactly what creative._row draws, from the same properties.
@@ -34,6 +37,13 @@ def expected_map(ds: Dataset, strip_rows: Optional[int] = None) -> dict[str, str
             out[f"{k}.trend"] = ipo.trend_text
         if ipo.min_invest_text:
             out[f"{k}.min"] = ipo.min_invest_text
+        if is_open:
+            chg = ipo.sub_change_text("retail", ds.run_date)
+            if chg:
+                out[f"{k}.retail_chg"] = chg
+            closes = ipo.closes_label(ds.run_date)
+            if closes:
+                out[f"{k}.closes"] = closes
         if is_open and ipo.allotment_text:
             out[f"{k}.allot"] = ipo.allotment_text
         if is_open and ipo.listing_text:

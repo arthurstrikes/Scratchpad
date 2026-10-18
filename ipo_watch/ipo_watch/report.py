@@ -5,11 +5,12 @@ from Telegram or the .txt file lands in WhatsApp already formatted.
 """
 from __future__ import annotations
 
+from datetime import date
 from typing import Optional
 
 from .config import GMP_HIGHLIGHT_THRESHOLD_PCT, NOT_UPDATED, SOURCE_NAME
 from .merge import Dataset, leader, rank_by_gmp
-from .models import IPO
+from .models import IPO, _d
 
 HOT = "🔥"
 
@@ -48,10 +49,40 @@ def _dates_line(ipo: IPO) -> str:
             f" | Listing: {ipo.listing_text or NOT_UPDATED}")
 
 
+def _sub_line(icon: str, label: str, ipo: IPO, which: str, today) -> str:
+    value = ipo.retail_text if which == "retail" else ipo.total_text
+    change = ipo.sub_change_text(which, today)
+    return f"{icon} {label}: {value}" + (f" ({change})" if change else "")
+
+
+def glance_text(ds: Dataset) -> str:
+    """One counts-only line for the top of the report: what is open, what
+    closes soon, what is upcoming, how many are above the High GMP line."""
+    n_open, n_up = len(ds.open_ipos), len(ds.upcoming_ipos)
+    parts = []
+    if n_open:
+        today = ds.run_date
+        c0 = sum(1 for i in ds.open_ipos if i.closes_label(today) == "Closes today")
+        c1 = sum(1 for i in ds.open_ipos if i.closes_label(today) == "Closes tomorrow")
+        soon = [f"{c} {'closes' if c == 1 else 'close'} {when}"
+                for c, when in ((c0, "today"), (c1, "tomorrow")) if c]
+        parts.append(f"{n_open} open" + (f" ({', '.join(soon)})" if soon else ""))
+    else:
+        parts.append("none open")
+    parts.append(f"{n_up} upcoming" if n_up else "none upcoming")
+    hot = sum(1 for i in ds.published if i.is_hot)
+    parts.append(f"{hot} above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}% GMP" if hot
+                 else f"none above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}% GMP")
+    return " · ".join(parts)
+
+
 def _block(ipo: IPO, today, with_sub: bool) -> str:
-    lines = [_title(ipo), f"📅 {ipo.date_range_text}", _price_line(ipo)]
+    closes = ipo.closes_label(today)
+    dates = f"📅 {ipo.date_range_text}" + (f" | ⏰ {closes}" if closes else "")
+    lines = [_title(ipo), dates, _price_line(ipo)]
     if with_sub:
-        lines += [f"👥 Retail: {ipo.retail_text}", f"📊 Total: {ipo.total_text}"]
+        lines += [_sub_line("👥", "Retail", ipo, "retail", today),
+                  _sub_line("📊", "Total", ipo, "total", today)]
     lines.append(f"🟢 GMP: {ipo.gmp_text} | *{ipo.gmp_pct_text}*")
     lines += [x for x in (_trend_line(ipo, today), _dates_line(ipo)) if x]
     return "\n".join(lines)
@@ -59,7 +90,8 @@ def _block(ipo: IPO, today, with_sub: bool) -> str:
 
 def build_report(ds: Dataset) -> str:
     d = ds.run_date.strftime("%d %b %Y") if ds.run_date else ""
-    L: list[str] = ["*📊 DAILY MAINBOARD IPO WATCH*", f"📅 {d} | 5:00 PM IST", ""]
+    L: list[str] = ["*📊 DAILY MAINBOARD IPO WATCH*", f"📅 {d} | 5:00 PM IST",
+                    f"🔎 {glance_text(ds)}", ""]
 
     L.append("*🟢 OPEN MAINBOARD IPOs*")
     L.append("")
@@ -122,9 +154,12 @@ def _footer(ds: Dataset) -> str:
         "📌 _GMP = Grey Market Premium_",
         "📈 _GMP % calculated on upper price band_",
         f"🔥 _Flag = GMP above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%_",
+        "👥 _▲/▼ on subscription = change since our previous update._",
         "⚠️ _GMP is unofficial and can change before listing._",
         f"Source: {SOURCE_NAME}",
     ]
+    if ds.track_record:
+        L.append(f"🎯 _{ds.track_record}_")
     stamps = []
     if ds.subscription_timestamp:
         stamps.append(f"Subscription data: {ds.subscription_timestamp}")
@@ -215,6 +250,55 @@ def build_listing_report(results: list, run_date) -> str:
     return "\n".join(L) + "\n"
 
 
+def _coming_line(ipo: IPO) -> str:
+    bits = []
+    if ipo.status.value == "Open":
+        bits.append(f"bidding closes {_d(ipo.close_date)}" if ipo.close_date else "bidding open")
+    else:
+        bits.append(f"opens {_d(ipo.open_date)}" if ipo.open_date else "dates awaited")
+        if ipo.close_date:
+            bits.append(f"closes {_d(ipo.close_date)}")
+    if ipo.allotment_date:
+        bits.append(f"allotment {_d(ipo.allotment_date)}")
+    if ipo.listing_date:
+        bits.append(f"lists {_d(ipo.listing_date)}")
+    return f"• {ipo.name} - " + " · ".join(bits)
+
+
+def build_weekly_report(week_end: date, listed: list, ds: Optional[Dataset],
+                        track: Optional[str]) -> str:
+    """Sunday wrap: what listed in the last 7 days (NSE prices next to the GMP
+    we reported) and what is open or upcoming, from our latest update."""
+    L = ["*📅 WEEKLY IPO WRAP*", f"🗓️ Week ending {week_end.strftime('%d %b %Y')}", ""]
+    L.append("*🏁 LISTED THIS WEEK*")
+    L.append("")
+    if listed:
+        up = sum(1 for r in listed if r.listing_gain_pct is not None and r.listing_gain_pct > 0)
+        L.append(f"{len(listed)} Mainboard IPO(s) we covered listed; {up} opened above the issue price.")
+        L.append("")
+        for r in listed:
+            L += _listing_lines(r, compact=True) + [""]
+        L.append("_Gap = actual listing gain minus the GMP % we last reported._")
+    else:
+        L.append("None of the IPOs we covered listed this week.")
+    L.append("")
+    L.append("*🔜 COMING UP*")
+    if ds is not None and ds.published:
+        when = ds.run_date.strftime("%d %b") if ds.run_date else ""
+        L.append(f"_From our {when} update._")
+        L.append("")
+        for ipo in ds.published:
+            L.append(_coming_line(ipo))
+    else:
+        L += ["", "Nothing open or announced in our latest update."]
+    L.append("")
+    if track:
+        L.append(f"🎯 _{track}_")
+    L += ["⚠️ _GMP is unofficial and can change before listing._",
+          f"Source: NSE (prices), {SOURCE_NAME} (GMP and dates)"]
+    return "\n".join(L) + "\n"
+
+
 CAPTION_LIMIT = 960          # Telegram allows 1024 characters on a photo caption
 
 
@@ -232,7 +316,8 @@ def build_caption(ds: Dataset) -> str:
     for ipo in rank_by_gmp(ds):
         dot = "🟢" if ipo.status.value == "Open" else "🔵"
         arrow = f" {ipo.trend.text()}" if ipo.trend and ipo.trend.status == "ok" else ""
-        closing = " ⏰ closes today" if ipo in closing_today(ds) else ""
+        label = ipo.closes_label(ds.run_date)
+        closing = f" ⏰ {label.lower()}" if label in ("Closes today", "Closes tomorrow") else ""
         lines.append(f"{dot} {ipo.name} | *{ipo.gmp_pct_text}* ({ipo.gmp_text}){arrow}{closing}")
     out = [head, ""]
     used = len(head) + len(tail) + 4

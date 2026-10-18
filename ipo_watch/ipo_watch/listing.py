@@ -207,7 +207,8 @@ def parse_bhav(text: str) -> dict[str, dict]:
 
 # --------------------------------------------------- our own saved reports
 
-def load_candidates(directory: str, today: date) -> list[Candidate]:
+def load_candidates(directory: str, today: date,
+                    lookback_days: int = LOOKBACK_DAYS) -> list[Candidate]:
     """IPOs we reported on that have closed, newest information per IPO."""
     seen: dict[str, Candidate] = {}
     gmp_seen: dict[str, tuple[date, Decimal, Optional[Decimal]]] = {}
@@ -219,7 +220,7 @@ def load_candidates(directory: str, today: date) -> list[Candidate]:
         except (OSError, ValueError):
             continue
         run = parse_date(raw.get("run_date"))
-        if run is None or run > today or (today - run).days > LOOKBACK_DAYS:
+        if run is None or run > today or (today - run).days > lookback_days:
             continue
         for group in ("open", "upcoming", "recently_closed_internal"):
             for it in raw.get(group) or []:
@@ -360,6 +361,58 @@ def load_recent_results(directory: str, today: date, days: int = 3) -> list[List
         if r.listing_date and 0 <= (today - r.listing_date).days <= days:
             out.append(r)
     return sorted(out, key=lambda r: (r.listing_date, r.name), reverse=True)
+
+
+# ------------------------------------------------------- GMP track record
+
+RECORD_LISTINGS = 25         # the track record looks at the most recent listings
+RECORD_MIN_WITH_GMP = 5      # ...and says nothing until this many have a GMP on record
+
+
+def load_all_results(directory: str, today: Optional[date] = None) -> list[ListingResult]:
+    """Every stored listing result (newest first)."""
+    out = []
+    for path in glob.glob(os.path.join(directory or ".", "ipo-watch-listing-*.json")):
+        try:
+            with open(path, encoding="utf-8") as fh:
+                r = ListingResult.from_dict(json.load(fh))
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+        if r.listing_date and (today is None or r.listing_date <= today):
+            out.append(r)
+    return sorted(out, key=lambda r: (r.listing_date, r.name), reverse=True)
+
+
+def track_record_text(results: list, limit: int = RECORD_LISTINGS) -> Optional[str]:
+    """One plain sentence on how far GMP was from the real listing gain.
+
+    Looks at the most recent `limit` listings; only those where we had
+    published a GMP can be compared. Gap = listing gain minus GMP %, so a
+    negative gap means GMP was higher than what happened. None until there
+    are enough to say anything (fails closed, never a guess)."""
+    recent = sorted(results, key=lambda r: (r.listing_date, r.name), reverse=True)[:limit]
+    used = [r for r in recent if r.gap_pts is not None]
+    if len(used) < RECORD_MIN_WITH_GMP:
+        return None
+    avg = (sum(abs(r.gap_pts) for r in used) / len(used)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
+    higher = sum(1 for r in used if r.gap_pts < 0)
+    return (f"GMP track record, last {len(recent)} listings ({len(used)} with a GMP on record): "
+            f"the real listing gain was {avg} points away from the GMP we reported, on average; "
+            f"GMP was higher than the real gain in {higher} of {len(used)}.")
+
+
+def backfill_results(directory: str, today: date, equities: list[dict],
+                     bhav_for: Callable[[date], Optional[dict]]) -> list[ListingResult]:
+    """Save a result for every past listing of an IPO we reported (no message
+    is sent). Existing files are left alone. Returns the ones newly saved."""
+    candidates = load_candidates(directory, today, lookback_days=10_000)
+    found = [r for r in find_results(candidates, equities, bhav_for) if r.listing_date <= today]
+    new = []
+    for r in found:
+        if not os.path.exists(result_path(directory, r)):
+            save_result(directory, r)
+            new.append(r)
+    return new
 
 
 IMAGE_LISTING_DAYS = 2       # the daily image shows listings from the last two days

@@ -260,3 +260,34 @@ def enrich_dataset(ds: Dataset, today: date, get: Fetcher, workers: int = 1,
     if no_detail:
         ds.warnings.append("Lot size and key dates not updated for: " + ", ".join(no_detail)
                            + " (IPOWatch page could not be read)")
+
+
+def attach_prev_subscription(ds: Dataset, directory: str, today: date) -> None:
+    """Fill each published IPO's previous retail/total subscription from our
+    own latest earlier report that carried a figure for it. Offline, exact:
+    these are numbers we already published."""
+    if not directory:
+        return
+    latest: dict[str, tuple[date, Optional[Decimal], Optional[Decimal]]] = {}
+    for path in sorted(glob.glob(os.path.join(directory, "ipo-watch-*-dataset.json"))):
+        try:
+            with open(path, encoding="utf-8") as fh:
+                raw = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        d = parse_date(raw.get("run_date"))
+        if d is None or d >= today:
+            continue
+        for group in ("open", "upcoming"):
+            for it in raw.get(group) or []:
+                key = norm_key(it.get("name", ""))
+                r, t = it.get("retail_sub"), it.get("total_sub")
+                if not key or (r is None and t is None):
+                    continue
+                if key not in latest or d >= latest[key][0]:
+                    latest[key] = (d, Decimal(r) if r is not None else None,
+                                   Decimal(t) if t is not None else None)
+    for ipo in ds.published:
+        hit = latest.get(norm_key(ipo.name))
+        if hit:
+            ipo.prev_sub_date, ipo.prev_retail, ipo.prev_total = hit

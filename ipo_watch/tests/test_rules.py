@@ -1,6 +1,6 @@
 """Tests for the accuracy rules in spec sections 3, 4 and 5."""
 import sys, os
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -911,3 +911,104 @@ def test_trend_is_measured_against_the_figure_we_published():
     t = compute_trend(overlay_published(ipowatch, ours), today, Decimal("15"))
     assert t.prev_gmp == Decimal("35") and t.change == Decimal("-20")
     assert [str(v) for v in t.series] == ["40", "35", "15"]
+
+
+# --- 18 Oct 2026 decision aids: closing labels, glance, subscription change,
+# --- GMP track record, weekly wrap -------------------------------------------
+
+def _open(name, close, retail=None, prev=None, gmp=None):
+    from ipo_watch.models import Status
+    i = mk(name, gmp, Decimal("100"), retail=retail, total=retail,
+           o=date(2026, 10, 15), c=close)
+    i.status = Status.OPEN
+    i.prev_retail = prev
+    i.prev_sub_date = date(2026, 10, 17) if prev is not None else None
+    return i
+
+
+def test_closes_label_today_tomorrow_and_days_left():
+    t = date(2026, 10, 18)
+    assert _open("A", date(2026, 10, 18)).closes_label(t) == "Closes today"
+    assert _open("A", date(2026, 10, 19)).closes_label(t) == "Closes tomorrow"
+    assert _open("A", date(2026, 10, 21)).closes_label(t) == "3 days left"
+    assert mk("U").closes_label(t) is None            # not Open: no label
+
+
+def test_subscription_change_is_computed_from_our_own_previous_figure():
+    t = date(2026, 10, 18)
+    up = _open("A", date(2026, 10, 19), Decimal("7.14"), Decimal("5.24"))
+    assert up.sub_change_text("retail", t) == "▲ from 5.24x"
+    down = _open("A", date(2026, 10, 19), Decimal("1"), Decimal("2"))
+    assert down.sub_change_text("retail", t) == "▼ from 2x"
+    same = _open("A", date(2026, 10, 19), Decimal("3"), Decimal("3"))
+    assert same.sub_change_text("retail", t) == "▬ no change"
+    assert _open("A", date(2026, 10, 19), Decimal("3")).sub_change_text("retail", t) is None  # no earlier figure
+    old = _open("A", date(2026, 10, 19), Decimal("3"), Decimal("2"))
+    old.prev_sub_date = date(2026, 10, 15)
+    assert old.sub_change_text("retail", t).endswith("(as on 15 Oct)")
+
+
+def test_glance_line_counts_only():
+    from ipo_watch.merge import Dataset
+    from ipo_watch.report import glance_text
+    ds = Dataset(open_ipos=[_open("A", date(2026, 10, 19), gmp=Decimal("40")),
+                            _open("B", date(2026, 10, 18), gmp=Decimal("5"))],
+                 upcoming_ipos=[mk("C")], run_date=date(2026, 10, 18))
+    assert glance_text(ds) == "2 open (1 closes today, 1 closes tomorrow) · 1 upcoming · 1 above 25% GMP"
+    assert glance_text(Dataset(run_date=date(2026, 10, 18))) == \
+        "none open · none upcoming · none above 25% GMP"
+
+
+def _res(sym, d, issue, opn, gmp_pct):
+    from ipo_watch.listing import ListingResult
+    return ListingResult(name=sym, symbol=sym, series="EQ", listing_date=d,
+                         issue_price=Decimal(issue), open_price=Decimal(opn),
+                         close_price=Decimal(opn),
+                         last_gmp=Decimal("1") if gmp_pct is not None else None,
+                         last_gmp_pct=Decimal(gmp_pct) if gmp_pct is not None else None)
+
+
+def test_track_record_needs_enough_listings_and_uses_the_latest_25():
+    from ipo_watch.listing import track_record_text
+    few = [_res(f"S{i}", date(2026, 10, 1 + i), "100", "110", "10") for i in range(4)]
+    assert track_record_text(few) is None             # fewer than 5 with a GMP: say nothing
+    rs = [_res(f"S{i}", date(2026, 9, 1) + timedelta(days=i), "100", "110", "20") for i in range(30)]
+    txt = track_record_text(rs)
+    assert "last 25 listings (25 with a GMP on record)" in txt
+    assert "10.0 points away" in txt and "higher than the real gain in 25 of 25" in txt
+
+
+def test_track_record_counts_only_listings_with_a_gmp():
+    from ipo_watch.listing import track_record_text
+    rs = [_res(f"S{i}", date(2026, 10, 1 + i), "100", "100", "10") for i in range(5)]
+    rs += [_res("N", date(2026, 10, 20), "100", "150", None)]       # no GMP on record
+    txt = track_record_text(rs)
+    assert "last 6 listings (5 with a GMP on record)" in txt and "10.0 points" in txt
+
+
+def test_previous_subscription_taken_from_our_saved_reports(tmp_path):
+    import json
+    from ipo_watch.enrich import attach_prev_subscription
+    from ipo_watch.merge import Dataset
+    (tmp_path / "ipo-watch-2026-10-17-dataset.json").write_text(json.dumps(
+        {"run_date": "2026-10-17", "open": [{"name": "Alpha Co", "retail_sub": "5.24", "total_sub": "5.82"}]}))
+    a = _open("Alpha Co", date(2026, 10, 19), Decimal("7.14"))
+    attach_prev_subscription(Dataset(open_ipos=[a], run_date=date(2026, 10, 18)), str(tmp_path),
+                             date(2026, 10, 18))
+    assert a.prev_retail == Decimal("5.24") and a.prev_total == Decimal("5.82")
+    assert a.prev_sub_date == date(2026, 10, 17)
+
+
+def test_weekly_wrap_lists_this_weeks_listings_and_what_is_coming():
+    from ipo_watch.merge import Dataset
+    from ipo_watch.report import build_weekly_report
+    a = _open("Alpha Co", date(2026, 10, 19))
+    a.allotment_date, a.listing_date = date(2026, 10, 21), date(2026, 10, 23)
+    ds = Dataset(open_ipos=[a], run_date=date(2026, 10, 18))
+    listed = [_res("BETA", date(2026, 10, 14), "100", "110", "8")]
+    text = build_weekly_report(date(2026, 10, 18), listed, ds, "GMP track record, x.")
+    assert "WEEKLY IPO WRAP" in text and "1 Mainboard IPO(s) we covered listed; 1 opened above" in text
+    assert "• Alpha Co - bidding closes 19 Oct · allotment 21 Oct · lists 23 Oct" in text
+    assert "GMP track record, x." in text
+    assert "None of the IPOs we covered listed this week." in build_weekly_report(
+        date(2026, 10, 18), [], None, None)

@@ -8,7 +8,33 @@ the rules and the technical history; this page holds the plan.
 (done, found, decided, still open). Dated entries, newest first. Nothing here
 is ever deleted, only marked done.
 
-Last updated: 15 Oct 2026 (late).
+Last updated: 18 Oct 2026. **Fresh session? Read section 0 first.**
+
+---
+
+## 0. Where we left off (18 Oct 2026) - read this first
+
+**Live engine today:** the 5:05 PM backup trigger (`trig_01AnmiV5iED3Xe8jVFkVd7zD`) fires into the long-running
+interactive session, which runs `python3 -m ipo_watch.run --outdir output` from `~/Scratchpad`
+(= `/root/Scratchpad`), sends the PNG and .txt, pastes the report, and states the Telegram line.
+**Capture the whole run log to a file** (`> /tmp/run.log`) - on 16 Oct the Telegram line was lost by piping to `tail`.
+The 5:00 PM routine is still dead (classifier) and only the user can delete it in the Routines list.
+
+**Waiting on the user:** (1) add the two GitHub secrets, say "done" (A1, step-by-step in `EXPLAINER.md` and chat);
+(2) their yes to the open proposals (G17 closed-awaiting-listing section; cash-for-lots, upgrade 4).
+**Then:** dispatch the daily workflow once with `send_telegram` on, confirm arrival, add the cron lines
+(daily `30 11 * * *`, midday `30 8 * * *`, watchdog `55 11 * * *`, listing `30 13 * * 1-5`, weekly `30 12 * * 0`, all UTC),
+retire the 5:05 PM backup (classifier may block `update_trigger`), user deletes the 5:00 PM routine.
+
+**Built 16-18 Oct (all merged to main):** Tonbo minimum-investment fix; Data note when a minimum is missing;
+trend measured against the figure *we* published; then the decision aids (below).
+**Also remember:** reminder `trig_01SNDhTcCYzauXQsXpk7aHax` fires 20 Oct 14:00 UTC to run the listing scorecard for
+HD Fire Protect from the session (skip if the GitHub listing workflow is live). Seed the `history` branch with the
+backfilled listing results after any merge that changes their format (see section 6b).
+
+**How the user likes to work:** not a programmer; wants plain language ("explain like a 10th standard student");
+decide technical things myself; ask before changing published numbers, design, schedule or delivery; wants
+UI/UX and user empathy to drive choices; never investment advice.
 
 ---
 
@@ -22,7 +48,7 @@ Last updated: 15 Oct 2026 (late).
 | **Hands-off** | Runs with no person and no Claude session | Not yet. **Proven on GitHub (15 Oct dry run succeeded)**; waiting for two secrets (A1) to send from there |
 | **Useful at a glance** | Answers "is it moving, what do I need, when does it list" without opening a link | Mostly: trend, minimum investment and dates added 15 Oct. Listing outcomes still missing |
 | **Reads well in WhatsApp** | Fits the chat thread, copies cleanly, forwards cleanly | Built (4:5 fit, tap-to-copy, WhatsApp bold). Not yet confirmed on your phone (A4) |
-| **Learns** | Tracks how reliable GMP turned out to be against the real listing | Not started |
+| **Learns** | Tracks how reliable GMP turned out to be against the real listing | Started 18 Oct: one-line GMP track record (last 25 listings) in text and image. Only 10 listings have a GMP on record so far; it sharpens with every listing |
 
 ## 2. Achievements
 
@@ -39,6 +65,9 @@ Last updated: 15 Oct 2026 (late).
 | 15 Oct (late) | Listing scorecard also **proven on GitHub's runner** (replayed 8 Oct, same result) |
 | 15 Oct (night) | Listing results now also in the **daily image** (slim strip: listing gain, day 1, GMP said; 3 rows down to 1 as space allows). High GMP flag raised to above 25%. Tests -> 72 |
 | since 16 Sep | Daily report delivered every day through the backup (about 30 days) |
+| 16 Oct | Found why Tonbo had no minimum investment (its detail page has a different web address; our guess redirected to the GMP page). Fixed by following the page's own "IPO Details" button. A missing minimum now also shows under Data notes |
+| 18 Oct | **Trend baseline fixed:** IPOWatch revised its own 17 Oct figures after we published, so "vs yesterday" showed "no change" while the GMP had moved. The trend now compares against the figure we published |
+| 18 Oct | **Decision aids built (user said "all"):** "Closes today / tomorrow / N days left" tag, a counts-only "at a glance" line, subscription change since our previous update, a one-line GMP track record over the last 25 listings, and a Sunday weekly wrap. Backfill saved 21 past listings (10 with a GMP on record). Tests 75 -> 82 |
 
 ## 3. Gaps and misses (honest list, including mine)
 
@@ -59,6 +88,13 @@ Last updated: 15 Oct 2026 (late).
 | G13 | I sent 100+ requests to IPOWatch in one hour while testing, and IPOWatch was slow or timing out for both the sandbox and GitHub that afternoon | Partly my doing, partly the site. Nightly load is only 18 requests | Mitigated: gzip, longer waits, retries, own-history fallback. Test with saved pages |
 | G14 | I suggested a **Telegram channel** for your WhatsApp contacts. That was weak: they can only follow it if they use Telegram | Misleading idea | Withdrawn unless your audience uses Telegram (A8) |
 | G15 | The trend compares against IPOWatch's own daily record; our own previous report can differ (Jio: 200 vs 220) | Two honest baselines | Needs your preference (A5) |
+| G17 | **Closed IPOs disappear between close and listing.** HD Fire Protect closed 15 Oct and lists 20 Oct, but is in no report in between, although allotment and listing are what an applicant cares about then | An applicant loses the very dates they need most | **Proposal to the user:** a small "Closed - awaiting allotment / listing" section (dates only, no subscription). Needs their yes: it changes the published-IPO rule |
+| G18 | On 16 Oct Tonbo's minimum investment was missing and nothing said so | A silent gap | Fixed 16 Oct; now a Data note appears |
+| G19 | The "vs yesterday" trend used IPOWatch's *revised* row, not what we published (Sahajanand showed no change on a Rs 20 fall) | Misleading trend | Fixed 18 Oct (supersedes G15 and A5) |
+| G20 | IPOWatch does not refresh subscription on weekends, so Sat/Sun reports repeat Friday's multiples | Looks fresh, is not | Now visible: the new subscription-change tag reads "no change"; the stamp is in the footer |
+| G21 | I lost the Telegram result line on 16 Oct by piping the run log through `tail` | Could not confirm delivery to the user | Process fix: always save the whole log to a file |
+| G22 | GMP track record rests on only 10 listings with a GMP on record (our reports began 28 Sep) | Small sample | Text states the real count; shown only from 5 upward; grows daily |
+| G23 | The photo caption does not travel to WhatsApp (tested by the user 15 Oct) | Image and text stay two steps | Answered A4. Options in 5b; caption kept simple |
 | G16 | On 15 Oct IPOWatch's extra pages timed out, so the first GitHub dry run showed "GMP trend: Not updated" for most IPOs | The design degrades honestly, but a real send would look thin | Mitigations shipped (see G13); re-check on the next live run |
 
 ## 4. Open actions
@@ -68,8 +104,8 @@ Last updated: 15 Oct 2026 (late).
 | A1 | Add two GitHub secrets (`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`): repo **Settings > Secrets and variables > Actions** | **You** | 3 minutes. I can walk you through it |
 | A2 | Run the GitHub workflow once with Telegram on and confirm it arrives | Me + you | A1 |
 | A3 | Go live: switch on the three schedules, retire the 5:05 PM backup, delete the dead 5:00 PM routine in the Routines list on claude.ai | Me (code) + **you** (the routine, I am blocked from it) | A2 and your yes |
-| A4 | Tell me how tonight's image looks in WhatsApp, whether tap-to-copy pastes with bold, **and whether the photo's caption comes along when you share the photo from Telegram to WhatsApp** (decides step 2 in section 5b) | **You** | Tonight's report. You said you'll share after the 5:05 PM run |
-| A5 | ~~Pick the trend baseline~~ **Decided 15 Oct: keep IPOWatch's daily record** | done | |
+| A4 | ~~Tell me~~ **Answered 15 Oct:** image shares straight to WhatsApp; the caption does not come along; text is copied separately. Original question: tell me how tonight's image looks in WhatsApp, whether tap-to-copy pastes with bold, **and whether the photo's caption comes along when you share the photo from Telegram to WhatsApp** (decides step 2 in section 5b) | **You** | Tonight's report. You said you'll share after the 5:05 PM run |
+| A5 | ~~Pick the trend baseline~~ 15 Oct: IPOWatch's record; **changed 18 Oct (user: yes) to the figure we published the day before** | done | |
 | A6 | ~~Where listing results come from~~ **Decided 15 Oct:** exchange data (NSE): issue price to first-day open, and separately first-day open to close. Built the same day | done | |
 | A7 | ~~Second source~~ **Decided 15 Oct (my call, you said numbers need not match):** NSE's official data is the independent check for listing facts; no second GMP website, because GMP sites differ by nature and a cross-check would add noise, not safety | done | |
 | A8 | Who receives the report (individuals or WhatsApp groups) and how many? Decides whether the WhatsApp Business route (5b, step 3) is worth it | **You** | One line |
@@ -94,8 +130,8 @@ Ordered by value for effort. "Needs" says what blocks it.
 | # | Idea | Value | Needs |
 |---|---|---|---|
 | I8 | **Listing-day scorecard** (done 15 Oct, matched 21 past listings): issue price to first-day open, first-day open to close, next to the GMP we last reported and the gap in points. Evening card + text; the daily report shows the last 3 days. Next: a running GMP accuracy score (I8b) | The most differentiating idea here | Evening schedule needs A1-A3 |
-| I9 | **Date reminders** ("allotment tomorrow", "lists tomorrow") | Small, high value; the dates are already collected | Me |
-| I10 | **Weekly Sunday summary** (week's listings vs GMP, subscription finals) | Useful recap | I5, I8 |
+| I9 | **Date reminders.** Done 18 Oct for the closing day ("Closes today / tomorrow / N days left" in text and image). Still open: "allotment tomorrow", "lists tomorrow" | Small, high value | Me |
+| I10 | **Weekly Sunday summary:** built 18 Oct (`--mode weekly`, workflow `ipo-watch-weekly.yml`, manual-only). Lists the week's listings vs GMP and what is coming up | Useful recap | Schedule needs A1-A3 |
 | I11 | **Subscription momentum** (day-by-day retail multiple, last-day surge) | Shows demand building, not just a number | I5 |
 | I12 | **Big-move alert** (GMP jumps or falls sharply versus the morning) | Time-sensitive signal | Runner (I1) |
 
@@ -119,6 +155,23 @@ Ordered by value for effort. "Needs" says what blocks it.
 | I15 | Second source used **only** to flag disagreement | Catches a bad IPOWatch figure | A7 |
 | I16 | Telegram channel | Only for recipients who use Telegram (see 5b) | A8 |
 | I17 | WhatsApp Business Cloud API (about Rs 60 a year for one message a day; more per recipient) | The only compliant way to post to WhatsApp automatically, to **individual opted-in numbers** (not groups) | Previously declined; see 5b step 3 |
+
+### 5d. UI / UX and user-empathy backlog (added 18 Oct)
+
+Guiding question for every item: *what does the person need in the first ten seconds, on a phone, possibly in a hurry?*
+
+| # | Idea | Why it helps the reader | Status |
+|---|---|---|---|
+| U1 | Closing tag on each open IPO and a counts-only glance line | Answers "what needs me today?" without reading dates | **Done 18 Oct** |
+| U2 | Subscription change since the last update | Shows demand moving, not just a number | **Done 18 Oct** |
+| U3 | GMP track record sentence | Keeps the reader's trust calibrated: GMP is a rumour, not a promise | **Done 18 Oct** |
+| U4 | "Closed - awaiting allotment/listing" section (G17) | The applicant's next dates never vanish | Proposed, needs yes |
+| U5 | Cash needed for 1 / 2 / 3 lots | Answers "how much do I put in?" | Proposed (upgrade 4), not requested |
+| U6 | "Allotment tomorrow" and "Lists tomorrow" tags | Same logic as the closing tag, for the later dates | Proposed (I9) |
+| U7 | One-IPO share cards | Easy to forward just one IPO | Backlog (I13) |
+| U8 | Hindi or other-language caption | Wider audience | Backlog (A8) |
+| U9 | Quiet-day wording: on weekends say plainly "IPOWatch has not refreshed since Friday" | Honest about stale numbers | Idea; the footer stamp covers it today |
+| U10 | Accessibility check of the image (contrast, minimum text size on a phone) | Readable in sunlight and for older eyes | Backlog |
 
 ### 5c. Evidence so far: how far GMP missed (15 Oct, from NSE vs our saved reports)
 
@@ -170,10 +223,14 @@ nothing lost on the way:
 | 15 Oct | **High GMP flag raised from above 10% to above 25%** (your suggestion; I agreed: with GMPs of 11-70% the old line flagged every IPO). Rule printed in the legend |
 | 15 Oct | Trend baseline stays IPOWatch's daily record. Listing results come from NSE: issue to first-day open, and open to close separately. No second GMP website (numbers need not match); NSE is the independent check. **Scope change:** listing results are now published (the old rule was open/upcoming only) |
 
+| 18 Oct | Trend baseline = the GMP **we published** the day before (your yes). Decision aids 1, 2, 3, 5, 6 approved ("all"); track record uses the **last 25 listings**; upgrade 4 (cash for 1-3 lots) not requested, left open |
+| 18 Oct | Closed-but-not-yet-listed IPOs stay out of the report (rule unchanged) until you decide on G17 |
+
 ## 6b. Scheduled follow-ups (so nothing depends on memory)
 
 | When | What | Notes |
 |---|---|---|
+| Sundays | Weekly wrap from the session (`python3 -m ipo_watch.run --mode weekly --outdir output`) until the GitHub schedule is live | First edition 18 Oct. Needs the listing results on record: run `--mode backfill --outdir output` once after a fresh checkout, and keep the `history` branch copy updated |
 | 20 Oct 2026, 7:30 PM IST | Run the listing scorecard from the Claude session for **HD Fire Protect** (first real listing under the new feature) | Reminder `trig_01SNDhTcCYzauXQsXpk7aHax`. If the GitHub listing workflow is live by then, skip it and delete the reminder (avoids a duplicate message) |
 
 ## 7. Platform facts worth remembering

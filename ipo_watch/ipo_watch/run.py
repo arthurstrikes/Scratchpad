@@ -19,16 +19,16 @@ from decimal import Decimal
 
 from .config import (GMP_URL, IST, OUTPUT_DIR, SOURCE_NAME, SUBSCRIPTION_URL)
 from .creative import last_render_info, render_listing_png, render_png
-from .enrich import enrich_dataset
+from .enrich import attach_prev_subscription, enrich_dataset
 from .fetch import FetchError, extract_page_timestamp, fetch_pages, load_fixture
 from .merge import Dataset, build_dataset
 from .models import Board, IPO, Provenance, Status, Trend, parse_date
 from .parse import parse_page
-from .listing import (BHAV_URL, ListingResult, find_results, fetch_equities, get_text, load_candidates,
-                      load_recent_results, make_bhav_getter, match_symbol, parse_bhav,
-                      result_path, save_result)
+from .listing import (BHAV_URL, ListingResult, backfill_results, find_results, fetch_equities, get_text,
+                      load_all_results, load_candidates, load_recent_results, make_bhav_getter,
+                      match_symbol, parse_bhav, result_path, save_result, track_record_text)
 from .report import (build_caption, build_listing_report, build_midday_report, build_report,
-                     closing_today)
+                     build_weekly_report, closing_today)
 from .share import build_share_page
 from . import telegram
 from .verify import check, check_listing
@@ -84,6 +84,8 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
              f"lot size for {sum(1 for i in ds.published if i.min_invest)}, "
              f"key dates for {sum(1 for i in ds.published if i.allotment_date or i.listing_date)}")
     if history_dir:
+        attach_prev_subscription(ds, history_dir, today)
+        ds.track_record = track_record_text(load_all_results(history_dir, today))
         ds.recent_listings = load_recent_results(history_dir, today)
         if ds.recent_listings:
             _log(f"recently listed: {', '.join(r.name for r in ds.recent_listings)}")
@@ -146,6 +148,9 @@ def dataset_to_json(ds: Dataset) -> dict:
             "min_invest": str(i.min_invest) if i.min_invest is not None else None,
             "allotment_date": i.allotment_date.isoformat() if i.allotment_date else None,
             "listing_date": i.listing_date.isoformat() if i.listing_date else None,
+            "prev_retail": str(i.prev_retail) if i.prev_retail is not None else None,
+            "prev_total": str(i.prev_total) if i.prev_total is not None else None,
+            "prev_sub_date": i.prev_sub_date.isoformat() if i.prev_sub_date else None,
         }
     return {
         "run_date": ds.run_date.isoformat() if ds.run_date else None,
@@ -158,6 +163,7 @@ def dataset_to_json(ds: Dataset) -> dict:
         "recently_closed_internal": [one(i) for i in ds.recently_closed],
         "excluded_sme": ds.excluded_sme,
         "recent_listings": [r.to_dict() for r in ds.recent_listings],
+        "track_record": ds.track_record,
         "warnings": ds.warnings,
         "conflicts": [c.__dict__ for c in ds.conflicts],
     }
@@ -192,6 +198,8 @@ def dataset_from_json(path: str) -> Dataset:
         ipo.min_invest = dec("min_invest")
         ipo.allotment_date = parse_date(d.get("allotment_date"))
         ipo.listing_date = parse_date(d.get("listing_date"))
+        ipo.prev_retail, ipo.prev_total = dec("prev_retail"), dec("prev_total")
+        ipo.prev_sub_date = parse_date(d.get("prev_sub_date"))
         return ipo
 
     ds = Dataset(
@@ -199,6 +207,7 @@ def dataset_from_json(path: str) -> Dataset:
         upcoming_ipos=[one(d, Status.UPCOMING) for d in raw.get("upcoming", [])],
         excluded_sme=raw.get("excluded_sme", []),
         recent_listings=[ListingResult.from_dict(x) for x in raw.get("recent_listings", [])],
+        track_record=raw.get("track_record"),
         warnings=raw.get("warnings", []),
         subscription_timestamp=raw.get("subscription_timestamp"),
         gmp_timestamp=raw.get("gmp_timestamp"),
@@ -368,6 +377,50 @@ def _listing_mode(args, today: date) -> int:
     return 3 if (args.fail_on_telegram_error and status == "failed") else 0
 
 
+def _backfill_mode(args, today: date) -> int:
+    """Save a result for every past listing of an IPO we reported. Sends nothing."""
+    equities = fetch_equities()
+    if not equities:
+        _log("backfill: NSE's equity list could not be read")
+        return 2
+    new = backfill_results(args.outdir, today, equities, make_bhav_getter())
+    for r in new:
+        _log(f"backfill: saved {r.name} ({r.symbol}) listed {r.listing_date:%d %b} "
+             f"gain {r.listing_gain_text}"
+             + (f", GMP said {r.last_gmp_pct}%" if r.last_gmp_pct is not None else ", no GMP on record"))
+    _log(f"backfill: {len(new)} new, {len(load_all_results(args.outdir, today))} listings on record")
+    return 0
+
+
+def _weekly_mode(args, today: date) -> int:
+    """Sunday wrap: this week's listings plus what is coming up."""
+    listed = [r for r in load_all_results(args.outdir, today) if 0 <= (today - r.listing_date).days <= 6]
+    listed.sort(key=lambda r: (r.listing_date, r.name))
+    files = sorted(f for f in os.listdir(args.outdir) if f.endswith("-dataset.json")
+                   and f[len("ipo-watch-"):len("ipo-watch-") + 10] <= today.isoformat()) \
+        if os.path.isdir(args.outdir) else []
+    ds = dataset_from_json(os.path.join(args.outdir, files[-1])) if files else None
+    text = build_weekly_report(today, listed, ds,
+                               track_record_text(load_all_results(args.outdir, today)))
+    path = os.path.join(args.outdir, f"ipo-watch-{today:%Y-%m-%d}-weekly.txt")
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(text)
+    status = "not configured"
+    if telegram.configured():
+        try:
+            telegram.send_text(text)
+            status = "delivered"
+            _log("telegram  -> delivered (weekly)")
+        except telegram.TelegramError as exc:
+            status = "failed"
+            _log(f"telegram  -> FAILED: {exc}")
+    else:
+        _log("telegram  -> not configured (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID unset)")
+    print("\n" + "=" * 62 + "\n" + text + "=" * 62)
+    _log(f"weekly   -> {path}")
+    return 3 if (args.fail_on_telegram_error and status == "failed") else 0
+
+
 def _alert(msg: str) -> None:
     """Tell the user on Telegram that today's run failed. Never raises."""
     if not telegram.configured():
@@ -394,14 +447,25 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--fail-on-telegram-error", action="store_true",
                     help="exit 3 if Telegram is configured but delivery failed (for CI, so the "
                          "failure is visible instead of only logged)")
-    ap.add_argument("--mode", choices=("daily", "midday", "listing"), default="daily",
+    ap.add_argument("--mode", choices=("daily", "midday", "listing", "weekly", "backfill"),
+                    default="daily",
                     help="midday = short text update for IPOs closing today (no image); "
-                         "listing = evening scorecard for IPOs that listed on NSE today")
+                         "listing = evening scorecard for IPOs that listed on NSE today; "
+                         "weekly = Sunday wrap (text); "
+                         "backfill = save past listing results for the GMP track record (sends nothing)")
     ap.add_argument("--force", action="store_true",
                     help="listing mode: send again even if already sent")
     args = ap.parse_args(argv)
 
     today = date.fromisoformat(args.date) if args.date else datetime.now(IST).date()
+
+    if args.mode in ("weekly", "backfill"):
+        try:
+            return (_weekly_mode if args.mode == "weekly" else _backfill_mode)(args, today)
+        except Exception as exc:  # noqa: BLE001
+            if args.mode == "weekly":
+                _alert(_failure_text(today, f"weekly wrap: unexpected error ({type(exc).__name__}: {exc})"))
+            raise
 
     if args.mode == "listing":
         try:
