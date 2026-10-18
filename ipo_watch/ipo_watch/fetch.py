@@ -83,6 +83,15 @@ def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None,
                     raise FetchError(f"{url} returned HTTP {status}")
                 break
             except Exception as exc:  # noqa: BLE001
+                # IPOWatch answers some plain requests with 403 (seen from GitHub's
+                # runners on 18 Oct). A real browser is let through, so try that
+                # once before giving up; it is the same live page, never a guess.
+                if getattr(exc, "code", None) == 403:
+                    try:
+                        return _with_browser(urls, pages, snapshot_dir)
+                    except Exception as browser_exc:  # noqa: BLE001
+                        raise FetchError(f"Could not fetch {url}: {exc}; browser fallback "
+                                         f"also failed: {browser_exc}") from exc
                 # A dropped connection is common through proxies; retry before
                 # giving up, so one hiccup does not cost a whole day's report.
                 if attempt == attempts:
@@ -102,6 +111,13 @@ def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None,
         if snapshot_dir:
             _snapshot(pg, snapshot_dir)
     return pages
+
+
+def _with_browser(urls: list[str], pages: dict[str, Page],
+                  snapshot_dir: Optional[str]) -> dict[str, Page]:
+    """Fetch every page not yet read through a real browser (403 fallback)."""
+    todo = [u for u in urls if u not in pages]
+    return {**pages, **render_pages(todo, snapshot_dir=snapshot_dir)}
 
 
 def render_pages(urls: list[str], snapshot_dir: Optional[str] = None) -> dict[str, Page]:
