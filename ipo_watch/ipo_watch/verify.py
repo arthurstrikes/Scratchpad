@@ -28,8 +28,23 @@ class Mismatch:
 def expected_map(ds: Dataset, strip_rows: Optional[int] = None) -> dict[str, str]:
     """The single source of truth for what the image must display."""
     out: dict[str, str] = {"glance": glance_text(ds)}
-    if ds.track_record:
-        out["track"] = ds.track_record
+    tr = ds.track_record
+    if tr:
+        out["trk.title"] = tr.title
+        out["trk.gain"], out["trk.up"] = tr.gain_text, tr.up_text
+        if tr.day1_text:
+            out["trk.day1"] = tr.day1_text
+        if tr.miss_text:
+            out["trk.miss"] = tr.miss_text
+    for n, ipo in enumerate(ds.awaiting):
+        k = f"aw{n}"
+        out.update({f"{k}.name": ipo.name, f"{k}.gmppct": ipo.gmp_pct_text, f"{k}.gmp": ipo.gmp_text,
+                    f"{k}.closed": f"Closed {ipo.close_date.strftime('%d %b')}",
+                    f"{k}.retail": ipo.retail_text, f"{k}.total": ipo.total_text})
+        if ipo.allotment_text:
+            out[f"{k}.allot"] = ipo.allotment_text
+        if ipo.listing_text:
+            out[f"{k}.list"] = ipo.listing_text
 
     def extras(k: str, ipo, is_open: bool) -> None:
         # Mirrors exactly what creative._row draws, from the same properties.

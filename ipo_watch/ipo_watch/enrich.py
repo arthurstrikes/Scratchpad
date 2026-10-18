@@ -262,32 +262,81 @@ def enrich_dataset(ds: Dataset, today: date, get: Fetcher, workers: int = 1,
                            + " (IPOWatch page could not be read)")
 
 
-def attach_prev_subscription(ds: Dataset, directory: str, today: date) -> None:
-    """Fill each published IPO's previous retail/total subscription from our
-    own latest earlier report that carried a figure for it. Offline, exact:
-    these are numbers we already published."""
-    if not directory:
-        return
-    latest: dict[str, tuple[date, Optional[Decimal], Optional[Decimal]]] = {}
-    for path in sorted(glob.glob(os.path.join(directory, "ipo-watch-*-dataset.json"))):
+def _saved_reports(directory: str, today: date) -> list[tuple[date, dict]]:
+    """Our own earlier daily datasets (oldest first), as plain JSON."""
+    out = []
+    for path in sorted(glob.glob(os.path.join(directory or ".", "ipo-watch-*-dataset.json"))):
         try:
             with open(path, encoding="utf-8") as fh:
                 raw = json.load(fh)
         except (OSError, ValueError):
             continue
         d = parse_date(raw.get("run_date"))
-        if d is None or d >= today:
-            continue
+        if d is not None and d < today:
+            out.append((d, raw))
+    return sorted(out, key=lambda t: t[0])
+
+
+def attach_prev_subscription(ds: Dataset, directory: str, today: date) -> None:
+    """Fill each published IPO's previous retail/total subscription from our
+    own earlier reports. Offline and exact: these are figures we already
+    published.
+
+    The baseline is the latest earlier figure that is *different* from today's,
+    so on a weekend (IPOWatch does not refresh) the report keeps showing
+    Friday's move instead of a meaningless "no change". When every earlier
+    figure is the same, the latest one is kept and reads as "no change"."""
+    if not directory:
+        return
+    history: dict[str, list[tuple[date, Optional[Decimal], Optional[Decimal]]]] = {}
+    for d, raw in _saved_reports(directory, today):
         for group in ("open", "upcoming"):
             for it in raw.get(group) or []:
                 key = norm_key(it.get("name", ""))
                 r, t = it.get("retail_sub"), it.get("total_sub")
-                if not key or (r is None and t is None):
-                    continue
-                if key not in latest or d >= latest[key][0]:
-                    latest[key] = (d, Decimal(r) if r is not None else None,
-                                   Decimal(t) if t is not None else None)
+                if key and (r is not None or t is not None):
+                    history.setdefault(key, []).append(
+                        (d, Decimal(r) if r is not None else None,
+                         Decimal(t) if t is not None else None))
     for ipo in ds.published:
-        hit = latest.get(norm_key(ipo.name))
-        if hit:
-            ipo.prev_sub_date, ipo.prev_retail, ipo.prev_total = hit
+        rows = history.get(norm_key(ipo.name)) or []
+        for which in ("retail", "total"):
+            now = ipo.retail_sub if which == "retail" else ipo.total_sub
+            pairs = [(d, (r if which == "retail" else t)) for d, r, t in rows]
+            pairs = [(d, v) for d, v in pairs if v is not None]
+            if not pairs or now is None:
+                continue
+            differing = [(d, v) for d, v in pairs if v != now]
+            d, v = (differing or pairs)[-1]
+            if which == "retail":
+                ipo.prev_retail, ipo.prev_retail_date = v, d
+            else:
+                ipo.prev_total, ipo.prev_total_date = v, d
+
+
+def find_awaiting(ds: Dataset, directory: str, today: date,
+                  window_days: int = 14) -> list[IPO]:
+    """Closed Mainboard IPOs that have not listed yet and whose GMP is above the
+    High GMP line (the user's rule, 18 Oct 2026). Allotment and listing dates
+    come from our own saved reports of the IPO while it was open."""
+    from .listing import load_all_results
+    listed = {norm_key(r.name) for r in load_all_results(directory, today)}
+    dates: dict[str, tuple[Optional[date], Optional[date]]] = {}
+    for _, raw in _saved_reports(directory, today):
+        for group in ("open", "upcoming"):
+            for it in raw.get(group) or []:
+                key = norm_key(it.get("name", ""))
+                if key and (it.get("listing_date") or it.get("allotment_date")):
+                    dates[key] = (parse_date(it.get("allotment_date")),
+                                  parse_date(it.get("listing_date")))
+    out = []
+    for ipo in ds.recently_closed:
+        key = norm_key(ipo.name)
+        if (not ipo.close_date or not 0 < (today - ipo.close_date).days <= window_days
+                or key in listed or not ipo.is_hot):
+            continue
+        ipo.allotment_date, ipo.listing_date = dates.get(key, (None, None))
+        if ipo.listing_date is not None and ipo.listing_date < today:
+            continue                      # already listed; the scorecard covers it
+        out.append(ipo)
+    return sorted(out, key=lambda i: (i.close_date, i.name))

@@ -110,9 +110,12 @@ class IPO:
     listing_date: Optional[date] = None
 
     # Subscription as shown in our own previous report (enrich.attach_prev_subscription).
+    # The latest *different* figure we showed (so a weekend keeps showing Friday's
+    # move), with the date of that earlier report.
     prev_retail: Optional[Decimal] = None
     prev_total: Optional[Decimal] = None
-    prev_sub_date: Optional[date] = None
+    prev_retail_date: Optional[date] = None
+    prev_total_date: Optional[date] = None
 
     prov: Provenance = field(default_factory=Provenance)
     # Set when a value existed but failed verification (rule 5.10).
@@ -137,7 +140,7 @@ class IPO:
         pct = self.gmp_pct
         if pct is None:
             return NOT_VERIFIED if "gmp" in self.unverified_fields else NOT_UPDATED
-        return f"{pct:.2f}%"          # rule 5.7: GMP 0 renders as 0.00%
+        return pct_display(pct)       # rule 5.7: GMP 0 renders as 0.00%
 
     @property
     def gmp_text(self) -> str:
@@ -148,7 +151,8 @@ class IPO:
     @property
     def is_hot(self) -> bool:
         pct = self.gmp_pct
-        return pct is not None and pct > Decimal(str(GMP_HIGHLIGHT_THRESHOLD_PCT))
+        # Judged on the figure the reader sees, so "26%" is flagged and "25%" is not.
+        return pct is not None and pct_shown(pct) > Decimal(str(GMP_HIGHLIGHT_THRESHOLD_PCT))
 
     # ---------- display helpers ----------
 
@@ -204,24 +208,24 @@ class IPO:
         previous report was not yesterday's."""
         now = self.retail_sub if which == "retail" else self.total_sub
         was = self.prev_retail if which == "retail" else self.prev_total
+        when = self.prev_retail_date if which == "retail" else self.prev_total_date
         if now is None or was is None:
             return None
         if now == was:
-            text = "▬ no change"
-        else:
-            text = f"{'▲' if now > was else '▼'} from {_num(was)}x"
-        if self.prev_sub_date and today and (today - self.prev_sub_date).days > 1:
-            text += f" (as on {_d(self.prev_sub_date)})"
+            return "▬ no change"
+        text = f"{'▲' if now > was else '▼'} from {_num(was)}x"
+        if when and today and (today - when).days > 1:
+            text += f" on {_d(when)}"
         return text
 
     def closes_label(self, today: Optional[date]) -> Optional[str]:
-        """'Closes today' / 'Closes tomorrow' / '3 days left' for an open IPO."""
+        """'Closes today' / 'Closes tomorrow' for an open IPO; nothing further out."""
         if self.status != Status.OPEN or not self.close_date or not today:
             return None
         n = (self.close_date - today).days
         if n < 0:
             return None
-        return "Closes today" if n == 0 else "Closes tomorrow" if n == 1 else f"{n} days left"
+        return "Closes today" if n == 0 else "Closes tomorrow" if n == 1 else None
 
     @property
     def retail_text(self) -> str:
@@ -230,6 +234,18 @@ class IPO:
     @property
     def total_text(self) -> str:
         return self.sub_text("total")
+
+
+def pct_shown(p: Decimal) -> Decimal:
+    """The GMP % as displayed: whole number from 10 upward (half-up), two
+    decimals below 10. The value is still computed to 2dp; only the display
+    is rounded (user's request, 18 Oct 2026)."""
+    return p.quantize(Decimal("1"), rounding=ROUND_HALF_UP) if abs(p) >= 10 else p
+
+
+def pct_display(p: Decimal) -> str:
+    shown = pct_shown(p)
+    return f"{shown:.0f}%" if abs(p) >= 10 else f"{shown:.2f}%"
 
 
 def _num(v: Decimal) -> str:

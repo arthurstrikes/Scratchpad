@@ -36,7 +36,7 @@ CSS = f"""
   --bg:#111111; --surface:#1A1A1A; --surface-2:#202020; --line:#2A2A2A;
   --ink:#F5F5F5; --ink-2:#B0B0B0; --ink-3:#8A8A8A;
   --brand:#FF6B35; --brand-soft:#2A1810; --brand-fill:#C94A1A; --brand-fill-2:#9E3410;
-  --good:#4CAF50; --bad:#FF4444;
+  --good:#4CAF50; --bad:#FF4444; --warn:#F5B301; --warn-soft:#2B2410;
   --band-v:24px; --band-b:22px; --h1:44px; --when:60px; --gap:22px;
   --pad:13px; --nm:28px; --sub:20px; --pct:52px; --kv:44px; --fine:17px;
 }}
@@ -100,12 +100,25 @@ main{{padding:4px 40px 0}}
 .row.hot{{border-left-color:var(--brand)}}
 .nmrow{{display:flex;align-items:center;gap:14px;flex-wrap:wrap;min-width:0}}
 .nm{{font-size:var(--nm);font-weight:700;line-height:1.15;letter-spacing:.2px}}
-.flag.close{{color:var(--ink-2)}}
-.flag.close.soon{{color:var(--brand);background:var(--brand-soft)}}
+/* urgency: filled amber pills, deliberately unlike the outlined orange High GMP tag */
+.urg{{font-size:12.5px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;
+     border-radius:12px;padding:5px 11px 4px;white-space:nowrap}}
+.urg.today{{background:var(--warn);color:#111}}
+.urg.tomorrow{{background:var(--warn-soft);color:var(--warn)}}
 .chg{{font-size:calc(var(--sub) - 3px);font-weight:700;white-space:nowrap}}
 .chg.up{{color:var(--good)}} .chg.down{{color:var(--bad)}} .chg.flat{{color:var(--ink-3)}}
 .glance{{font-size:20px;font-weight:500;color:var(--ink-2);padding:14px 2px 0;letter-spacing:.2px}}
-.track{{font-size:15px;color:var(--ink-3);line-height:1.5;margin-bottom:10px;font-style:italic}}
+.tiles{{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}}
+.tile{{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px 11px}}
+.tile .kl{{font-size:12.5px;font-weight:500;letter-spacing:2.6px;text-transform:uppercase;color:var(--ink-3)}}
+.tile .tv{{font-size:calc(var(--kv) - 2px);margin-top:6px;color:var(--ink)}}
+.tile .tv.up{{color:var(--good)}} .tile .tv.down{{color:var(--bad)}}
+.tile .tn{{font-size:14.5px;color:var(--ink-3);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+.sec-h.slim2{{margin-top:calc(var(--gap) - 4px);margin-bottom:8px}}
+.arow{{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:20px;
+      padding:calc(var(--pad) - 2px) 24px calc(var(--pad) - 2px) 27px;border-top:1px solid var(--line)}}
+.arow:first-child{{border-top:0}}
+.arow .pct{{font-size:calc(var(--pct) - 6px)}}
 .flag{{font-size:12.5px;font-weight:700;letter-spacing:2.6px;text-transform:uppercase;
       color:var(--brand);border:1.5px solid currentColor;border-radius:3px;padding:5px 7px 4px}}
 .sub{{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 0;margin-top:5px;
@@ -227,8 +240,8 @@ def _row(ipo: IPO, idx: int, show_sub: bool, today=None) -> str:
     flag = '<span class="flag">High GMP</span>' if ipo.is_hot else ""
     closes = ipo.closes_label(today)
     if closes:
-        soon = " soon" if closes in ("Closes today", "Closes tomorrow") else ""
-        flag += f'<span class="flag close{soon}" data-verify="{kid}.closes">{_e(closes)}</span>'
+        when = "today" if closes == "Closes today" else "tomorrow"
+        flag += f'<span class="urg {when}" data-verify="{kid}.closes">{_e(closes)}</span>'
 
     fields = [
         _field("", ipo.date_range_text, f"{kid}.dates", False),
@@ -262,6 +275,47 @@ def _row(ipo: IPO, idx: int, show_sub: bool, today=None) -> str:
         <span class="{_pct_class(ipo)}" data-verify="{kid}.gmppct">{_e(ipo.gmp_pct_text)}</span>
         <div class="gmp2">{_spark(ipo)}<span class="rs">GMP <span data-verify="{kid}.gmp">{_e(ipo.gmp_text)}</span></span>{_trend_chip(ipo, kid)}</div>
       </div>
+    </div>"""
+
+
+def _await_row(ipo: IPO, idx: int) -> str:
+    k = f"aw{idx}"
+    fields = [_field("", f"Closed {ipo.close_date.strftime('%d %b')}", f"{k}.closed", False),
+              _field("Retail", ipo.retail_text, f"{k}.retail", ipo.retail_sub is None),
+              _field("Total", ipo.total_text, f"{k}.total", ipo.total_sub is None)]
+    dates = []
+    if ipo.allotment_text:
+        dates.append(_field("Allotment", ipo.allotment_text, f"{k}.allot", False))
+    if ipo.listing_text:
+        dates.append(_field("Listing", ipo.listing_text, f"{k}.list", False))
+    fine = f'<div class="fine">{"".join(dates)}</div>' if dates else ""
+    return f"""
+    <div class="arow">
+      <div>
+        <div class="nmrow"><span class="nm" data-verify="{k}.name">{_e(ipo.name)}</span></div>
+        <div class="sub">{"".join(fields)}</div>{fine}
+      </div>
+      <div class="gmp">
+        <span class="{_pct_class(ipo)}" data-verify="{k}.gmppct">{_e(ipo.gmp_pct_text)}</span>
+        <div class="gmp2"><span class="rs">GMP <span data-verify="{k}.gmp">{_e(ipo.gmp_text)}</span></span></div>
+      </div>
+    </div>"""
+
+
+def _track_tiles(tr) -> str:
+    def tile(label: str, value: Optional[str], note: str, key: str, tone: str = "") -> str:
+        if value is None:
+            return ""
+        return (f'<div class="tile"><div class="kl">{_e(label)}</div>'
+                f'<div class="tv num {tone}" data-verify="{key}">{_e(value)}</div>'
+                f'<div class="tn">{_e(note)}</div></div>')
+    sign = lambda t: "up" if t.startswith("+") else "down" if t.startswith("-") else ""  # noqa: E731
+    return f"""<div class="sec-h slim2"><span class="dot lst"></span><h2 data-verify="trk.title">{_e(tr.title)}</h2><span class="rule"></span></div>
+    <div class="tiles">
+      {tile("Avg listing gain", tr.gain_text, "issue price → first-day open", "trk.gain", sign(tr.gain_text))}
+      {tile("Opened above issue", tr.up_text, "listings that gained on day one", "trk.up")}
+      {tile("Avg first day", tr.day1_text, "open → close", "trk.day1", sign(tr.day1_text or ""))}
+      {tile("GMP vs reality", tr.miss_text, tr.miss_note or "", "trk.miss") if tr.miss_text else ""}
     </div>"""
 
 
@@ -303,6 +357,14 @@ def build_html(ds: Dataset, tier: int = 0, strip_rows: Optional[int] = None) -> 
     off = len(ds.open_ipos)
     up_rows = [_row(i, off + n, False, ds.run_date) for n, i in enumerate(ds.upcoming_ipos)]
 
+    await_html = ""
+    if ds.awaiting:
+        await_html = (
+            '<div class="sec-h"><span class="dot up"></span><h2>Closed · awaiting listing</h2>'
+            f'<span class="rule"></span><span class="num">{len(ds.awaiting)}</span></div>'
+            '<div class="rows">' + "".join(_await_row(i, n) for n, i in enumerate(ds.awaiting)) + "</div>")
+    track_html = _track_tiles(ds.track_record) if ds.track_record else ""
+
     strip = strip_listings(ds.recent_listings, ds.run_date)
     strip = strip if strip_rows is None else strip[:strip_rows]
     strip_html = ""
@@ -324,9 +386,6 @@ def build_html(ds: Dataset, tier: int = 0, strip_rows: Optional[int] = None) -> 
         items = "<br>".join(_e(w) for w in ds.warnings[:4])
         warn_html = f'<div class="warn">{items}</div>'
 
-    track_html = (f'<div class="track" data-verify="track">{_e(ds.track_record)}</div>'
-                  if ds.track_record else "")
-
     return f"""<!doctype html><html><head><meta charset="utf-8">
 <style>{font_face_css()}{CSS}</style></head>
 <body><div class="sheet t{tier}">
@@ -338,12 +397,13 @@ def build_html(ds: Dataset, tier: int = 0, strip_rows: Optional[int] = None) -> 
     <div class="glance" data-verify="glance">{_e(glance_text(ds))}</div>
     {_section("Open now", "open", open_rows, "No Mainboard IPOs are open today.")}
     {_section("Upcoming", "up", up_rows, "No Mainboard IPOs are scheduled yet.")}
+    {await_html}
     {strip_html}
     {_leaders(ds)}
+    {track_html}
     <div class="ftr">
       {warn_html}
-      {track_html}
-      <div class="legend"><span>GMP = Grey Market Premium</span><span>High GMP = above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%</span><span>▲/▼ = change since our previous update</span><span>GMP % on upper price band</span><span>GMP is unofficial and can change before listing</span>{"<span>Listed = issue to first-day open · Day 1 = open to close · GMP said = last reported</span>" if strip else ""}</div>
+      <div class="legend"><span>GMP = Grey Market Premium</span><span>High GMP = above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}%</span><span>▲/▼ = change since our previous update</span>{"<span>Awaiting listing = closed, GMP above " + f"{GMP_HIGHLIGHT_THRESHOLD_PCT:g}" + "%</span>" if ds.awaiting else ""}<span>GMP % on upper price band</span><span>GMP is unofficial and can change before listing</span>{"<span>Listed = issue to first-day open · Day 1 = open to close · GMP said = last reported</span>" if strip else ""}</div>
       <div class="src"><div>Source: <b>{_e(SOURCE_NAME)}</b></div>{stamp_html}</div>
     </div>
   </main>

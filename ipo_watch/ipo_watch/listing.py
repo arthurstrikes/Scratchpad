@@ -51,10 +51,10 @@ def _pct(num: Decimal, den: Decimal) -> Optional[Decimal]:
     return (num / den * Decimal(100)).quantize(Q2, rounding=ROUND_HALF_UP)
 
 
-def _signed(p: Optional[Decimal]) -> str:
+def _signed(p: Optional[Decimal], places: int = 2) -> str:
     if p is None:
         return "Not updated"
-    return f"{p:+.2f}%" if p != 0 else "0.00%"
+    return f"{p:+.{places}f}%" if p != 0 else f"{0:.{places}f}%"
 
 
 def _price(v: Optional[Decimal]) -> str:
@@ -366,7 +366,8 @@ def load_recent_results(directory: str, today: date, days: int = 3) -> list[List
 # ------------------------------------------------------- GMP track record
 
 RECORD_LISTINGS = 25         # the track record looks at the most recent listings
-RECORD_MIN_WITH_GMP = 5      # ...and says nothing until this many have a GMP on record
+RECORD_MIN_LISTINGS = 5      # nothing is said until this many listings are on record
+RECORD_MIN_WITH_GMP = 5      # the GMP-miss figure needs this many with a GMP on record
 
 
 def load_all_results(directory: str, today: Optional[date] = None) -> list[ListingResult]:
@@ -383,22 +384,70 @@ def load_all_results(directory: str, today: Optional[date] = None) -> list[Listi
     return sorted(out, key=lambda r: (r.listing_date, r.name), reverse=True)
 
 
-def track_record_text(results: list, limit: int = RECORD_LISTINGS) -> Optional[str]:
-    """One plain sentence on how far GMP was from the real listing gain.
+@dataclass
+class TrackRecord:
+    """Averages over the most recent listings. Display strings live here so the
+    text report, the image and the image check all use the same words."""
+    n: int                              # listings in the window
+    avg_gain: Decimal                   # average listing gain (issue -> open), %
+    up: int                             # opened above the issue price
+    avg_day1: Optional[Decimal]         # average first-day open -> close, %
+    n_gmp: int                          # listings where we had published a GMP
+    avg_miss: Optional[Decimal]         # average |listing gain - GMP %|, points
+    over: int                           # GMP was higher than the real gain
 
-    Looks at the most recent `limit` listings; only those where we had
-    published a GMP can be compared. Gap = listing gain minus GMP %, so a
-    negative gap means GMP was higher than what happened. None until there
-    are enough to say anything (fails closed, never a guess)."""
-    recent = sorted(results, key=lambda r: (r.listing_date, r.name), reverse=True)[:limit]
-    used = [r for r in recent if r.gap_pts is not None]
-    if len(used) < RECORD_MIN_WITH_GMP:
+    @property
+    def title(self) -> str:
+        return f"GMP track record · last {self.n} listings"
+
+    @property
+    def gain_text(self) -> str: return _signed(self.avg_gain, 1)
+    @property
+    def up_text(self) -> str: return f"{self.up} of {self.n}"
+    @property
+    def day1_text(self) -> Optional[str]:
+        return None if self.avg_day1 is None else _signed(self.avg_day1, 1)
+    @property
+    def miss_text(self) -> Optional[str]:
+        return None if self.avg_miss is None else f"{self.avg_miss} pts"
+    @property
+    def miss_note(self) -> Optional[str]:
+        if self.avg_miss is None:
+            return None
+        return f"{self.n_gmp} with GMP · too high in {self.over}"
+
+    def to_dict(self) -> dict:
+        s = lambda v: str(v) if v is not None else None  # noqa: E731
+        return {"n": self.n, "avg_gain": s(self.avg_gain), "up": self.up,
+                "avg_day1": s(self.avg_day1), "n_gmp": self.n_gmp,
+                "avg_miss": s(self.avg_miss), "over": self.over}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "TrackRecord":
+        dec = lambda k: Decimal(d[k]) if d.get(k) is not None else None  # noqa: E731
+        return cls(n=d["n"], avg_gain=dec("avg_gain"), up=d["up"], avg_day1=dec("avg_day1"),
+                   n_gmp=d["n_gmp"], avg_miss=dec("avg_miss"), over=d["over"])
+
+
+def track_record(results: list, limit: int = RECORD_LISTINGS) -> Optional[TrackRecord]:
+    """Average performance of the most recent `limit` listings, and how far GMP
+    was from reality where we had published one. None until there are enough
+    (fails closed, never a guess). Gap = listing gain minus GMP %, so a
+    negative gap means GMP was higher than what happened."""
+    recent = [r for r in sorted(results, key=lambda r: (r.listing_date, r.name), reverse=True)
+              if r.listing_gain_pct is not None][:limit]
+    if len(recent) < RECORD_MIN_LISTINGS:
         return None
-    avg = (sum(abs(r.gap_pts) for r in used) / len(used)).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP)
-    higher = sum(1 for r in used if r.gap_pts < 0)
-    return (f"GMP track record, last {len(recent)} listings ({len(used)} with a GMP on record): "
-            f"the real listing gain was {avg} points away from the GMP we reported, on average; "
-            f"GMP was higher than the real gain in {higher} of {len(used)}.")
+    q1 = Decimal("0.1")
+    avg = lambda xs: (sum(xs) / len(xs)).quantize(q1, rounding=ROUND_HALF_UP)  # noqa: E731
+    day1 = [r.day1_pct for r in recent if r.day1_pct is not None]
+    gap = [r.gap_pts for r in recent if r.gap_pts is not None]
+    return TrackRecord(
+        n=len(recent), avg_gain=avg([r.listing_gain_pct for r in recent]),
+        up=sum(1 for r in recent if r.listing_gain_pct > 0),
+        avg_day1=avg(day1) if day1 else None, n_gmp=len(gap),
+        avg_miss=avg([abs(g) for g in gap]) if len(gap) >= RECORD_MIN_WITH_GMP else None,
+        over=sum(1 for g in gap if g < 0))
 
 
 def backfill_results(directory: str, today: date, equities: list[dict],
@@ -413,6 +462,36 @@ def backfill_results(directory: str, today: date, equities: list[dict],
             save_result(directory, r)
             new.append(r)
     return new
+
+
+def backfill_older(directory: str, today: date, equities: list[dict],
+                   bhav_for: Callable[[date], Optional[dict]], sub_rows: list,
+                   want: int = RECORD_LISTINGS) -> list[ListingResult]:
+    """Top the record up to `want` listings using Mainboard IPOs that IPOWatch's
+    subscription page still lists but that closed before our own reports began.
+    Prices come from NSE; there is no GMP on record for these (we never
+    published one), so they count towards the averages but not the GMP-miss
+    figure. Matching is the same exact-or-unique-prefix rule as everywhere."""
+    have = {r.symbol for r in load_all_results(directory, today)}
+    if len(have) >= want:
+        return []
+    from .models import Board
+    cands = [Candidate(name=r.name, close_date=r.close_date)
+             for r in sub_rows
+             if r.board == Board.MAINBOARD and r.close_date and r.close_date < today]
+    cands.sort(key=lambda c: c.close_date, reverse=True)
+    new = []
+    for res in find_results(cands, equities, bhav_for):
+        if res.symbol in have or res.listing_date > today:
+            continue
+        new.append(res)
+    new.sort(key=lambda r: (r.listing_date, r.name), reverse=True)
+    out = []
+    for r in new[: max(0, want - len(have))]:
+        if not os.path.exists(result_path(directory, r)):
+            save_result(directory, r)
+            out.append(r)
+    return out
 
 
 IMAGE_LISTING_DAYS = 2       # the daily image shows listings from the last two days

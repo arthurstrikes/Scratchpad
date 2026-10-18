@@ -19,14 +19,14 @@ from decimal import Decimal
 
 from .config import (GMP_URL, IST, OUTPUT_DIR, SOURCE_NAME, SUBSCRIPTION_URL)
 from .creative import last_render_info, render_listing_png, render_png
-from .enrich import attach_prev_subscription, enrich_dataset
+from .enrich import attach_prev_subscription, enrich_dataset, find_awaiting
 from .fetch import FetchError, extract_page_timestamp, fetch_pages, load_fixture
 from .merge import Dataset, build_dataset
 from .models import Board, IPO, Provenance, Status, Trend, parse_date
 from .parse import parse_page
-from .listing import (BHAV_URL, ListingResult, backfill_results, find_results, fetch_equities, get_text,
+from .listing import (BHAV_URL, ListingResult, backfill_older, backfill_results, find_results, fetch_equities, get_text,
                       load_all_results, load_candidates, load_recent_results, make_bhav_getter,
-                      match_symbol, parse_bhav, result_path, save_result, track_record_text)
+                      match_symbol, parse_bhav, result_path, save_result, track_record, TrackRecord)
 from .report import (build_caption, build_listing_report, build_midday_report, build_report,
                      build_weekly_report, closing_today)
 from .share import build_share_page
@@ -88,7 +88,11 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
              f"key dates for {sum(1 for i in ds.published if i.allotment_date or i.listing_date)}")
     if history_dir:
         attach_prev_subscription(ds, history_dir, today)
-        ds.track_record = track_record_text(load_all_results(history_dir, today))
+        ds.track_record = track_record(load_all_results(history_dir, today))
+        ds.awaiting = find_awaiting(ds, history_dir, today)
+        if ds.awaiting:
+            _log(f"closed, awaiting listing (GMP above the High GMP line): "
+                 f"{', '.join(i.name for i in ds.awaiting)}")
         ds.recent_listings = load_recent_results(history_dir, today)
         if ds.recent_listings:
             _log(f"recently listed: {', '.join(r.name for r in ds.recent_listings)}")
@@ -153,7 +157,8 @@ def dataset_to_json(ds: Dataset) -> dict:
             "listing_date": i.listing_date.isoformat() if i.listing_date else None,
             "prev_retail": str(i.prev_retail) if i.prev_retail is not None else None,
             "prev_total": str(i.prev_total) if i.prev_total is not None else None,
-            "prev_sub_date": i.prev_sub_date.isoformat() if i.prev_sub_date else None,
+            "prev_retail_date": i.prev_retail_date.isoformat() if i.prev_retail_date else None,
+            "prev_total_date": i.prev_total_date.isoformat() if i.prev_total_date else None,
         }
     return {
         "run_date": ds.run_date.isoformat() if ds.run_date else None,
@@ -166,7 +171,8 @@ def dataset_to_json(ds: Dataset) -> dict:
         "recently_closed_internal": [one(i) for i in ds.recently_closed],
         "excluded_sme": ds.excluded_sme,
         "recent_listings": [r.to_dict() for r in ds.recent_listings],
-        "track_record": ds.track_record,
+        "track_record": ds.track_record.to_dict() if ds.track_record else None,
+        "awaiting": [one(i) for i in ds.awaiting],
         "warnings": ds.warnings,
         "conflicts": [c.__dict__ for c in ds.conflicts],
     }
@@ -202,7 +208,8 @@ def dataset_from_json(path: str) -> Dataset:
         ipo.allotment_date = parse_date(d.get("allotment_date"))
         ipo.listing_date = parse_date(d.get("listing_date"))
         ipo.prev_retail, ipo.prev_total = dec("prev_retail"), dec("prev_total")
-        ipo.prev_sub_date = parse_date(d.get("prev_sub_date"))
+        ipo.prev_retail_date = parse_date(d.get("prev_retail_date"))
+        ipo.prev_total_date = parse_date(d.get("prev_total_date"))
         return ipo
 
     ds = Dataset(
@@ -210,7 +217,9 @@ def dataset_from_json(path: str) -> Dataset:
         upcoming_ipos=[one(d, Status.UPCOMING) for d in raw.get("upcoming", [])],
         excluded_sme=raw.get("excluded_sme", []),
         recent_listings=[ListingResult.from_dict(x) for x in raw.get("recent_listings", [])],
-        track_record=raw.get("track_record"),
+        track_record=TrackRecord.from_dict(raw["track_record"]) if raw.get("track_record") else None,
+        awaiting=[one(d, Status.CLOSED) for d in raw.get("awaiting", [])],
+        recently_closed=[one(d, Status.CLOSED) for d in raw.get("recently_closed_internal", [])],
         warnings=raw.get("warnings", []),
         subscription_timestamp=raw.get("subscription_timestamp"),
         gmp_timestamp=raw.get("gmp_timestamp"),
@@ -386,7 +395,14 @@ def _backfill_mode(args, today: date) -> int:
     if not equities:
         _log("backfill: NSE's equity list could not be read")
         return 2
-    new = backfill_results(args.outdir, today, equities, make_bhav_getter())
+    bhav = make_bhav_getter()
+    new = backfill_results(args.outdir, today, equities, bhav)
+    try:
+        sub = fetch_pages([SUBSCRIPTION_URL])[SUBSCRIPTION_URL]
+        new += backfill_older(args.outdir, today, equities, bhav,
+                              parse_page(sub.html, SUBSCRIPTION_URL, today))
+    except Exception as exc:  # noqa: BLE001
+        _log(f"backfill: could not top up from IPOWatch's older IPOs ({exc})")
     for r in new:
         _log(f"backfill: saved {r.name} ({r.symbol}) listed {r.listing_date:%d %b} "
              f"gain {r.listing_gain_text}"
@@ -404,7 +420,7 @@ def _weekly_mode(args, today: date) -> int:
         if os.path.isdir(args.outdir) else []
     ds = dataset_from_json(os.path.join(args.outdir, files[-1])) if files else None
     text = build_weekly_report(today, listed, ds,
-                               track_record_text(load_all_results(args.outdir, today)))
+                               track_record(load_all_results(args.outdir, today)))
     path = os.path.join(args.outdir, f"ipo-watch-{today:%Y-%m-%d}-weekly.txt")
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(text)
