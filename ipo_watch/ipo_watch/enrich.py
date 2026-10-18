@@ -115,6 +115,19 @@ def parse_gmp_history(html: str, today: date) -> Optional[list[tuple[date, Optio
     return None
 
 
+def overlay_published(history: list[tuple[date, Optional[Decimal]]],
+                      local: list[tuple[date, Optional[Decimal]]]
+                      ) -> list[tuple[date, Optional[Decimal]]]:
+    """Where we published a GMP for a day, that figure replaces IPOWatch's
+    (it sometimes revises an old day's row afterwards), so "vs yesterday" is
+    measured against what the reader was actually shown."""
+    ours = {d: g for d, g in local if g is not None}
+    out = [(d, ours.get(d, g)) for d, g in history]
+    seen = {d for d, _ in out}
+    out += [(d, g) for d, g in ours.items() if d not in seen]
+    return out
+
+
 def compute_trend(history: Optional[list[tuple[date, Optional[Decimal]]]],
                   today: date, gmp_today: Optional[Decimal]) -> Trend:
     """Published GMP versus the latest earlier day that has a number."""
@@ -201,6 +214,8 @@ def enrich_ipo(ipo: IPO, today: date, get: Fetcher,
         history = parse_gmp_history(gmp_html, today)
     if history is None and local:
         history = local            # IPOWatch page unreadable: use our own record
+    elif history is not None and local:
+        history = overlay_published(history, local)
     ipo.trend = compute_trend(history, today, ipo.gmp)
     if ipo.trend.status == "unavailable":
         problems["trend"] = True

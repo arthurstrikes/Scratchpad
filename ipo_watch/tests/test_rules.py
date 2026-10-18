@@ -901,3 +901,13 @@ def test_missing_minimum_investment_is_flagged_in_data_notes():
     pages = {a.gmp_url: gmp, "https://ipowatch.in/alpha-co-ipo/": detail}
     enrich_dataset(ds, date(2026, 10, 15), pages.get)
     assert any("Minimum investment not available for: Alpha Co" in w for w in ds.warnings)
+
+
+def test_trend_is_measured_against_the_figure_we_published():
+    from ipo_watch.enrich import overlay_published
+    today = date(2026, 10, 18)
+    ipowatch = [(date(2026, 10, 17), Decimal("15")), (date(2026, 10, 16), Decimal("40"))]
+    ours = [(date(2026, 10, 17), Decimal("35"))]          # what we showed on the 17th
+    t = compute_trend(overlay_published(ipowatch, ours), today, Decimal("15"))
+    assert t.prev_gmp == Decimal("35") and t.change == Decimal("-20")
+    assert [str(v) for v in t.series] == ["40", "35", "15"]
