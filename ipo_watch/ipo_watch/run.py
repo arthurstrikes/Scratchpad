@@ -59,11 +59,14 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
     gmp_rows = parse_page(gmp_page.html, GMP_URL, today)
     _log(f"parsed {len(sub_rows)} subscription rows, {len(gmp_rows)} GMP rows")
 
-    if not sub_rows and not gmp_rows:
+    if not sub_rows or not gmp_rows:
+        which = "either IPOWatch page" if not sub_rows and not gmp_rows else (
+            "IPOWatch's subscription page" if not sub_rows else "IPOWatch's GMP page")
         raise FetchError(
-            "No IPO rows parsed from either IPOWatch page. The page layout has "
-            "probably changed - recalibrate ipo_watch/parse.py against a fresh "
-            "snapshot before publishing."
+            f"No IPO rows parsed from {which}. The page layout has probably changed, "
+            "or IPOWatch served a reduced page (seen from GitHub's runners on 18 Oct "
+            "after a 403). Nothing is published from half the data; recalibrate "
+            "ipo_watch/parse.py against a fresh snapshot if the layout changed."
         )
 
     ds = build_dataset(
