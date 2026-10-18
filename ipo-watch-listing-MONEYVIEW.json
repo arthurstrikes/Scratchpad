@@ -1,0 +1,14 @@
+{
+  "name": "Moneyview",
+  "symbol": "MONEYVIEW",
+  "series": "EQ",
+  "listing_date": "2026-10-01",
+  "issue_price": "34.00",
+  "open_price": "55.00",
+  "close_price": "53.88",
+  "cap_price": "34",
+  "last_gmp": "14",
+  "last_gmp_pct": "41.18",
+  "last_gmp_date": "2026-09-28",
+  "notes": []
+}
