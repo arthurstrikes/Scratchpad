@@ -29,7 +29,7 @@ CARD_W = 1080
 # WhatsApp crops very tall images in the chat thread, so the card is held to
 # 4:5 or squarer by stepping through denser layout tiers until it fits.
 MAX_H = 1350
-TIERS = (0, 1, 2)
+TIERS = (0, 1, 2, 3)
 
 CSS = f"""
 :root{{
@@ -44,6 +44,22 @@ CSS = f"""
     --pad:10px; --nm:26px; --sub:18px; --pct:46px; --kv:38px; --fine:16px}}
 .t2{{--band-v:14px; --band-b:12px; --h1:34px; --when:44px; --gap:12px;
     --pad:7px; --nm:24px; --sub:17px; --pct:41px; --kv:34px; --fine:15px}}
+.t3{{--band-v:10px; --band-b:8px; --h1:30px; --when:36px; --gap:8px;
+    --pad:7px; --nm:23px; --sub:16.5px; --pct:38px; --kv:30px; --fine:14.5px}}
+.t3 .eyebrow{{margin-bottom:4px;font-size:12px}}
+.t3 .glance{{padding-top:8px;font-size:17px}}
+.t3 .tile .tn{{font-size:13.5px;margin-top:2px}}
+.t3 .tile{{padding:9px 14px 8px}}
+.t3 .kpi{{padding:7px 16px 6px}}
+.t3 .kpi .kn{{margin-top:2px;font-size:16px}}
+.t3 .kpis{{margin-top:12px}}
+.t3 .ftr{{margin-top:10px;padding-top:8px}}
+.t3 .legend{{font-size:13px;line-height:1.45;margin-bottom:6px}}
+.t3 .src{{font-size:13px}}
+.t3 .sheet,.sheet.t3{{padding-bottom:12px}}
+.t3 .sec-h{{margin-bottom:6px}}
+.t3 .flag,.t3 .urg{{padding-top:3px;padding-bottom:2px}}
+.t3 .tr,.t3 .rs{{font-size:16px}}
 *{{margin:0;padding:0;box-sizing:border-box}}
 body{{width:{CARD_W}px;background:var(--bg);color:var(--ink);font-family:{FONT_STACK};
      -webkit-font-smoothing:antialiased;font-variant-numeric:tabular-nums lining-nums}}

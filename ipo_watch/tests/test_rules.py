@@ -1120,3 +1120,25 @@ def test_subscription_table_whose_name_header_became_a_row_number_still_parses()
             "<td>170.44</td><td>29.49</td><td>135.00</td><td>16:30</td></tr></table>")
     rows = parse_page(html, "https://ipowatch.in/ipo-subscription-status-today/", date(2026, 10, 19))
     assert [(r.name, r.retail_sub, r.total_sub) for r in rows] == [("Tonbo Imaging", Decimal("29.49"), Decimal("135.00"))]
+
+
+def test_a_heavy_day_still_fits_four_by_five():
+    """19 Oct: 4 open + 3 upcoming + awaiting + track record was 1433px at the old
+    densest tier; the extra tier keeps it inside 1350."""
+    from ipo_watch.creative import MAX_H, last_render_info, render_png
+    from ipo_watch.listing import track_record
+    from ipo_watch.merge import Dataset
+    from ipo_watch.models import Status
+    hot = mk("Hot Co", Decimal("30"), Decimal("100"), retail=Decimal("3"), total=Decimal("9"),
+             o=date(2026, 10, 13), c=date(2026, 10, 15))
+    hot.status = Status.CLOSED
+    open_ = [_open(f"Open {i}", date(2026, 10, 19), Decimal("3"), Decimal("2"), gmp=Decimal("40"))
+             for i in range(4)]
+    up = [mk(f"Up {i}", Decimal("20"), Decimal("100")) for i in range(3)]
+    for u in up:
+        u.status = Status.UPCOMING
+    rs = [_res(f"S{i}", date(2026, 10, 1 + i), "100", "110", "10") for i in range(6)]
+    ds = Dataset(open_ipos=open_, upcoming_ipos=up, awaiting=[hot], track_record=track_record(rs),
+                 run_date=date(2026, 10, 19))
+    render_png(ds, tmp_path_factory_dir() + "/t.png")
+    assert last_render_info()["height"] <= MAX_H
