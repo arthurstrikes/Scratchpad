@@ -53,13 +53,21 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps chromium
 
+      # A dry run (Telegram off) is a health check, not a delivery: its outcome is
+      # printed in the log instead of failing the job, so GitHub does not e-mail a
+      # "Run failed" notice for every check. Real runs still fail loudly.
       - name: Run IPO Watch
         id: run
+        continue-on-error: ${{ github.event_name == 'workflow_dispatch' && !inputs.send_telegram }}
         working-directory: ipo_watch
         env:
           TELEGRAM_BOT_TOKEN: ${{ (github.event_name != 'workflow_dispatch' || inputs.send_telegram) && secrets.TELEGRAM_BOT_TOKEN || '' }}
           TELEGRAM_CHAT_ID: ${{ (github.event_name != 'workflow_dispatch' || inputs.send_telegram) && secrets.TELEGRAM_CHAT_ID || '' }}
         run: python -m ipo_watch.run --outdir output --fail-on-telegram-error
+
+      - name: Dry-run result line
+        if: always() && github.event_name == 'workflow_dispatch' && !inputs.send_telegram
+        run: echo "DRY RUN RESULT - pipeline step outcome ${{ steps.run.outcome }} (see the parsed row counts above)"
 
       # Only real sends are recorded, so a manual dry run never writes history.
       - name: Save today's result to the history branch
