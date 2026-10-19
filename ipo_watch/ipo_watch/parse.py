@@ -157,6 +157,12 @@ def _header_map(rows) -> tuple[dict[str, int], int]:
             key = _match_column(t)
             if key and key not in mapping:
                 mapping[key] = i
+        # 19 Oct 2026: IPOWatch's name column header became a bare row number
+        # ("1") instead of "IPO". When that is the only unmapped lead column and
+        # the rest of the header is recognisable, it is the name column.
+        if ("name" not in mapping and texts and re.fullmatch(r"\d*", texts[0].strip())
+                and 0 not in mapping.values() and len(mapping) >= 3):
+            mapping["name"] = 0
         if "name" in mapping and len(mapping) >= 2:
             return mapping, ridx
     return {}, -1
