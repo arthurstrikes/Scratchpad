@@ -32,6 +32,18 @@ trend measured against the figure *we* published; then the decision aids (below)
 HD Fire Protect from the session (skip if the GitHub listing workflow is live). Seed the `history` branch with the
 backfilled listing results after any merge that changes their format (see section 6b).
 
+**Standing duties (the user asked on 19 Oct: do these without being reminded):**
+1. **GitHub dry-run check, every day.** Trigger `trig_01P5bUqYnxfojzDfwuMvF7JZ` (12:15 UTC = 5:45 PM IST, fires into the long-running session) dispatches `ipo-watch.yml` with `send_telegram` false, reads the log and adds a line to the table below. PASS = succeeded, at least 100 subscription rows, at least 1 GMP row, image check passed. Say nothing to the user on a FAIL. **After three passes in a row, tell the user and ask for a yes** before going live (schedules, retiring the 5:05 PM backup). Never send a real run from this check.
+2. **Sundays:** after the daily report, also run `python3 -m ipo_watch.run --mode weekly --outdir output > /tmp/weekly.log 2>&1` (the weekly wrap) until the GitHub weekly schedule is live; attach nothing, just confirm the Telegram line in the reply.
+3. **20 Oct, 7:30 PM IST:** listing scorecard for HD Fire Protect (reminder `trig_01SNDhTcCYzauXQsXpk7aHax`).
+4. Every daily run: save the whole log to a file, report the Telegram line, flag oddities in two or three lines.
+
+### GitHub go-live test log (dry runs, nothing sent)
+
+| Date | Result | Notes |
+|---|---|---|
+| 18 Oct | FAIL | 403 on the plain request; browser fallback got a reduced page (15 subscription rows, 0 GMP); run now aborts in that case |
+
 **How the user likes to work:** not a programmer; wants plain language ("explain like a 10th standard student");
 decide technical things myself; ask before changing published numbers, design, schedule or delivery; wants
 UI/UX and user empathy to drive choices; never investment advice.
