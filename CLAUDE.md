@@ -364,8 +364,8 @@ two-line rows (not cards), no GMP ranking block in the image (it is in the
 text), no per-row comparison bars. Height is the priority - it is read on a
 phone. **Held to 4:5 or squarer (`MAX_H = 1350` CSS px, so 2160x2700 max)**:
 WhatsApp crops very tall images in the chat thread. `creative.render_png`
-renders the roomiest of three density tiers (`TIERS`) that fits and the run
-log prints which one was used; an 8-IPO day lands near 1080x1250.
+renders the roomiest of four density tiers (`TIERS`) that fits and the run
+log prints which one was used; an 8-IPO day lands near 1080x1250. **A fourth tier (3) was added 19 Oct**: with 7 IPOs plus the awaiting-listing section and the track-record tiles the old densest tier was 1433px, over the 4:5 limit; tier 3 lands near 1260 (`test_a_heavy_day_still_fits_four_by_five`).
 
 **"High GMP" flag (fire emoji in the text, HIGH GMP tag and orange edge in the
 image): GMP % strictly above 25%**, from `config.GMP_HIGHLIGHT_THRESHOLD_PCT`, the
