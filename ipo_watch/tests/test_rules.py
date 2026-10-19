@@ -1109,3 +1109,14 @@ def test_a_403_from_ipowatch_falls_back_to_a_real_browser(monkeypatch):
     monkeypatch.setattr(fetch, "render_pages", browser)
     got = fetch.fetch_pages(["https://ipowatch.in/x/"], attempts=4)
     assert calls["browser"] == 1 and "<table" in got["https://ipowatch.in/x/"].html
+
+
+def test_subscription_table_whose_name_header_became_a_row_number_still_parses():
+    """19 Oct 2026: IPOWatch's first header cell changed from 'IPO' to '1'."""
+    from ipo_watch.parse import parse_page
+    html = ("<table><tr><th>1</th><th>Type</th><th>Closing Date</th><th>QIB (X)</th><th>NII (X)</th>"
+            "<th>Retail (X)</th><th>Total (X)</th><th>Last Updated</th></tr>"
+            "<tr><td>Tonbo Imaging</td><td>Mainboard</td><td>October 19, 2026</td><td>293.56</td>"
+            "<td>170.44</td><td>29.49</td><td>135.00</td><td>16:30</td></tr></table>")
+    rows = parse_page(html, "https://ipowatch.in/ipo-subscription-status-today/", date(2026, 10, 19))
+    assert [(r.name, r.retail_sub, r.total_sub) for r in rows] == [("Tonbo Imaging", Decimal("29.49"), Decimal("135.00"))]
