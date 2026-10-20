@@ -73,6 +73,7 @@ class Candidate:
     last_gmp: Optional[Decimal] = None
     last_gmp_pct: Optional[Decimal] = None
     last_gmp_date: Optional[date] = None
+    listing_date: Optional[date] = None     # what IPOWatch told us when we reported it
 
 
 @dataclass
@@ -232,6 +233,8 @@ def load_candidates(directory: str, today: date,
                 c.name, c.close_date = it["name"], close
                 if it.get("price_max") is not None:
                     c.cap_price = Decimal(it["price_max"])
+                if it.get("listing_date"):
+                    c.listing_date = parse_date(it["listing_date"])
                 if it.get("gmp") is not None and group in ("open", "upcoming"):
                     pct = Decimal(it["gmp_pct"]) if it.get("gmp_pct") is not None else None
                     gmp_seen[key] = (run, Decimal(it["gmp"]), pct)

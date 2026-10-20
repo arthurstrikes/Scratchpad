@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (90 at 19 Oct 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (93 at 20 Oct 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -556,6 +556,27 @@ if the earlier report was not yesterday's); (3) the track record's fourth tile i
 instead of the abstract average gap; the average miss and "GMP too high in N" stay in the
 text; (4) the awaiting-listing rows show the **issue price** (`aw<i>.price`).
 
+**Added 20 Oct (operator's call, user said "you decide and execute"):**
+- **Stale-data cue.** When the subscription figures are older than the run date (IPOWatch
+  does not refresh on weekends), the text report shows "⏳ Subscription figures are from
+  17 Oct (IPOWatch has not refreshed since)" under the glance line and the image's
+  subscription stamp turns amber (`report.subscription_stale_date`).
+- **Layout canary.** `fixtures/layout_fingerprint.json` holds the heading rows of IPOWatch's
+  tables as of 19 Oct. Every live run compares them (`parse.layout_changes`) and prints
+  `LAYOUT CHANGE: ...` lines in the run log and saves them in the dataset JSON
+  (`layout_notes`). **Operator-only: never shown to the reader.** Daily duty: grep the run log
+  for `LAYOUT CHANGE` and, if present, read the snapshot, extend the parser and re-pin the
+  fingerprint (regenerate it from a fresh snapshot with `parse.layout_fingerprint`).
+- **Listing scorecard robustness.** NSE's list of securities can lag the listing day, so
+  `--mode listing` now also trusts the listing date IPOWatch gave us (`Candidate.listing_date`)
+  and keeps re-reading NSE's list for up to 30 minutes; if the IPO still is not there it sends a
+  one-line "due to list today, NSE data not out yet" note and exits 0. **Replay the next day**
+  with `--mode listing --date <listing day>` (the result is only saved after a real send).
+- **Decisions, not built:** no share page and no WhatsApp Business route until the audience is
+  known; no "cash for 1-3 lots" (the minimum investment already shows one lot); no
+  allotment/listing tags (the user limited urgency tags to closing today/tomorrow); the
+  "Highest GMP / Top Retail / Top Total" strip stays (signed-off design).
+
 ## Plain-language guide and living plan
 
 `EXPLAINER.md` explains the whole project in simple words (what, why, how, when,
@@ -581,7 +602,9 @@ The photo now carries a compact WhatsApp-ready summary as its caption
 Telegram's 1024 characters). **Tested by the user 15 Oct: the image shares
 straight to WhatsApp but the caption does NOT come along; the text has to be
 copied separately** (ROADMAP A4 answered). The caption is therefore only a
-convenience inside Telegram.
+convenience inside Telegram. **Since 20 Oct the caption is plain text** (no WhatsApp
+stars, which only showed as stray asterisks in Telegram): `📊 IPO Watch · 20 Oct`, then
+one line per IPO ranked by GMP %, e.g. `🟢 Tonbo Imaging · 74% (₹520) ▼ ₹5 ⏰ closes today`.
 
 ## WhatsApp text format
 

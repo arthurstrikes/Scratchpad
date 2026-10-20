@@ -23,7 +23,7 @@ from .enrich import attach_prev_subscription, enrich_dataset, find_awaiting
 from .fetch import FetchError, extract_page_timestamp, fetch_pages, load_fixture
 from .merge import Dataset, build_dataset
 from .models import Board, IPO, Provenance, Status, Trend, parse_date
-from .parse import parse_page
+from .parse import layout_changes, parse_page
 from .listing import (BHAV_URL, ListingResult, backfill_older, backfill_results, find_results, fetch_equities, get_text,
                       load_all_results, load_candidates, load_recent_results, make_bhav_getter,
                       match_symbol, parse_bhav, result_path, save_result, track_record, TrackRecord)
@@ -76,6 +76,10 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
         generated_at=datetime.now(IST),
         source_mode=mode,
     )
+    if not fixture_dir:
+        ds.layout_notes = _layout_notes(sub_page.html, gmp_page.html)
+        for n in ds.layout_notes:
+            _log(f"LAYOUT CHANGE: {n}")
     _log(f"open={len(ds.open_ipos)} upcoming={len(ds.upcoming_ipos)} "
          f"closed_retained={len(ds.recently_closed)} sme_excluded={len(ds.excluded_sme)}")
 
@@ -97,6 +101,21 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
         if ds.recent_listings:
             _log(f"recently listed: {', '.join(r.name for r in ds.recent_listings)}")
     return ds
+
+
+LAYOUT_FILE = os.path.join(os.path.dirname(__file__), "..", "fixtures", "layout_fingerprint.json")
+
+
+def _layout_notes(sub_html: str, gmp_html: str) -> list[str]:
+    """Canary: compare IPOWatch's table headings with the saved fingerprint.
+    Never raises and never changes the report - it only tells the operator."""
+    try:
+        with open(LAYOUT_FILE, encoding="utf-8") as fh:
+            exp = json.load(fh)
+    except (OSError, ValueError):
+        return []
+    return (layout_changes(sub_html, exp.get("subscription", []), "subscription page")
+            + layout_changes(gmp_html, exp.get("gmp", []), "GMP page"))
 
 
 ENRICH_BUDGET_S = 300      # all per-IPO pages together; the run never waits longer
@@ -172,6 +191,7 @@ def dataset_to_json(ds: Dataset) -> dict:
         "excluded_sme": ds.excluded_sme,
         "recent_listings": [r.to_dict() for r in ds.recent_listings],
         "track_record": ds.track_record.to_dict() if ds.track_record else None,
+        "layout_notes": ds.layout_notes,
         "awaiting": [one(i) for i in ds.awaiting],
         "warnings": ds.warnings,
         "conflicts": [c.__dict__ for c in ds.conflicts],
@@ -218,6 +238,7 @@ def dataset_from_json(path: str) -> Dataset:
         excluded_sme=raw.get("excluded_sme", []),
         recent_listings=[ListingResult.from_dict(x) for x in raw.get("recent_listings", [])],
         track_record=TrackRecord.from_dict(raw["track_record"]) if raw.get("track_record") else None,
+        layout_notes=raw.get("layout_notes", []),
         awaiting=[one(d, Status.CLOSED) for d in raw.get("awaiting", [])],
         recently_closed=[one(d, Status.CLOSED) for d in raw.get("recently_closed_internal", [])],
         warnings=raw.get("warnings", []),
@@ -323,8 +344,33 @@ def _listing_mode(args, today: date) -> int:
         _log(f"ABORTED: {reason}")
         _alert(_failure_text(today, reason))
         return 2
-    listing_today = [c for c in candidates
-                     if (eq := match_symbol(c, equities)) and eq["listing_date"] == today]
+    def due_today(eqs):
+        return [c for c in candidates
+                if (eq := match_symbol(c, eqs)) and eq["listing_date"] == today]
+
+    # IPOWatch told us when each IPO lists; NSE's own list of securities can lag
+    # the listing day. Keep re-reading it (within the same 30 minute window the
+    # price file gets) rather than concluding "nothing lists today".
+    expected = [c for c in candidates if c.listing_date == today]
+    listing_today = due_today(equities)
+    waited_eq = 0
+    while expected and not listing_today and waited_eq < LISTING_POLL_MAX_S:
+        _log(f"listing: {', '.join(c.name for c in expected)} due today per IPOWatch but not yet "
+             "on NSE's list - waiting")
+        time.sleep(LISTING_POLL_S)
+        waited_eq += LISTING_POLL_S
+        equities = fetch_equities() or equities
+        listing_today = due_today(equities)
+    if not listing_today and expected:
+        names = ", ".join(c.name for c in expected)
+        _log(f"listing: {names} still not on NSE's list - will retry tomorrow with --date {today}")
+        if telegram.configured():
+            try:
+                telegram.send_text(f"🏁 {names} was due to list today, but NSE's data for it is not out "
+                                   "yet. The listing scorecard will follow as soon as it is.")
+            except telegram.TelegramError:
+                pass
+        return 0
     if not listing_today:
         _log("listing: none of the IPOs we reported on lists on NSE today - nothing to send")
         return 0

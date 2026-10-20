@@ -840,7 +840,7 @@ def test_photo_caption_is_compact_ranked_and_within_telegram_limit():
             for i in range(1, 41)]
     ds = build_dataset([], ipos, D)
     cap = build_caption(ds)
-    assert len(cap) <= 1024 and cap.startswith("*📊 IPO Watch | 15 Oct*")
+    assert len(cap) <= 1024 and cap.startswith("📊 IPO Watch · 15 Oct") and "*" not in cap
     assert cap.index("Company number 40") < cap.index("Company number 39")   # ranked by GMP %
     assert "more in the image" in cap
     small = build_caption(build_dataset([], [mk("Acme", Decimal("5"), Decimal("100"),
@@ -1142,3 +1142,35 @@ def test_a_heavy_day_still_fits_four_by_five():
                  run_date=date(2026, 10, 19))
     render_png(ds, tmp_path_factory_dir() + "/t.png")
     assert last_render_info()["height"] <= MAX_H
+
+
+def test_layout_canary_notices_a_changed_heading_but_stays_quiet_otherwise():
+    from ipo_watch.parse import layout_changes, layout_fingerprint
+    html = ("<table><tr><th>1</th><th>Type</th><th>Closing Date</th></tr></table>")
+    fp = layout_fingerprint(html)
+    assert fp == ["1 | type | closing date"]
+    assert layout_changes(html, fp, "subscription page") == []
+    changed = "<table><tr><th>IPO</th><th>Type</th><th>Closing Date</th></tr></table>"
+    notes = layout_changes(changed, fp, "subscription page")
+    assert any("no longer seen" in n for n in notes) and any("new heading row" in n for n in notes)
+
+
+def test_stale_subscription_figures_are_called_out():
+    from ipo_watch.merge import Dataset
+    from ipo_watch.report import build_report, subscription_stale_date
+    ds = Dataset(run_date=date(2026, 10, 18), subscription_timestamp="17 Oct, 18:00")
+    assert subscription_stale_date(ds) == date(2026, 10, 17)
+    assert "⏳ Subscription figures are from 17 Oct" in build_report(ds)
+    fresh = Dataset(run_date=date(2026, 10, 19), subscription_timestamp="19 Oct, 16:30")
+    assert subscription_stale_date(fresh) is None and "⏳" not in build_report(fresh)
+
+
+def test_candidates_remember_the_listing_date_ipowatch_gave_us(tmp_path):
+    import json
+    from ipo_watch.listing import load_candidates
+    (tmp_path / "ipo-watch-2026-10-15-dataset.json").write_text(json.dumps(
+        {"run_date": "2026-10-15", "open": [{"name": "HD Fire Protect", "close_date": "2026-10-15",
+                                              "price_max": "271", "gmp": "91", "gmp_pct": "33.58",
+                                              "listing_date": "2026-10-20"}]}))
+    c = load_candidates(str(tmp_path), date(2026, 10, 20))[0]
+    assert c.name == "HD Fire Protect" and c.listing_date == date(2026, 10, 20)

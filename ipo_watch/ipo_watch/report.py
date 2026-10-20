@@ -5,7 +5,7 @@ from Telegram or the .txt file lands in WhatsApp already formatted.
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from .config import GMP_HIGHLIGHT_THRESHOLD_PCT, NOT_UPDATED, SOURCE_NAME
@@ -55,6 +55,22 @@ def _sub_line(icon: str, label: str, ipo: IPO, which: str, today) -> str:
     return f"{icon} {label}: {value}" + (f" ({change})" if change else "")
 
 
+def subscription_stale_date(ds: Dataset) -> Optional[date]:
+    """The date of the subscription figures when they are older than the run
+    date (IPOWatch does not refresh on weekends), else None."""
+    import re
+    m = re.match(r"\s*(\d{1,2})\s+([A-Za-z]{3})", ds.subscription_timestamp or "")
+    if not m or not ds.run_date:
+        return None
+    try:
+        d = datetime.strptime(f"{m.group(1)} {m.group(2)} {ds.run_date.year}", "%d %b %Y").date()
+    except ValueError:
+        return None
+    if d > ds.run_date:
+        d = d.replace(year=d.year - 1)
+    return d if d < ds.run_date else None
+
+
 def glance_text(ds: Dataset) -> str:
     """One counts-only line for the top of the report: what is open, what
     closes soon, what is upcoming, how many are above the High GMP line."""
@@ -93,7 +109,11 @@ def _block(ipo: IPO, today, with_sub: bool) -> str:
 def build_report(ds: Dataset) -> str:
     d = ds.run_date.strftime("%d %b %Y") if ds.run_date else ""
     L: list[str] = ["*📊 DAILY MAINBOARD IPO WATCH*", f"📅 {d} | 5:00 PM IST",
-                    f"🔎 {glance_text(ds)}", ""]
+                    f"🔎 {glance_text(ds)}"]
+    stale = subscription_stale_date(ds)
+    if stale:
+        L.append(f"⏳ Subscription figures are from {stale.strftime('%d %b')} (IPOWatch has not refreshed since)")
+    L.append("")
 
     L.append("*🟢 OPEN MAINBOARD IPOs*")
     L.append("")
@@ -339,22 +359,20 @@ CAPTION_LIMIT = 960          # Telegram allows 1024 characters on a photo captio
 
 
 def build_caption(ds: Dataset) -> str:
-    """Compact WhatsApp-ready summary to ride along with the image.
-
-    Telegram passes a photo's caption on when it is shared to another app, so
-    one share can carry the picture and these lines together. One line per
-    IPO, ranked by GMP %, trimmed to fit the caption limit.
-    """
+    """Plain, glanceable summary under the photo in Telegram: one line per IPO,
+    ranked by GMP %, trimmed to fit the caption limit. Plain text on purpose -
+    the user's test (15 Oct) showed the caption does not travel to WhatsApp, so
+    WhatsApp's bold stars would only show as stray asterisks in Telegram."""
     d = ds.run_date.strftime("%d %b") if ds.run_date else ""
-    head = f"*📊 IPO Watch | {d}*"
-    tail = "_Full numbers in the image. GMP is unofficial._"
+    head = f"📊 IPO Watch · {d}"
+    tail = "Full numbers in the image. GMP is unofficial."
     lines = []
     for ipo in rank_by_gmp(ds):
         dot = "🟢" if ipo.status.value == "Open" else "🔵"
         arrow = f" {ipo.trend.text()}" if ipo.trend and ipo.trend.status == "ok" else ""
         label = ipo.closes_label(ds.run_date)
         closing = f" ⏰ {label.lower()}" if label in ("Closes today", "Closes tomorrow") else ""
-        lines.append(f"{dot} {ipo.name} | *{ipo.gmp_pct_text}* ({ipo.gmp_text}){arrow}{closing}")
+        lines.append(f"{dot} {ipo.name} · {ipo.gmp_pct_text} ({ipo.gmp_text}){arrow}{closing}")
     out = [head, ""]
     used = len(head) + len(tail) + 4
     shown = 0
