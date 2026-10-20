@@ -47,6 +47,16 @@ says "Not updated". A wrong number is worse than no number.
 5. It sends the picture and the message to Telegram.
 6. If anything fails, it tells you it could not run. It does not send a wrong report.
 
+## How to read the picture (a 10-second guide)
+
+- **Orange band:** the date. Under it, one line counts what is open, what closes soon and what is awaiting listing.
+- **Green percentage (big):** the GMP as a percent of the price. Whole numbers from 10% up.
+- **Amber pill:** closes today or tomorrow. **Orange outline:** High GMP (above 25%).
+- **Little arrows after Retail and Total:** how much the subscription moved since our last update (only when it moved enough to matter).
+- **⏳ line or amber stamp:** the subscription numbers are from an earlier day because IPOWatch did not refresh (weekends).
+- **Closed, awaiting listing:** an IPO that already closed and had a GMP above 25%, until it lists.
+- **Track record tiles:** how past IPOs actually listed compared with what GMP said.
+
 ## What is new in the report?
 
 - **Closes today / tomorrow / 3 days left**: a tag on each open IPO.
