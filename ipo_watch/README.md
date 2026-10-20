@@ -1,6 +1,6 @@
 # Daily Mainboard IPO Watch
 
-Automated 8:00 PM IST IPO update: reads IPOWatch, verifies the numbers,
+Automated 5:00 PM IST IPO update: reads IPOWatch, verifies the numbers,
 calculates GMP % independently, and produces a WhatsApp-ready text report,
 a share-ready image creative, and a one-tap share page.
 
@@ -24,20 +24,32 @@ Outputs land in `output/`:
 |---|---|
 | `ipo-watch-<date>.png` | the WhatsApp creative |
 | `ipo-watch-<date>.txt` | the full WhatsApp text report |
-| `ipo-watch-<date>-caption.txt` | the short forwarding caption |
 | `ipo-watch-<date>-dataset.json` | the verified dataset behind both |
 | `share.html` | open this to share: Share → pick contacts → Send |
 | `snapshots/` | raw HTML of every page read, for audit |
 
-## Scheduling (8:00 PM IST daily)
+## Scheduling (5:00 PM IST daily)
 
 ```bash
-./install_schedule.sh     # adds a 20:00 local-time cron entry
+./install_schedule.sh     # adds a 17:00 local-time cron entry
 ```
 
 `run_daily.sh` runs the pipeline, logs to `logs/`, and opens `share.html`
-when it finishes. On a non-IST machine, convert the hour: 8:00 PM IST is
-14:30 UTC.
+when it finishes. On a non-IST machine, convert the hour: 5:00 PM IST is
+11:30 UTC.
+
+## Other modes
+
+```bash
+python3 -m ipo_watch.run --mode midday     # closing-day subscription check (text only)
+python3 -m ipo_watch.run --mode listing    # evening listing scorecard (NSE prices vs GMP)
+python3 -m ipo_watch.run --mode weekly     # Sunday wrap
+python3 -m ipo_watch.run --mode backfill   # save past listing results (sends nothing)
+```
+
+Delivery is Telegram (needs `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`). The full
+rules, history and decisions live in the repository root: `CLAUDE.md`, `ROADMAP.md`
+and the plain-language `EXPLAINER.md`.
 
 ## Design rules this implements
 
@@ -52,7 +64,7 @@ section heading). Recently closed Mainboard IPOs are retained inside the
 dataset for validation but never printed. QIB and NII are never captured.
 
 **GMP %** — Always computed as `GMP ÷ upper price band × 100`, rounded
-half-up to 2dp. IPOWatch's own "estimated listing gain" column is
+half-up to 2dp (shown as a whole number from 10% up). IPOWatch's own "estimated listing gain" column is
 deliberately ignored. GMP of ₹0 prints as `0.00%`.
 
 **Accuracy** — Every field is optional and nothing is ever defaulted or
