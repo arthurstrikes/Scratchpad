@@ -60,6 +60,8 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
     _log(f"parsed {len(sub_rows)} subscription rows, {len(gmp_rows)} GMP rows")
 
     if not sub_rows or not gmp_rows:
+        for name, page in (("subscription", sub_page), ("GMP", gmp_page)):
+            _log(f"diagnostic: {name} page served {len(page.html)} bytes, {_page_peek(page.html)}")
         which = "either IPOWatch page" if not sub_rows and not gmp_rows else (
             "IPOWatch's subscription page" if not sub_rows else "IPOWatch's GMP page")
         raise FetchError(
@@ -101,6 +103,17 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
         if ds.recent_listings:
             _log(f"recently listed: {', '.join(r.name for r in ds.recent_listings)}")
     return ds
+
+
+def _page_peek(html: str) -> str:
+    """Title, table count and the first words of visible text: enough to tell a
+    bot-check or cut-down page from the real one when a run aborts."""
+    import re
+    title = re.search(r"<title[^>]*>(.*?)</title>", html, re.S | re.I)
+    text = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", html, flags=re.S | re.I)
+    text = " ".join(re.sub(r"<[^>]+>", " ", text).split())
+    return (f"title={' '.join(title.group(1).split())[:80]!r}, tables={html.lower().count('<table')}, "
+            f"text starts: {text[:260]!r}")
 
 
 LAYOUT_FILE = os.path.join(os.path.dirname(__file__), "..", "fixtures", "layout_fingerprint.json")
