@@ -256,6 +256,7 @@ nothing lost on the way:
 | When | What | Notes |
 |---|---|---|
 | Sundays | Weekly wrap from the session (`python3 -m ipo_watch.run --mode weekly --outdir output`) until the GitHub schedule is live | First edition 18 Oct. Needs the listing results on record: run `--mode backfill --outdir output` once after a fresh checkout, and keep the `history` branch copy updated |
+| 21 Oct 2026, ~1:51 PM IST | Catch-up check: if HD Fire Protect's scorecard was not sent on 20 Oct, replay it with `--mode listing --date 2026-10-20` (reminder `trig_01GsbsPyVuX4n4NvXoe1bnPy`); also grep the daily log for `LAYOUT CHANGE` | Added 20 Oct |
 | 20 Oct 2026, 7:30 PM IST | Run the listing scorecard from the Claude session for **HD Fire Protect** (first real listing under the new feature) | Reminder `trig_01SNDhTcCYzauXQsXpk7aHax`. If the GitHub listing workflow is live by then, skip it and delete the reminder (avoids a duplicate message) |
 
 ## 7. Platform facts worth remembering
