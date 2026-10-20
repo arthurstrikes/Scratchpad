@@ -589,8 +589,13 @@ subscription rows, 0 GMP rows). The run now aborts unless both pages parse. The 
 repository secrets are in and the Telegram path from GitHub works. Do not add the cron
 lines until a dry run on GitHub parses the full pages. The session backup stays the engine.
 
-**Standing duties (user, 19 Oct 2026: "do this without me reminding"):** a daily trigger
-(`trig_01P5bUqYnxfojzDfwuMvF7JZ`, 12:15 UTC) runs a GitHub **dry-run** check and logs it in
+**Root cause of the GitHub block (20 Oct):** IPOWatch sits behind Cloudflare; GitHub's runner is
+served the "Just a moment... security verification" bot check on the GMP page (and a cut-down
+subscription page). That is a deliberate protection, and **we do not try to evade it**. The run
+log prints a `diagnostic:` line (title, table count, first words) whenever a page is half empty.
+
+**Standing duties (user, 19 Oct 2026: "do this without me reminding"):** a trigger
+(`trig_01P5bUqYnxfojzDfwuMvF7JZ`, now **weekly**, Mondays 12:15 UTC, was daily until 20 Oct) runs a GitHub **dry-run** check and logs it in
 ROADMAP.md section 0; after three passes in a row, tell the user and ask for a yes before
 going live. On Sundays also run `--mode weekly`. Details and the log table are in ROADMAP.md
 section 0. Never send a real GitHub run from the check.
