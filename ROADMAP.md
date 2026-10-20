@@ -46,6 +46,7 @@ backfilled listing results after any merge that changes their format (see sectio
 |---|---|---|
 | 18 Oct | FAIL | 403 on the plain request; browser fallback got a reduced page (15 subscription rows, 0 GMP); run now aborts in that case |
 | 19 Oct | FAIL | Reduced page again (15 subscription rows, 0 GMP rows); run aborted as designed. Pass streak: 0 |
+| 20 Oct | FAIL - **root cause found** | The new log diagnostic showed IPOWatch's GMP page answered GitHub's runner with Cloudflare's "Just a moment... Performing security verification" bot check (0 tables); the subscription page came back cut down (15 rows). IPOWatch treats GitHub's datacenter addresses as bots. Getting past that would mean evading its security check, which we will not do. **Decision:** GitHub is not viable as the engine unless IPOWatch allows it; the session backup stays. Check cadence reduced to weekly (Mondays) |
 
 **How the user likes to work:** not a programmer; wants plain language ("explain like a 10th standard student");
 decide technical things myself; ask before changing published numbers, design, schedule or delivery; wants
