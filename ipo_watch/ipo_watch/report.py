@@ -88,7 +88,8 @@ def glance_text(ds: Dataset) -> str:
     parts.append(f"{n_up} upcoming" if n_up else "none upcoming")
     if ds.awaiting:
         parts.append(f"{len(ds.awaiting)} awaiting listing")
-    hot = sum(1 for i in ds.published if i.is_hot)
+    # Closed-awaiting IPOs are in that section because their GMP is above the line.
+    hot = sum(1 for i in ds.published if i.is_hot) + len(ds.awaiting)
     parts.append(f"{hot} above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}% GMP" if hot
                  else f"none above {GMP_HIGHLIGHT_THRESHOLD_PCT:g}% GMP")
     return " · ".join(parts)
@@ -197,10 +198,11 @@ def _ranking(ds: Dataset) -> str:
 
     L.append(f"🔥 Highest GMP: {top_gmp.name} — {top_gmp.gmp_pct_text}"
              if top_gmp else f"🔥 Highest GMP: {NOT_UPDATED}")
+    none_open = "no IPO is open today" if not ds.open_ipos else NOT_UPDATED
     L.append(f"👥 Highest Retail Subscription: {top_ret.name} — {top_ret.retail_text}"
-             if top_ret else f"👥 Highest Retail Subscription: {NOT_UPDATED}")
+             if top_ret else f"👥 Highest Retail Subscription: {none_open}")
     L.append(f"📊 Highest Total Subscription: {top_tot.name} — {top_tot.total_text}"
-             if top_tot else f"📊 Highest Total Subscription: {NOT_UPDATED}")
+             if top_tot else f"📊 Highest Total Subscription: {none_open}")
     return "\n".join(L)
 
 
