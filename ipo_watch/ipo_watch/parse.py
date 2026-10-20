@@ -353,3 +353,30 @@ def parse_page(html: str, source_url: str, today: date) -> list[IPO]:
         except Exception:  # one malformed table must not kill the run
             continue
     return found
+
+
+
+# ---------------------------------------------------------------- layout canary
+
+def layout_fingerprint(html: str) -> list[str]:
+    """The heading row of every table on a page, normalised, sorted, unique.
+    Used to notice when IPOWatch changes its layout *before* it degrades a report."""
+    soup = BeautifulSoup(html, "lxml")
+    out = set()
+    for t in soup.find_all("table"):
+        row = t.find("tr")
+        if row is None:
+            continue
+        cells = [" ".join(c.get_text(" ", strip=True).split()).lower()
+                 for c in row.find_all(["th", "td"])]
+        if len(cells) >= 3:
+            out.add(" | ".join(cells))
+    return sorted(out)
+
+
+def layout_changes(html: str, expected: list[str], page: str) -> list[str]:
+    """Plain descriptions of heading rows that appeared or disappeared."""
+    got = layout_fingerprint(html)
+    notes = [f"{page}: heading row no longer seen: {h}" for h in expected if h not in got]
+    notes += [f"{page}: new heading row: {h}" for h in got if h not in expected]
+    return notes

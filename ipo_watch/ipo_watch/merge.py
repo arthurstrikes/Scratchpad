@@ -54,6 +54,9 @@ class Dataset:
     track_record: Optional[object] = None
     # Closed, not yet listed, GMP above the High GMP line (enrich.find_awaiting).
     awaiting: list = field(default_factory=list)
+    # Operator-only: IPOWatch heading rows that changed against the saved
+    # fingerprint. Logged and saved in the dataset; never shown to the reader.
+    layout_notes: list = field(default_factory=list)
 
     @property
     def published(self) -> list[IPO]:

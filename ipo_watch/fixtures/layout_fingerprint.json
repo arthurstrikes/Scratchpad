@@ -1,0 +1,8 @@
+{
+  "subscription": [
+    "1 | type | closing date | qib (x) | nii (x) | retail (x) | total (x) | last updated"
+  ],
+  "gmp": [
+    "company | gmp* | trend | price band | est. gain | date"
+  ]
+}

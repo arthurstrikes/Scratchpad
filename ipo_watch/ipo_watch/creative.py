@@ -22,7 +22,7 @@ from .config import CHROMIUM_PATH, GMP_HIGHLIGHT_THRESHOLD_PCT, SOURCE_NAME
 from .fonts import DISPLAY_STACK, FONT_STACK, font_face_css
 from .listing import strip_listings
 from .merge import Dataset, rank_by_gmp
-from .report import glance_text
+from .report import glance_text, subscription_stale_date
 from .models import IPO
 
 CARD_W = 1080
@@ -183,6 +183,7 @@ svg.spark{{display:block;flex:none}}
 .src{{display:flex;justify-content:space-between;align-items:center;gap:16px;
      font-size:15px;color:var(--ink-3)}}
 .src b{{color:var(--ink-2);font-weight:700}}
+.src .stale{{color:var(--warn)}}
 """
 
 
@@ -398,7 +399,8 @@ def build_html(ds: Dataset, tier: int = 0, strip_rows: Optional[int] = None) -> 
         stamps.append(f"Subscription {_e(ds.subscription_timestamp)}")
     if ds.gmp_timestamp:
         stamps.append(f"GMP {_e(ds.gmp_timestamp)}")
-    stamp_html = f'<div>{" &nbsp;·&nbsp; ".join(stamps)}</div>' if stamps else "<div></div>"
+    cls = ' class="stale"' if subscription_stale_date(ds) else ""
+    stamp_html = f'<div{cls}>{" &nbsp;·&nbsp; ".join(stamps)}</div>' if stamps else "<div></div>"
 
     warn_html = ""
     if ds.warnings:
