@@ -1174,3 +1174,19 @@ def test_candidates_remember_the_listing_date_ipowatch_gave_us(tmp_path):
                                               "listing_date": "2026-10-20"}]}))
     c = load_candidates(str(tmp_path), date(2026, 10, 20))[0]
     assert c.name == "HD Fire Protect" and c.listing_date == date(2026, 10, 20)
+
+
+def test_no_open_ipo_day_reads_cleanly_and_counts_awaiting_ones_as_high_gmp():
+    from ipo_watch.merge import Dataset
+    from ipo_watch.models import Status
+    from ipo_watch.report import build_report, glance_text
+    hot = mk("Hot Co", Decimal("70"), Decimal("100"), retail=Decimal("3"), total=Decimal("9"),
+             o=date(2026, 10, 13), c=date(2026, 10, 15))
+    hot.status = Status.CLOSED
+    up = mk("Up Co", Decimal("5"), Decimal("100"))
+    up.status = Status.UPCOMING
+    ds = Dataset(upcoming_ipos=[up], awaiting=[hot], run_date=date(2026, 10, 20))
+    assert glance_text(ds) == "none open · 1 upcoming · 1 awaiting listing · 1 above 25% GMP"
+    out = build_report(ds)
+    assert "Highest Retail Subscription: no IPO is open today" in out
+    assert "Highest Total Subscription: no IPO is open today" in out

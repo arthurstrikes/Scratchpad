@@ -352,11 +352,11 @@ def _leaders(ds: Dataset) -> str:
     top_ret = leader(ds, "retail_sub")
     top_tot = leader(ds, "total_sub")
 
-    def box(label: str, ipo: Optional[IPO], value: str, key: str, good: bool) -> str:
+    def box(label: str, ipo: Optional[IPO], value: str, key: str, good: bool) -> str:  # noqa: C901
         if ipo is None:
             return (f'<div class="kpi"><div class="kl">{_e(label)}</div>'
                     f'<div class="kv num" style="color:var(--ink-3)">—</div>'
-                    f'<div class="kn na">Not updated</div></div>')
+                    f'<div class="kn na">{"No IPO open today" if not ds.open_ipos else "Not updated"}</div></div>')
         cls = "kv num good" if good else "kv num"
         return (f'<div class="kpi"><div class="kl">{_e(label)}</div>'
                 f'<div class="{cls}" data-verify="{key}.val">{_e(value)}</div>'
