@@ -110,6 +110,7 @@ UI/UX and user empathy to drive choices; never investment advice.
 | G20 | IPOWatch does not refresh subscription on weekends, so Sat/Sun reports repeat Friday's multiples | Looks fresh, is not | Now visible: the new subscription-change tag reads "no change"; the stamp is in the footer |
 | G21 | I lost the Telegram result line on 16 Oct by piping the run log through `tail` | Could not confirm delivery to the user | Process fix: always save the whole log to a file |
 | G22 | GMP track record rests on only 10 listings with a GMP on record (our reports began 28 Sep) | Small sample | Text states the real count; shown only from 5 upward; grows daily |
+| G32 | IPOWatch gave HD Fire Protect a listing date a day early (20 Oct; NSE: 21 Oct). The awaiting row would have vanished a day before the listing and the scorecard run missed | A wrong date in a published report, on the IPO the user cares most about | Fixed 21 Oct: NSE's date overrules IPOWatch's, with a Data note when they differ. Scorecard re-scheduled for the evening of 21 Oct |
 | G31 | **HD Fire Protect's listing scorecard was at risk:** NSE's list of securities lacked it on listing morning (latest entry 14 Oct), and listing mode would have said "nothing lists today" | The very IPO the user cares most about | Fixed 20 Oct: trusts IPOWatch's listing date, keeps polling, sends a "not out yet" note, replay next day |
 | G30 | Reports on weekends repeated Friday's figures with only a small footer stamp | Stale numbers looked fresh | Fixed 20 Oct: "⏳ figures are from <date>" line and an amber stamp in the image |
 | G29 | No early warning when IPOWatch changes its layout (5+ changes in 3 weeks; 19 Oct nearly cost a report) | Silent degradation | Built 20 Oct: layout canary (operator-only `LAYOUT CHANGE` log lines); closes backlog I4 |
@@ -257,6 +258,7 @@ nothing lost on the way:
 | When | What | Notes |
 |---|---|---|
 | Sundays | Weekly wrap from the session (`python3 -m ipo_watch.run --mode weekly --outdir output`) until the GitHub schedule is live | First edition 18 Oct. Needs the listing results on record: run `--mode backfill --outdir output` once after a fresh checkout, and keep the `history` branch copy updated |
+| 21 Oct 2026, 7:30 PM IST | Listing scorecard for **HD Fire Protect (NSE lists it on 21 Oct, not 20)**: `python3 -m ipo_watch.run --mode listing --outdir output`; replay next day with `--date 2026-10-21` if NSE data is late | Added 21 Oct |
 | 21 Oct 2026, ~1:51 PM IST | Catch-up check: if HD Fire Protect's scorecard was not sent on 20 Oct, replay it with `--mode listing --date 2026-10-20` (reminder `trig_01GsbsPyVuX4n4NvXoe1bnPy`); also grep the daily log for `LAYOUT CHANGE` | Added 20 Oct |
 | 20 Oct 2026, 7:30 PM IST | Run the listing scorecard from the Claude session for **HD Fire Protect** (first real listing under the new feature) | Reminder `trig_01SNDhTcCYzauXQsXpk7aHax`. If the GitHub listing workflow is live by then, skip it and delete the reminder (avoids a duplicate message) |
 

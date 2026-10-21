@@ -19,7 +19,7 @@ from decimal import Decimal
 
 from .config import (GMP_URL, IST, OUTPUT_DIR, SOURCE_NAME, SUBSCRIPTION_URL)
 from .creative import last_render_info, render_listing_png, render_png
-from .enrich import attach_prev_subscription, enrich_dataset, find_awaiting
+from .enrich import apply_nse_listing_dates, attach_prev_subscription, enrich_dataset, find_awaiting
 from .fetch import FetchError, extract_page_timestamp, fetch_pages, load_fixture
 from .merge import Dataset, build_dataset
 from .models import Board, IPO, Provenance, Status, Trend, parse_date
@@ -95,7 +95,9 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
     if history_dir:
         attach_prev_subscription(ds, history_dir, today)
         ds.track_record = track_record(load_all_results(history_dir, today))
-        ds.awaiting = find_awaiting(ds, history_dir, today)
+        nse = [] if fixture_dir else (fetch_equities() or [])
+        ds.awaiting = find_awaiting(ds, history_dir, today, equities=nse)
+        apply_nse_listing_dates(ds, nse)
         if ds.awaiting:
             _log(f"closed, awaiting listing (GMP above the High GMP line): "
                  f"{', '.join(i.name for i in ds.awaiting)}")

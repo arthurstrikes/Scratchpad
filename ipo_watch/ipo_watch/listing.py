@@ -366,6 +366,16 @@ def load_recent_results(directory: str, today: date, days: int = 3) -> list[List
     return sorted(out, key=lambda r: (r.listing_date, r.name), reverse=True)
 
 
+def nse_listing_date(name: str, close_date: Optional[date], equities: list[dict]) -> Optional[date]:
+    """The listing date NSE itself shows for this IPO (exact or unique-prefix name
+    match inside 14 days of the close), else None. NSE's list already carries
+    upcoming listings, so this can overrule a third-party date."""
+    if not close_date or not equities:
+        return None
+    eq = match_symbol(Candidate(name=name, close_date=close_date), equities)
+    return eq["listing_date"] if eq else None
+
+
 # ------------------------------------------------------- GMP track record
 
 RECORD_LISTINGS = 25         # the track record looks at the most recent listings
