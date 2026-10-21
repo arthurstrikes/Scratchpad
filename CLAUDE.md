@@ -64,6 +64,8 @@ row number ("1")**, so no column was recognised as the name and the run aborted 
 blank-or-numeric first header cell as the name column when at least three other columns
 are recognised. Lesson: when a run reports 0 rows, read the snapshot's header row first.
 
+**21 Oct 2026: the header changed again, from "1" back to "IPO Name"** (caught by the layout canary; the parser already knew both wordings, so the report was unaffected). The fingerprint is re-pinned to the new wording.
+
 **Subscription page** - one table:
 `IPO | Type | Closing Date | QIB (X) | NII (X) | Retail (X) | Total (X) | Last Updated`
 - `Type` says "Mainboard" or "SME" outright. Authoritative; do not re-derive.
