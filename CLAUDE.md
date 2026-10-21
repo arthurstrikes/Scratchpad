@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (93 at 20 Oct 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (95 at 21 Oct 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -572,6 +572,12 @@ text; (4) the awaiting-listing rows show the **issue price** (`aw<i>.price`).
   and keeps re-reading NSE's list for up to 30 minutes; if the IPO still is not there it sends a
   one-line "due to list today, NSE data not out yet" note and exits 0. **Replay the next day**
   with `--mode listing --date <listing day>` (the result is only saved after a real send).
+- **NSE is the authority on listing dates (21 Oct).** IPOWatch said HD Fire Protect lists on
+  20 Oct; NSE's own list says 21 Oct (our "scorecard tonight" plan was a day early and the IPO
+  would have dropped out of the awaiting section a day before it listed). NSE's list carries
+  upcoming listings ahead of time, so every live run now overrides IPOWatch's listing date with
+  NSE's whenever NSE has the company (`listing.nse_listing_date`, `enrich.apply_nse_listing_dates`,
+  `find_awaiting(..., equities=)`), and adds a plain Data note when they differ.
 - **Decisions, not built:** no share page and no WhatsApp Business route until the audience is
   known; no "cash for 1-3 lots" (the minimum investment already shows one lot); no
   allotment/listing tags (the user limited urgency tags to closing today/tomorrow); the

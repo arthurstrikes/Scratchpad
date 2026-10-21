@@ -1190,3 +1190,27 @@ def test_no_open_ipo_day_reads_cleanly_and_counts_awaiting_ones_as_high_gmp():
     out = build_report(ds)
     assert "Highest Retail Subscription: no IPO is open today" in out
     assert "Highest Total Subscription: no IPO is open today" in out
+
+
+def test_nse_listing_date_overrules_ipowatch_and_keeps_an_awaiting_ipo_visible(tmp_path):
+    import json
+    from ipo_watch.enrich import apply_nse_listing_dates, find_awaiting
+    from ipo_watch.merge import Dataset
+    from ipo_watch.models import Status
+    (tmp_path / "ipo-watch-2026-10-15-dataset.json").write_text(json.dumps(
+        {"run_date": "2026-10-15", "open": [{"name": "Hot Co", "allotment_date": "2026-10-16",
+                                              "listing_date": "2026-10-20"}]}))
+    hot = mk("Hot Co", Decimal("30"), Decimal("100"), retail=Decimal("3"), total=Decimal("9"),
+             o=date(2026, 10, 13), c=date(2026, 10, 15))
+    hot.status = Status.CLOSED
+    nse = [{"symbol": "HOTCO", "name": "Hot Co Limited", "series": "EQ", "listing_date": date(2026, 10, 21)}]
+    ds = Dataset(recently_closed=[hot], run_date=date(2026, 10, 21))
+    ds.awaiting = find_awaiting(ds, str(tmp_path), date(2026, 10, 21), equities=nse)
+    assert [i.name for i in ds.awaiting] == ["Hot Co"]          # IPOWatch said the 20th: would have vanished
+    assert ds.awaiting[0].listing_date == date(2026, 10, 21)
+    apply_nse_listing_dates(ds, nse)
+    assert ds.warnings == []                                      # already NSE's date: nothing to explain
+    ds.awaiting[0].listing_date = date(2026, 10, 20)
+    apply_nse_listing_dates(ds, nse)
+    assert ds.awaiting[0].listing_date == date(2026, 10, 21)
+    assert "listing date taken from NSE (21 Oct); IPOWatch had 20 Oct" in ds.warnings[0]

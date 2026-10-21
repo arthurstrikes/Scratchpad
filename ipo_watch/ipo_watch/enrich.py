@@ -314,8 +314,22 @@ def attach_prev_subscription(ds: Dataset, directory: str, today: date) -> None:
                 ipo.prev_total, ipo.prev_total_date = v, d
 
 
+def apply_nse_listing_dates(ds: Dataset, equities: list[dict]) -> None:
+    """NSE is the authority on when a share lists. Where its list shows a different
+    date from IPOWatch's for an IPO we publish, use NSE's and say so plainly."""
+    from .listing import nse_listing_date
+    for ipo in ds.published + ds.awaiting:
+        d = nse_listing_date(ipo.name, ipo.close_date, equities)
+        if d and ipo.listing_date and d != ipo.listing_date:
+            ds.warnings.append(f"{ipo.name}: listing date taken from NSE ({d.strftime('%d %b')}); "
+                               f"IPOWatch had {ipo.listing_date.strftime('%d %b')}")
+            ipo.listing_date = d
+        elif d and not ipo.listing_date:
+            ipo.listing_date = d
+
+
 def find_awaiting(ds: Dataset, directory: str, today: date,
-                  window_days: int = 14) -> list[IPO]:
+                  window_days: int = 14, equities: Optional[list] = None) -> list[IPO]:
     """Closed Mainboard IPOs that have not listed yet and whose GMP is above the
     High GMP line (the user's rule, 18 Oct 2026). Allotment and listing dates
     come from our own saved reports of the IPO while it was open."""
@@ -336,6 +350,9 @@ def find_awaiting(ds: Dataset, directory: str, today: date,
                 or key in listed or not ipo.is_hot):
             continue
         ipo.allotment_date, ipo.listing_date = dates.get(key, (None, None))
+        if equities:
+            from .listing import nse_listing_date
+            ipo.listing_date = nse_listing_date(ipo.name, ipo.close_date, equities) or ipo.listing_date
         if ipo.listing_date is not None and ipo.listing_date < today:
             continue                      # already listed; the scorecard covers it
         out.append(ipo)
