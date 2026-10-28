@@ -32,9 +32,20 @@ reported (sends nothing) so the GMP track record has data. **Always redirect the
 daily run's whole log to a file** (`> /tmp/run.log 2>&1`) - on 16 Oct the Telegram
 result line was lost by piping through `tail`.
 
-Chromium is preinstalled at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome`;
-`config.CHROMIUM_PATH` points there and `IPOWATCH_CHROMIUM` overrides it.
+Chromium is preinstalled under `/opt/pw-browsers/`; `config.CHROMIUM_PATH` finds whichever build
+is there (1194 until 22 Oct 2026, 1243 after) and `IPOWATCH_CHROMIUM` overrides it.
 Do **not** run `playwright install` in a cloud session - use the existing binary.
+
+**Container reset, 28 Oct 2026 (read this if reports look thinner than yesterday).** The cloud container
+behind the backup session was replaced overnight: `/root/Scratchpad` and its `output/` folder (every saved
+report from 15-27 Oct, the listing results) were gone, the checkout is now `/home/user/Scratchpad`, and
+`pip` pointed at a different Python than `python3` (use `python3 -m pip install -r requirements.txt`).
+Rebuilt from the `history` branch (`git archive origin/history | tar -x -C ipo_watch/output`) plus
+`--mode backfill` (sends nothing); the last-published GMPs for the 21-23 Oct listings were put back from
+the scorecards already sent, and a small rebuilt dataset holds Jio's and Paras's 23 Oct GMPs. Lost for good:
+the daily datasets of 15-27 Oct, so "change since last report" lines were missing on 28 Oct. The backup
+trigger's stored prompt still says `~/Scratchpad`; **do not follow it blindly - a fresh clone there has no
+history.** Saving the output somewhere that survives a reset (the `history` branch) needs the user's yes.
 
 ## Current status
 
