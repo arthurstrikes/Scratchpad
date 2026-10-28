@@ -282,6 +282,10 @@ def build_result(c: Candidate, eq: dict, bhav: Optional[dict]) -> Optional[Listi
     return r
 
 
+def _gmp_rank(r: ListingResult) -> tuple:
+    return (r.last_gmp_pct is not None, r.last_gmp is not None, r.last_gmp_date or date.min)
+
+
 def find_results(candidates: list[Candidate], equities: list[dict],
                  bhav_for: Callable[[date], Optional[dict]]) -> list[ListingResult]:
     by_symbol: dict[str, ListingResult] = {}
@@ -293,9 +297,10 @@ def find_results(candidates: list[Candidate], equities: list[dict],
         if not res:
             continue
         # The same company can appear under two spellings in our records
-        # (IPOWatch renamed one on 28 Sep); keep the one that has a GMP.
+        # (IPOWatch renamed one on 28 Sep); keep the one with the most usable GMP:
+        # a GMP % first (the gap needs it), then any GMP, then the most recent.
         old = by_symbol.get(res.symbol)
-        if old is None or (old.last_gmp is None and res.last_gmp is not None):
+        if old is None or _gmp_rank(res) > _gmp_rank(old):
             by_symbol[res.symbol] = res
     return sorted(by_symbol.values(), key=lambda r: (r.listing_date, r.name))
 

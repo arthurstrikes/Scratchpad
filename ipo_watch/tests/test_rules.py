@@ -750,6 +750,18 @@ def test_same_company_under_two_spellings_is_reported_once_keeping_the_gmp():
     assert len(out) == 1 and out[0].last_gmp == Decimal("20")
 
 
+def test_the_spelling_with_a_usable_gmp_percent_beats_an_older_bare_gmp():
+    # 28 Oct: "Jio Platform" carried a stale rupee GMP with no percent and hid the
+    # newer "Jio Platforms" record, so the scorecard went out without its GMP line.
+    eq = L.parse_equity_list(EQUITY_CSV)
+    bh = L.parse_bhav(BHAV_CSV)
+    stale = L.Candidate("Vishal Nirmiti", date(2026, 10, 5), Decimal("220"), Decimal("150"), None, date(2026, 10, 1))
+    fresh = L.Candidate("Vishal Nirmiti Ltd", date(2026, 10, 5), Decimal("220"), Decimal("20"), Decimal("9.09"), date(2026, 10, 4))
+    for order in ([stale, fresh], [fresh, stale]):
+        out = L.find_results(order, eq, lambda d: bh)
+        assert len(out) == 1 and out[0].last_gmp_pct == Decimal("9.09")
+
+
 def test_candidates_come_from_our_own_saved_reports(tmp_path):
     import json
     def write(day, gmp):
