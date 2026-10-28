@@ -1,6 +1,7 @@
 """Central configuration for the Daily Mainboard IPO Watch workflow."""
 from __future__ import annotations
 
+import glob
 import os
 from zoneinfo import ZoneInfo
 
@@ -12,11 +13,19 @@ SUBSCRIPTION_URL = "https://ipowatch.in/ipo-subscription-status-today/"
 GMP_URL = "https://ipowatch.in/ipo-grey-market-premium-latest-ipo-gmp/"
 BASE_URL = "https://ipowatch.in"
 
-# Chromium shipped with the image. Overridable for other machines.
-CHROMIUM_PATH = os.environ.get(
-    "IPOWATCH_CHROMIUM",
-    "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
-)
+# Chromium shipped with the image. Overridable for other machines. The image's
+# build number changes (1194 until 22 Oct 2026, 1243 after), so look for whichever
+# is installed instead of pinning one path.
+def _find_chromium() -> str:
+    for pattern in ("/opt/pw-browsers/chromium-*/chrome-linux*/chrome",
+                    "/opt/pw-browsers/chromium"):
+        found = sorted(glob.glob(pattern))
+        if found:
+            return found[-1]
+    return "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+
+
+CHROMIUM_PATH = os.environ.get("IPOWATCH_CHROMIUM") or _find_chromium()
 
 # A real desktop UA: IPOWatch serves a different (lighter) table to bot UAs.
 USER_AGENT = (
