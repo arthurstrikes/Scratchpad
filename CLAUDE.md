@@ -686,6 +686,12 @@ to spin up additional persistent-session backups like this one from inside
 an unattended session - only a human, or an already-existing human-started
 session, can be the target.
 
+**Update 1 Nov 2026: the 5:00 PM Routine delivered on its own** (user confirmed Telegram messages at 5:06 PM from the
+backup and 5:13 PM from the Routine, identical except for the weekly wrap), and the **backup trigger was paused** the same
+day (user: "do it yourself"). This session now sends only the Sunday weekly wrap and the evening listing scorecards, as
+self-re-arming `send_later` reminders. If the Routine goes silent again, re-enable the backup
+(`update_trigger enabled=true` on `trig_01AnmiV5iED3Xe8jVFkVd7zD`) and run the daily report by hand.
+
 ## If a scheduled run reports a problem
 
 The run fails closed, so a failure means no report was sent — not a wrong

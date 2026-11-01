@@ -14,11 +14,12 @@ Last updated: 1 Nov 2026. **Fresh session? Read section 0 first.**
 
 - **The 5:00 PM routine (`trig_01RLth6vAxrBZNfhHCXmWNDV`) delivered on its own for the first time since 11 Sep.** The user
   confirmed two Telegram messages on 1 Nov: 5:06 PM (the session backup) and 5:13 PM (the routine, which now fires about
-  5:13 PM, not 5:00). So it is no longer "dead". **Open decision for the user:** retire the backup (`trig_01AnmiV5iED3Xe8jVFkVd7zD`)?
-  Trade-off: a fresh routine session has no saved history, so its report lacks the closed-awaiting-listing section, the
-  recently-listed lines, the track record and the "change since last report" lines, and the Sunday weekly wrap and evening
-  listing scorecards only run from the backup session. Recommended: first make the history survive (restore from / save to
-  the `history` branch; needs the user's yes), then retire the backup.
+  5:13 PM, not 5:00). So it is no longer "dead". **Done 1 Nov (user: "do it yourself"):** the 5:05 PM backup trigger is PAUSED (not deleted; re-enable with
+  `update_trigger enabled=true`). The user compared the two 1 Nov messages: the routine's 5:13 PM report looked identical to the
+  backup's, except it has no weekly wrap. So this session now only sends the **Sunday weekly wrap** and the **evening listing
+  scorecards**, both as self-re-arming one-off reminders (`send_later`); the daily report comes from the routine alone.
+  If a day's report does not arrive, run it by hand and consider re-enabling the backup. The routine had failed on several earlier
+  days, so watch it for a week.
 - **Live engine path changed:** the container was reset on 28 Oct; the session checkout is `/home/user/Scratchpad`, not
   `/root/Scratchpad` (see CLAUDE.md, "Container reset"). Saved reports from 15-27 Oct were lost and partly rebuilt.
 - **GitHub dry-run check is weekly (Mondays), first PASS 26 Oct** (1 of 3). Renamed from "daily" on 1 Nov.
