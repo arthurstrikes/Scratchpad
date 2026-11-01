@@ -8,7 +8,21 @@ the rules and the technical history; this page holds the plan.
 (done, found, decided, still open). Dated entries, newest first. Nothing here
 is ever deleted, only marked done.
 
-Last updated: 18 Oct 2026. **Fresh session? Read section 0 first.**
+Last updated: 1 Nov 2026. **Fresh session? Read section 0 first.**
+
+### Latest (1 Nov 2026) - read before the older notes below, which are from 18 Oct
+
+- **The 5:00 PM routine (`trig_01RLth6vAxrBZNfhHCXmWNDV`) delivered on its own for the first time since 11 Sep.** The user
+  confirmed two Telegram messages on 1 Nov: 5:06 PM (the session backup) and 5:13 PM (the routine, which now fires about
+  5:13 PM, not 5:00). So it is no longer "dead". **Open decision for the user:** retire the backup (`trig_01AnmiV5iED3Xe8jVFkVd7zD`)?
+  Trade-off: a fresh routine session has no saved history, so its report lacks the closed-awaiting-listing section, the
+  recently-listed lines, the track record and the "change since last report" lines, and the Sunday weekly wrap and evening
+  listing scorecards only run from the backup session. Recommended: first make the history survive (restore from / save to
+  the `history` branch; needs the user's yes), then retire the backup.
+- **Live engine path changed:** the container was reset on 28 Oct; the session checkout is `/home/user/Scratchpad`, not
+  `/root/Scratchpad` (see CLAUDE.md, "Container reset"). Saved reports from 15-27 Oct were lost and partly rebuilt.
+- **GitHub dry-run check is weekly (Mondays), first PASS 26 Oct** (1 of 3). Renamed from "daily" on 1 Nov.
+- **Open:** merge rule for names IPOWatch splits across its two pages (second case, "SFC Environmental", 27-29 Oct); user's yes needed.
 
 ---
 
