@@ -775,6 +775,21 @@ def test_candidates_come_from_our_own_saved_reports(tmp_path):
     assert len(c) == 1 and c[0].last_gmp == Decimal("12") and c[0].cap_price == Decimal("100")
 
 
+def test_the_gmp_published_in_the_awaiting_section_counts_as_the_last_gmp_we_reported(tmp_path):
+    # 3 Nov: BLS Polymers closed at a 34% GMP, was shown as "awaiting listing" at 45-47%,
+    # yet its scorecard said "GMP said 34%" because only open/upcoming rows were read.
+    import json
+    def write(day, group, gmp, pct):
+        (tmp_path / f"ipo-watch-{day}-dataset.json").write_text(json.dumps({
+            "run_date": day, "open": [], "upcoming": [], "recently_closed_internal": [], "awaiting": [],
+            group: [{"name": "Acme", "close_date": "2026-10-29", "price_max": "150", "gmp": gmp, "gmp_pct": pct}]}))
+    write("2026-10-29", "open", "51", "34.00")
+    write("2026-11-01", "awaiting", "70", "46.67")
+    write("2026-11-02", "recently_closed_internal", "99", "66.00")        # never published: ignored
+    c = L.load_candidates(str(tmp_path), date(2026, 11, 3))
+    assert len(c) == 1 and (c[0].last_gmp, c[0].last_gmp_pct) == (Decimal("70"), Decimal("46.67"))
+
+
 def test_listing_card_paints_exactly_the_figures_that_are_verified():
     import re
     from ipo_watch.creative import build_listing_html

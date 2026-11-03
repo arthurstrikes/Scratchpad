@@ -223,7 +223,7 @@ def load_candidates(directory: str, today: date,
         run = parse_date(raw.get("run_date"))
         if run is None or run > today or (today - run).days > lookback_days:
             continue
-        for group in ("open", "upcoming", "recently_closed_internal"):
+        for group in ("open", "upcoming", "awaiting", "recently_closed_internal"):
             for it in raw.get(group) or []:
                 key = norm_key(it.get("name", ""))
                 close = parse_date(it.get("close_date"))
@@ -235,7 +235,9 @@ def load_candidates(directory: str, today: date,
                     c.cap_price = Decimal(it["price_max"])
                 if it.get("listing_date"):
                     c.listing_date = parse_date(it["listing_date"])
-                if it.get("gmp") is not None and group in ("open", "upcoming"):
+                # "awaiting" rows were published too (closed, GMP above the line), so their GMP is
+                # what we last told the reader; "recently_closed_internal" never was.
+                if it.get("gmp") is not None and group in ("open", "upcoming", "awaiting"):
                     pct = Decimal(it["gmp_pct"]) if it.get("gmp_pct") is not None else None
                     gmp_seen[key] = (run, Decimal(it["gmp"]), pct)
     for key, c in seen.items():
