@@ -69,6 +69,23 @@ by design.
 
 Learned from the live page; `fixtures/live/` pins it and five tests assert it.
 
+**8 Nov 2026 - BIG CHANGE: IPOWatch rebuilt both pages as JavaScript apps, and the run now aborts ("returned no tables").**
+Served HTML has no `<table>` on either page (subscription: "Loading open IPO subscription tracker..."). A browser render
+(`fetch.render_pages`, works in the sandbox) shows the new design, saved in `fixtures/redesign_2026-11-08/`:
+- **Subscription page:** one *card per open IPO* (name, dates, price band, GMP, "Subscription Status" date) with a small
+  table `Category | Subscription (x) | Shares Offered | Shares bid for | Total Amount` (rows QIB (Ex. Anchor), NII, bNII, sNII,
+  Retail, Total). No big list of ~300 past IPOs any more. **The card badge said "Mainboard" for two SME IPOs, so do not
+  trust it for the board.**
+- **GMP page:** table `IPO Name | IPO GMP | Trend | Price Band | Est. Listing | Date | Type | Status | Last Updated` where
+  Type is e.g. `BSE SME` / `NSE Emerge` (we have not yet seen the Mainboard value), paged ("2 IPOs tracked, Prev 1 Next"),
+  plus a second table of listed IPOs `IPO Name | Type | Issue Price | GMP | Listing Price`.
+- On 8 Nov there were **no Mainboard IPOs at all** on either page (only two SME ones), so the Mainboard row format could not be
+  seen. Rebuilding the parser against guesses would risk a false "nothing is open", so it was **not** done: the runs abort and
+  send the normal "could not run today" Telegram notice (fail closed). Plan: rebuild the reader when a Mainboard IPO appears
+  (or earlier with the safeguards: render in the browser when the served page has no tables; accept only recognised Type values
+  and abort on an unknown one; check the "N IPOs tracked" count against the rows parsed).
+  The Monday GitHub dry-run check will FAIL for the same reason (the streak resets).
+
 **19 Oct 2026: IPOWatch changed the subscription table's first header cell from "IPO" to a bare
 row number ("1")**, so no column was recognised as the name and the run aborted with
 "parsed 0 subscription rows". `_header_map` in `parse.py` now treats an unmapped,
