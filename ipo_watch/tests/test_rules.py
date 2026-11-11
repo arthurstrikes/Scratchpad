@@ -1241,3 +1241,97 @@ def test_nse_listing_date_overrules_ipowatch_and_keeps_an_awaiting_ipo_visible(t
     apply_nse_listing_dates(ds, nse)
     assert ds.awaiting[0].listing_date == date(2026, 10, 21)
     assert "listing date taken from NSE (21 Oct); IPOWatch had 20 Oct" in ds.warnings[0]
+
+
+# ------------------------------------------------------------------ 8 Nov 2026 redesign
+# IPOWatch rebuilt both pages as JavaScript apps. fixtures/redesign/ holds the real
+# rendered pages of 8 Nov (two SME IPOs, no Mainboard); redesign_empty/ the real empty
+# state of 11 Nov. Mainboard rows are made by editing the SME wording in a copy.
+
+import pytest
+import shutil as _shutil
+from datetime import date as _date
+
+
+def _redesign(tmp_path, gmp_edits=(), sub_edits=(), gmp_from="redesign", sub_from="redesign"):
+    base = os.path.join(os.path.dirname(__file__), "..", "fixtures")
+    (tmp_path / "x").mkdir()
+    d = tmp_path / "x"
+    g = open(os.path.join(base, gmp_from, "gmp_sample.html"), encoding="utf-8").read()
+    s = open(os.path.join(base, sub_from, "sub_sample.html"), encoding="utf-8").read()
+    for a, b in gmp_edits:
+        assert a in g, a
+        g = g.replace(a, b)
+    for a, b in sub_edits:
+        assert a in s, a
+        s = s.replace(a, b)
+    (d / "gmp_sample.html").write_text(g, encoding="utf-8")
+    (d / "sub_sample.html").write_text(s, encoding="utf-8")
+    return str(d)
+
+
+def test_redesign_pages_are_read_and_sme_stays_out(tmp_path):
+    from ipo_watch import run
+    ds = run.collect(_redesign(tmp_path), _date(2026, 11, 8), None)
+    assert not ds.published and sorted(ds.excluded_sme) == ["Antala Industries", "Vedant Poly Fabs"]
+
+
+def test_redesign_subscription_cards_give_retail_and_total_only_and_ignore_the_badge():
+    from ipo_watch.parse import parse_page
+    from ipo_watch.config import SUBSCRIPTION_URL
+    h = open(os.path.join(os.path.dirname(__file__), "..", "fixtures", "redesign", "sub_sample.html"),
+             encoding="utf-8").read()
+    rows = {r.name: r for r in parse_page(h, SUBSCRIPTION_URL, _date(2026, 11, 8))}
+    a = rows["Antala Industries"]
+    assert (a.retail_sub, a.total_sub, a.price_max) == (Decimal("5.22"), Decimal("12.79"), Decimal("66"))
+    assert (a.open_date, a.close_date) == (_date(2026, 10, 29), _date(2026, 11, 5))
+    assert a.board == Board.UNKNOWN                      # the card's "Mainboard" badge is not trusted
+    assert not hasattr(a, "qib") and "66.72" not in repr(a)
+
+
+def test_redesign_mainboard_row_is_published_with_subscription_from_its_card(tmp_path):
+    from ipo_watch import run
+    d = _redesign(tmp_path, gmp_edits=[("BSE SME", "NSE Mainboard"), ("Closed", "Open")])
+    ds = run.collect(d, _date(2026, 11, 3), None)
+    names = {i.name: i for i in ds.open_ipos}
+    assert "Antala Industries" in names
+    a = names["Antala Industries"]
+    assert (a.retail_sub, a.total_sub) == (Decimal("5.22"), Decimal("12.79"))
+
+
+def test_unrecognised_type_stops_the_run_instead_of_guessing(tmp_path):
+    from ipo_watch import run
+    from ipo_watch.fetch import FetchError
+    d = _redesign(tmp_path, gmp_edits=[("BSE SME", "NSE")])
+    with pytest.raises(FetchError, match="unrecognised IPO type"):
+        run.collect(d, _date(2026, 11, 8), None)
+
+
+def test_a_hidden_row_is_caught_by_the_announced_count(tmp_path):
+    from ipo_watch import run
+    from ipo_watch.fetch import FetchError
+    d = _redesign(tmp_path, gmp_edits=[('">2<!-- --> IPO<!-- -->s', '">3<!-- --> IPO<!-- -->s')])
+    with pytest.raises(FetchError, match="IPOs tracked"):
+        run.collect(d, _date(2026, 11, 8), None)
+
+
+def test_both_pages_saying_empty_is_an_honest_empty_report(tmp_path):
+    from ipo_watch import run
+    ds = run.collect(_redesign(tmp_path, gmp_from="redesign_empty", sub_from="redesign_empty"),
+                     _date(2026, 11, 11), None)
+    assert not ds.published and any("no IPOs at all" in w for w in ds.warnings)
+
+
+def test_open_cards_with_an_empty_gmp_page_is_a_disagreement_not_a_report(tmp_path):
+    from ipo_watch import run
+    from ipo_watch.fetch import FetchError
+    d = _redesign(tmp_path, gmp_from="redesign_empty", sub_from="redesign")
+    with pytest.raises(FetchError):
+        run.collect(d, _date(2026, 11, 8), None)
+
+
+def test_an_empty_page_that_is_still_loading_is_not_taken_for_empty():
+    from ipo_watch.parse import explicit_empty
+    html = ("<html><body>Tracking 0 open IPOs All Mainboard SME "
+            "Loading open IPO subscription tracker...</body></html>")
+    assert explicit_empty(html, "subscription") is False

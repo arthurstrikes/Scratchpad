@@ -216,7 +216,14 @@ def parse_table(table, source_url: str, today: date) -> list[IPO]:
 
         pmin, pmax = parse_price_band(col("price"))
 
-        board = board_from_cell(col("board")) or detect_board(name, href, heading)
+        # A Type column that says something we do not recognise is never guessed at
+        # (8 Nov 2026 redesign: SME shows as "BSE SME" / "NSE Emerge"; the Mainboard
+        # wording had not been seen yet). Stop the run so the new wording can be read.
+        raw_type = col("board")
+        if raw_type and board_from_cell(raw_type) is None:
+            raise LayoutError(f"unrecognised IPO type {raw_type!r} for {name!r} on IPOWatch's "
+                              "GMP page - cannot tell Mainboard from SME, nothing published")
+        board = board_from_cell(raw_type) or detect_board(name, href, heading)
         page_status = status_from_cell(col("status"))
 
         ipo = IPO(
@@ -343,6 +350,10 @@ def _clean_name(raw: str) -> str:
     return re.sub(r"\s+", " ", n).strip(" -–—,|") or raw.strip()
 
 
+class LayoutError(Exception):
+    """IPOWatch showed something the reader does not understand. The run stops."""
+
+
 def parse_page(html: str, source_url: str, today: date) -> list[IPO]:
     """Parse every table on a page and concatenate the IPO rows found."""
     soup = BeautifulSoup(html, "lxml")
@@ -350,9 +361,113 @@ def parse_page(html: str, source_url: str, today: date) -> list[IPO]:
     for table in soup.find_all("table"):
         try:
             found.extend(parse_table(table, source_url, today))
+        except LayoutError:
+            raise
         except Exception:  # one malformed table must not kill the run
             continue
+    found.extend(parse_subscription_cards(soup, source_url, today))
     return found
+
+
+# ------------------------------------------------- 8 Nov 2026 redesign: JS pages
+# IPOWatch rebuilt both pages as JavaScript apps. The subscription page is now one
+# card per open IPO (name, dates, price band, then a small Category | Subscription
+# table); the GMP page is a single table that announces "N IPOs tracked". See
+# fixtures/redesign_2026-11-08/ and CLAUDE.md.
+
+_CARD_LABELS = ("IPO Name", "Dates", "Price Band", "GMP")
+_SUB_STATUS_DATE = re.compile(r"Subscription Status\s+(\d{1,2} [A-Za-z]{3,9} \d{4})")
+_OPEN_COUNT = re.compile(r"Tracking\s+(\d+)\s+open\s+IPOs?", re.I)
+_TRACKED_COUNT = re.compile(r"(\d+)\s+IPO\s*s?\s+tracked", re.I)
+
+
+def _flat_text(html: str) -> str:
+    return " ".join(BeautifulSoup(html, "lxml").get_text(" ", strip=True).split())
+
+
+def announced_counts(html: str) -> dict[str, Optional[int]]:
+    """How many IPOs each page says it shows ("Tracking 2 open IPOs", "2 IPO s tracked").
+    None when the page does not say - the old layout never did."""
+    text = _flat_text(html)
+    o, t = _OPEN_COUNT.search(text), _TRACKED_COUNT.search(text)
+    return {"open": int(o.group(1)) if o else None, "tracked": int(t.group(1)) if t else None}
+
+
+def is_loading(html: str) -> bool:
+    """The page's own 'Loading ...' placeholder is still on screen: data has not arrived."""
+    text = _flat_text(html)
+    return "Loading open IPO subscription tracker" in text or "Loading GMP data" in text
+
+
+def explicit_empty(html: str, kind: str) -> bool:
+    """True only when IPOWatch itself says its list is empty (not while loading)."""
+    if is_loading(html):
+        return False
+    text = _flat_text(html)
+    n = announced_counts(html)
+    if kind == "subscription":
+        return n["open"] == 0 and "No open IPOs" in text
+    return n["tracked"] == 0 and "No records found" in text
+
+
+def _card_of(table):
+    node = table
+    for _ in range(10):
+        node = node.parent
+        if node is None:
+            return None
+        txt = node.get_text(" ", strip=True)
+        if "IPO Name" in txt and "Price Band" in txt:
+            return node
+    return None
+
+
+def parse_subscription_cards(soup, source_url: str, today: date) -> list[IPO]:
+    """One IPO per subscription card. Reads only the name, dates, price band, the
+    Retail and Total rows and the date of the figures; QIB / NII are never read, and
+    the card's own 'Mainboard' badge is ignored (it said Mainboard for SME issues)."""
+    out: list[IPO] = []
+    for table in soup.find_all("table"):
+        rows = table.find_all("tr")
+        head = [_norm(_cell_text(c)) for c in rows[0].find_all(["th", "td"])] if rows else []
+        if not (head and head[0] == "category" and any("subscription" in h for h in head)):
+            continue
+        card = _card_of(table)
+        if card is None:
+            raise LayoutError("a subscription table on IPOWatch has no IPO card around it")
+        fields: dict[str, str] = {}
+        for d in card.find_all("div"):
+            kids = d.find_all("div", recursive=False)
+            if len(kids) == 2 and kids[0].get_text(" ", strip=True) in _CARD_LABELS:
+                fields.setdefault(kids[0].get_text(" ", strip=True), kids[1].get_text(" ", strip=True))
+        h2 = card.find("h2")
+        name = (h2.get_text(" ", strip=True) if h2 else fields.get("IPO Name", "")).strip()
+        if not name:
+            raise LayoutError("a subscription card on IPOWatch has no IPO name")
+        retail = total = None
+        for tr in rows[1:]:
+            cells = [_cell_text(c) for c in tr.find_all(["th", "td"])]
+            if len(cells) < 2:
+                continue
+            label = _norm(cells[0])
+            if label == "retail":
+                retail = to_decimal(cells[1])
+            elif label == "total":
+                total = to_decimal(cells[1])
+        open_d = close_d = None
+        parts = re.split(r"\s+to\s+", fields.get("Dates", ""), maxsplit=1)
+        if len(parts) == 2:
+            open_d, close_d = parse_date(parts[0], today.year), parse_date(parts[1], today.year)
+        pmin, pmax = parse_price_band(fields.get("Price Band"))
+        m = _SUB_STATUS_DATE.search(card.get_text(" ", strip=True))
+        out.append(IPO(
+            name=_clean_name(name), board=Board.UNKNOWN, status=Status.UNKNOWN,
+            open_date=open_d, close_date=close_d, price_min=pmin, price_max=pmax,
+            retail_sub=retail, total_sub=total,
+            row_updated=m.group(1) if m else None,
+            prov=Provenance(source_url=source_url),
+        ))
+    return out
 
 
 
