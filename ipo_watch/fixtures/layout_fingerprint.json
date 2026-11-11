@@ -1,8 +1,9 @@
 {
   "subscription": [
-    "ipo name | type | closing date | qib (x) | nii (x) | retail (x) | total (x) | last updated"
+    "category | subscription (x) | shares offered | shares bid for | total amount (₹ cr)"
   ],
   "gmp": [
-    "company | gmp* | trend | price band | est. gain | date"
+    "ipo name | ipo gmp | trend | price band | est. listing | date | type | status | last updated",
+    "ipo name | type | issue price | gmp | listing price"
   ]
 }

@@ -23,7 +23,7 @@ from .enrich import apply_nse_listing_dates, attach_prev_subscription, enrich_da
 from .fetch import FetchError, extract_page_timestamp, fetch_pages, load_fixture
 from .merge import Dataset, build_dataset
 from .models import Board, IPO, Provenance, Status, Trend, parse_date
-from .parse import layout_changes, parse_page
+from .parse import LayoutError, announced_counts, explicit_empty, layout_changes, parse_page
 from .listing import (BHAV_URL, ListingResult, backfill_older, backfill_results, find_results, fetch_equities, get_text,
                       load_all_results, load_candidates, load_recent_results, make_bhav_getter,
                       match_symbol, parse_bhav, result_path, save_result, track_record, TrackRecord)
@@ -55,11 +55,16 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
         mode = "live"
 
     sub_page, gmp_page = pages[SUBSCRIPTION_URL], pages[GMP_URL]
-    sub_rows = parse_page(sub_page.html, SUBSCRIPTION_URL, today)
-    gmp_rows = parse_page(gmp_page.html, GMP_URL, today)
+    try:
+        sub_rows = parse_page(sub_page.html, SUBSCRIPTION_URL, today)
+        gmp_rows = parse_page(gmp_page.html, GMP_URL, today)
+    except LayoutError as exc:
+        raise FetchError(str(exc)) from exc
     _log(f"parsed {len(sub_rows)} subscription rows, {len(gmp_rows)} GMP rows")
+    both_empty = check_pages(sub_page.html, gmp_page.html, sub_rows, gmp_rows)
 
-    if not sub_rows or not gmp_rows:
+    if not both_empty and (not sub_rows or not gmp_rows) and not _empty_sub_with_gmp(
+            sub_page.html, sub_rows, gmp_rows):
         for name, page in (("subscription", sub_page), ("GMP", gmp_page)):
             _log(f"diagnostic: {name} page served {len(page.html)} bytes, {_page_peek(page.html)}")
         which = "either IPOWatch page" if not sub_rows and not gmp_rows else (
@@ -78,6 +83,9 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
         generated_at=datetime.now(IST),
         source_mode=mode,
     )
+    if both_empty:
+        ds.warnings.append("IPOWatch's pages currently list no IPOs at all (both say their list is "
+                           "empty), so there is nothing to show")
     if not fixture_dir:
         ds.layout_notes = _layout_notes(sub_page.html, gmp_page.html)
         for n in ds.layout_notes:
@@ -105,6 +113,35 @@ def collect(fixture_dir: str | None, today: date, snapshot_dir: str | None,
         if ds.recent_listings:
             _log(f"recently listed: {', '.join(r.name for r in ds.recent_listings)}")
     return ds
+
+
+def _empty_sub_with_gmp(sub_html: str, sub_rows: list, gmp_rows: list) -> bool:
+    """New layout: IPOs that are upcoming but not yet open have a GMP row and no
+    subscription card. That is fine only if the subscription page itself says it
+    has no open IPOs."""
+    return not sub_rows and bool(gmp_rows) and explicit_empty(sub_html, "subscription")
+
+
+def check_pages(sub_html: str, gmp_html: str, sub_rows: list, gmp_rows: list) -> bool:
+    """Cross-checks for IPOWatch's JavaScript pages (8 Nov 2026 redesign).
+
+    Each page announces how many IPOs it shows ("Tracking 2 open IPOs", "2 IPO s
+    tracked"); the rows we read must match, or part of the list is hidden (paging,
+    a half-loaded page) and nothing is published. Returns True when BOTH pages say
+    their list is empty - an honest "nothing to show" day. The old layout announces
+    no counts, so none of this applies to it."""
+    n_sub, n_gmp = announced_counts(sub_html), announced_counts(gmp_html)
+    if n_sub["open"] is not None and n_sub["open"] != len(sub_rows):
+        raise FetchError(f"IPOWatch's subscription page says {n_sub['open']} open IPOs but "
+                         f"{len(sub_rows)} were read - nothing published")
+    if n_gmp["tracked"] is not None and n_gmp["tracked"] != len(gmp_rows):
+        raise FetchError(f"IPOWatch's GMP page says {n_gmp['tracked']} IPOs tracked but "
+                         f"{len(gmp_rows)} were read (paging?) - nothing published")
+    if sub_rows and not gmp_rows:
+        raise FetchError("IPOWatch's subscription page shows open IPOs but its GMP page lists "
+                         "none - the pages disagree, nothing published")
+    return (not sub_rows and not gmp_rows and explicit_empty(sub_html, "subscription")
+            and explicit_empty(gmp_html, "gmp"))
 
 
 def _page_peek(html: str) -> str:

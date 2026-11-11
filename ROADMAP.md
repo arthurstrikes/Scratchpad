@@ -23,10 +23,10 @@ Last updated: 1 Nov 2026. **Fresh session? Read section 0 first.**
 - **Live engine path changed:** the container was reset on 28 Oct; the session checkout is `/home/user/Scratchpad`, not
   `/root/Scratchpad` (see CLAUDE.md, "Container reset"). Saved reports from 15-27 Oct were lost and partly rebuilt.
 - **GitHub dry-run check is weekly (Mondays), first PASS 26 Oct** (1 of 3). Renamed from "daily" on 1 Nov.
-- **8 Nov 2026: IPOWatch rebuilt both pages (JavaScript); daily runs now abort with the "could not run today" notice.** Details and
-  samples: CLAUDE.md ("BIG CHANGE") and `fixtures/redesign_2026-11-08/`. No Mainboard IPO was on the pages, so the Mainboard row
-  format is unseen; the rebuild (browser render + strict type check + count check) needs a first Mainboard sighting or the user's
-  go-ahead to build it blind with abort-on-unknown safeguards. The weekly wrap sent that day used a 1 Nov "coming up" list (stale).
+- **11 Nov 2026: reader rebuilt for IPOWatch's JavaScript pages** (rendered in the browser; new card reader; strict type check;
+  count and both-empty cross-checks). Live test on 11 Nov: both lists empty, so the report says no Mainboard IPOs are open or upcoming.
+  Details in CLAUDE.md. Not yet seen with a real Mainboard IPO: check the first live one. The GitHub dry-run streak restarts from 0.
+  Daily alerts 8-10 Nov were this change; the 8 Nov weekly wrap carried a stale 1 Nov "coming up" list.
 - **Open:** merge rule for names IPOWatch splits across its two pages (second case, "SFC Environmental", 27-29 Oct); user's yes needed.
 
 ---

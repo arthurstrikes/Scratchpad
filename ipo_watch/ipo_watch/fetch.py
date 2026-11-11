@@ -18,6 +18,7 @@ from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
 
+from .parse import explicit_empty
 from .config import (CA_BUNDLE, CHROMIUM_PATH, HTTP_TIMEOUT_S, IST,
                      PAGE_TIMEOUT_MS, SETTLE_MS, USER_AGENT)
 
@@ -102,9 +103,19 @@ def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None,
 
         html = raw.decode("utf-8", errors="replace")
         if "<table" not in html.lower():
-            raise FetchError(
-                f"{url} returned no tables ({len(raw)} bytes). The page layout may "
-                "have changed - inspect the snapshot before publishing anything.")
+            # 8 Nov 2026: IPOWatch's pages now load their tables with JavaScript, so the
+            # served HTML has none. Render the same live page in a browser instead.
+            try:
+                html = render_pages([url])[url].html
+            except Exception as exc:  # noqa: BLE001
+                raise FetchError(f"{url} returned no tables ({len(raw)} bytes) and the "
+                                 f"browser render failed too: {exc}") from exc
+            if "<table" not in html.lower() and not (
+                    explicit_empty(html, "subscription" if "subscription" in url else "gmp")):
+                raise FetchError(
+                    f"{url} returned no tables ({len(raw)} bytes), even rendered in a browser. "
+                    "The page layout may have changed - inspect the snapshot before "
+                    "publishing anything.")
 
         pg = Page(url=url, html=html, fetched_at=datetime.now(IST))
         pages[url] = pg
@@ -147,6 +158,15 @@ def render_pages(urls: list[str], snapshot_dir: Optional[str] = None) -> dict[st
                 page = ctx.new_page()
                 try:
                     page.goto(url, timeout=PAGE_TIMEOUT_MS, wait_until="domcontentloaded")
+                    # The JavaScript pages show a "Loading ..." placeholder until their
+                    # data arrives; wait for it to go (up to 25 s), then let it settle.
+                    try:
+                        page.wait_for_function(
+                            "() => { const t = document.body.innerText;"
+                            " return !t.includes('Loading open IPO subscription tracker')"
+                            " && !t.includes('Loading GMP data'); }", timeout=25_000)
+                    except Exception:  # noqa: BLE001 - the checks after rendering decide
+                        pass
                     page.wait_for_timeout(SETTLE_MS)
                     html = page.content()
                 except Exception as exc:  # noqa: BLE001

@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (97 at 3 Nov 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (105 at 11 Nov 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -69,22 +69,28 @@ by design.
 
 Learned from the live page; `fixtures/live/` pins it and five tests assert it.
 
-**8 Nov 2026 - BIG CHANGE: IPOWatch rebuilt both pages as JavaScript apps, and the run now aborts ("returned no tables").**
-Served HTML has no `<table>` on either page (subscription: "Loading open IPO subscription tracker..."). A browser render
-(`fetch.render_pages`, works in the sandbox) shows the new design, saved in `fixtures/redesign_2026-11-08/`:
-- **Subscription page:** one *card per open IPO* (name, dates, price band, GMP, "Subscription Status" date) with a small
-  table `Category | Subscription (x) | Shares Offered | Shares bid for | Total Amount` (rows QIB (Ex. Anchor), NII, bNII, sNII,
-  Retail, Total). No big list of ~300 past IPOs any more. **The card badge said "Mainboard" for two SME IPOs, so do not
-  trust it for the board.**
-- **GMP page:** table `IPO Name | IPO GMP | Trend | Price Band | Est. Listing | Date | Type | Status | Last Updated` where
-  Type is e.g. `BSE SME` / `NSE Emerge` (we have not yet seen the Mainboard value), paged ("2 IPOs tracked, Prev 1 Next"),
-  plus a second table of listed IPOs `IPO Name | Type | Issue Price | GMP | Listing Price`.
-- On 8 Nov there were **no Mainboard IPOs at all** on either page (only two SME ones), so the Mainboard row format could not be
-  seen. Rebuilding the parser against guesses would risk a false "nothing is open", so it was **not** done: the runs abort and
-  send the normal "could not run today" Telegram notice (fail closed). Plan: rebuild the reader when a Mainboard IPO appears
-  (or earlier with the safeguards: render in the browser when the served page has no tables; accept only recognised Type values
-  and abort on an unknown one; check the "N IPOs tracked" count against the rows parsed).
-  The Monday GitHub dry-run check will FAIL for the same reason (the streak resets).
+**8 Nov 2026 - IPOWatch rebuilt both pages as JavaScript apps; reader rebuilt 11 Nov (user: "build it" was implied by the
+daily "could not run" alerts).** The served HTML has no `<table>` (subscription: "Loading open IPO subscription tracker...";
+GMP: "Loading GMP data..."), so `fetch.fetch_pages` now renders the page in the browser (`render_pages`, waits for the
+"Loading" text to go) whenever the served page has no tables. Real samples: `fixtures/redesign_2026-11-08/` (as served + rendered),
+`fixtures/redesign/` (8 Nov, two SME IPOs) and `fixtures/redesign_empty/` (11 Nov, both lists empty). The new layout:
+- **Subscription page:** a card per open IPO (`parse.parse_subscription_cards`): name (h2), Dates (`29 Oct 2026 to 05 Nov 2026`),
+  Price Band, and a `Category | Subscription (x) | ...` table; only the **Retail** and **Total** rows are read (QIB/NII never).
+  The date of the figures ("Subscription Status 05 Nov 2026") is the row stamp. **The card badge said "Mainboard" for SME
+  issues, so it is ignored**; the board comes from the GMP page's Type column.
+- **GMP page:** one table `IPO Name | IPO GMP | Trend | Price Band | Est. Listing | Date | Type | Status | Last Updated`, paged,
+  with a second table of listed IPOs (ignored: no dates/status). Type is `BSE SME` / `NSE Emerge` for SME. **The Mainboard
+  wording has never been seen**, so any Type that is neither SME nor Mainboard/Mainline stops the run (`parse.LayoutError`,
+  "unrecognised IPO type") instead of being guessed; read the snapshot, extend `board_from_cell`, rerun.
+- **Safeguards (`run.check_pages`):** each page announces a count ("Tracking N open IPOs", "N IPO s tracked"); the rows read must
+  match or nothing is published; open cards with an empty GMP page is a disagreement and stops the run; an empty list counts as
+  "nothing to show" only when BOTH pages explicitly say so ("0 open IPOs" + "No open IPOs", "0 IPO s tracked" + "No records
+  found"), never while a "Loading" placeholder is still on screen. That day's report says there are no Mainboard IPOs and adds a
+  Data note that IPOWatch lists no IPOs at all.
+- Layout fingerprint re-pinned to these headings (the empty state shows 'no longer seen' notes - harmless, operator-only).
+- **Untested with real Mainboard data** (none was on the site 8-11 Nov). On the first Mainboard IPO, read that day's run log and
+  snapshot. The per-IPO links on the GMP page now point at `/<slug>-ipo-details/`, which the trend/lot-size enrichment was not
+  written for; it is best-effort and degrades to "Not updated", but check it on the first live IPO.
 
 **19 Oct 2026: IPOWatch changed the subscription table's first header cell from "IPO" to a bare
 row number ("1")**, so no column was recognised as the name and the run aborted with
