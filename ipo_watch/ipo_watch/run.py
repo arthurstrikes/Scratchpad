@@ -30,7 +30,7 @@ from .listing import (BHAV_URL, ListingResult, backfill_older, backfill_results,
 from .report import (build_caption, build_listing_report, build_midday_report, build_report,
                      build_weekly_report, closing_today)
 from .share import build_share_page
-from . import telegram
+from . import history, telegram
 from .verify import check, check_listing
 
 
@@ -576,6 +576,18 @@ def main(argv: list[str] | None = None) -> int:
 
     today = date.fromisoformat(args.date) if args.date else datetime.now(IST).date()
 
+    # IPOWATCH_NO_HISTORY=1 switches the history branch off entirely (the test suite sets it, so a test
+    # run can never write into the real saved reports).
+    live = not (args.fixture_dir or args.dataset or os.environ.get("IPOWATCH_NO_HISTORY"))
+    if live:
+        history.restore(args.outdir, _log)            # a fresh machine gets the saved reports back
+    rc = _dispatch(args, today)
+    if live and rc == 0 and args.mode != "midday" and telegram.configured():
+        history.save(args.outdir, _log)               # only after a real run, never a dry one
+    return rc
+
+
+def _dispatch(args, today: date) -> int:
     if args.mode in ("weekly", "backfill"):
         try:
             return (_weekly_mode if args.mode == "weekly" else _backfill_mode)(args, today)

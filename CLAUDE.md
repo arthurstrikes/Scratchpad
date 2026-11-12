@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (107 at 12 Nov 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (110 at 12 Nov 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -45,7 +45,14 @@ Rebuilt from the `history` branch (`git archive origin/history | tar -x -C ipo_w
 the scorecards already sent, and a small rebuilt dataset holds Jio's and Paras's 23 Oct GMPs. Lost for good:
 the daily datasets of 15-27 Oct, so "change since last report" lines were missing on 28 Oct. The backup
 trigger's stored prompt still says `~/Scratchpad`; **do not follow it blindly - a fresh clone there has no
-history.** Saving the output somewhere that survives a reset (the `history` branch) needs the user's yes.
+history.** (Saving to the `history` branch was approved on 12 Nov and is automatic now - see below.)
+
+**Saved reports now survive a machine reset (12 Nov 2026, user: "go ahead").** `ipo_watch/history.py`: every live run first restores any saved
+file the output folder is missing from the repo's `history` branch (never overwrites a local file), and after a real run (Telegram configured,
+exit 0, not midday) copies the datasets, listing results and report .txt to that branch and pushes (best-effort, logged as `history -> ...`,
+never changes the exit code). Only figures and text; never images or page snapshots. `IPOWATCH_NO_HISTORY=1` switches it off (the test suite
+sets it: **on 12 Nov a test run pushed two stub datasets into the real branch before that guard existed; they were restored from the earlier commit**).
+So a fresh machine rebuilds its memory by itself, and a routine session with push access keeps it up to date too.
 
 ## Current status
 
