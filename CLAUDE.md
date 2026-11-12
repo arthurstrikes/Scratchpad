@@ -719,6 +719,11 @@ day (user: "do it yourself"). This session now sends only the Sunday weekly wrap
 self-re-arming `send_later` reminders. If the Routine goes silent again, re-enable the backup
 (`update_trigger enabled=true` on `trig_01AnmiV5iED3Xe8jVFkVd7zD`) and run the daily report by hand.
 
+**Update 12 Nov 2026: the Routine was blocked by the classifier again** (its own session reported a denied `pip install` / run, reason
+"Code from External"), so today's report was run by hand and the **backup trigger was switched back on** (daily 5:05 PM IST,
+into this session). The Routine is therefore intermittent, not fixed: 1 Nov delivered, 12 Nov blocked. The backup's stored prompt
+still says `~/Scratchpad`; use `/home/user/Scratchpad` (it has the saved reports). If both fire on a day the user gets two reports.
+
 ## If a scheduled run reports a problem
 
 The run fails closed, so a failure means no report was sent — not a wrong
