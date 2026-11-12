@@ -1,0 +1,17 @@
+*🏁 LISTING DAY SCORECARD*
+📅 03 Nov 2026 | NSE
+
+*BLS POLYMERS* (NSE: BLSPOLY)
+💰 Issue ₹150 → Listed ₹248 | *+65.33%*
+📈 Day 1: Open ₹248 → Close ₹268.80 | *+8.39%*
+📊 Close vs issue: +79.20%
+🎯 GMP said ₹51 (34.00%) | Gap +31.33 pts
+
+*SFC ENVIRONMENTAL TECHNOLOGIES* (NSE: SFCTECH)
+💰 Issue ₹330 → Listed ₹355.10 | *+7.61%*
+📈 Day 1: Open ₹355.10 → Close ₹426.10 | *+19.99%*
+📊 Close vs issue: +29.12%
+🎯 GMP said ₹12 (3.64%) | Gap +3.97 pts
+
+_Issue = NSE base price. Listing gain = issue to first-day open. Day 1 = first-day open to close. Gap = listing gain minus the GMP % we last reported. GMP is unofficial._
+Source: NSE (prices), IPOWatch (GMP shown before listing)

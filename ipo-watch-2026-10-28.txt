@@ -1,0 +1,93 @@
+*📊 DAILY MAINBOARD IPO WATCH*
+📅 28 Oct 2026 | 5:00 PM IST
+🔎 5 open (1 closes today, 3 close tomorrow) · 1 upcoming · 1 above 25% GMP
+
+*🟢 OPEN MAINBOARD IPOs*
+
+*🔥 BLS POLYMERS*
+📅 27 Oct – 29 Oct | ⏰ Closes tomorrow
+💰 Price: ₹150 | Min ₹15,000 (100 shares)
+👥 Retail: 25.98x
+📊 Total: 29.26x
+🟢 GMP: ₹44 | *29%*
+📈 GMP trend: ▲ ₹4 vs yesterday (₹40 → ₹44)
+🗓️ Allotment: 30 Oct | Listing: 03 Nov
+
+*M.K.SONS FINE JEWELS*
+📅 28 Oct – 30 Oct
+💰 Price: ₹162 | Min ₹14,742 (91 shares)
+👥 Retail: 0.19x
+📊 Total: 0.58x
+🟢 GMP: ₹10 | *6.17%*
+📈 GMP trend: ▲ ₹2 vs yesterday (₹8 → ₹10)
+🗓️ Allotment: 02 Nov | Listing: 04 Nov
+
+*SFC ENVIRONMENTAL TECHNOLOGIES*
+📅 27 Oct – 29 Oct | ⏰ Closes tomorrow
+💰 Price: ₹330 | Min ₹14,850 (45 shares)
+👥 Retail: Not updated
+📊 Total: Not updated
+🟢 GMP: ₹18 | *5.45%*
+📈 GMP trend: ▼ ₹4 vs yesterday (₹22 → ₹18)
+🗓️ Allotment: 30 Oct | Listing: 03 Nov
+
+*EAAA INDIA ALTERNATIVES*
+📅 26 Oct – 28 Oct | ⏰ Closes today
+💰 Price: ₹1665 | Min ₹14,985 (9 shares)
+👥 Retail: 0.39x
+📊 Total: 4.54x
+🟢 GMP: ₹12 | *0.72%*
+📈 GMP trend: ▼ ₹8 vs yesterday (₹20 → ₹12)
+🗓️ Allotment: 29 Oct | Listing: 02 Nov
+
+*SFC ENVIRONMENTAL*
+📅 Not verified | ⏰ Closes tomorrow
+💰 Price: Not updated
+👥 Retail: 0.31x
+📊 Total: 0.23x
+🟢 GMP: Not updated | *Not updated*
+📈 GMP trend: Not updated
+🗓️ Allotment: 30 Oct | Listing: 03 Nov
+
+*🔵 UPCOMING MAINBOARD IPOs*
+
+*BOMBAY COATED AND SPECIAL STEELS*
+📅 29 Oct – 02 Nov
+💰 Price: ₹82 | Min ₹14,924 (182 shares)
+🟢 GMP: ₹9 | *11%*
+📈 GMP trend: Not updated
+🗓️ Allotment: 03 Nov | Listing: 05 Nov
+
+*🏆 CURRENT GMP RANKING*
+
+1. BLS Polymers — *29%* (₹44) 🟢 ▲ ₹4
+2. Bombay Coated and Special Steels — *11%* (₹9) 🔵
+3. M.K.Sons Fine Jewels — *6.17%* (₹10) 🟢 ▲ ₹2
+4. SFC Environmental Technologies — *5.45%* (₹18) 🟢 ▼ ₹4
+5. EAAA India Alternatives — *0.72%* (₹12) 🟢 ▼ ₹8
+6. SFC Environmental — *Not updated* (Not updated) 🟢
+
+🔥 Highest GMP: BLS Polymers — 29%
+👥 Highest Retail Subscription: BLS Polymers — 25.98x
+📊 Highest Total Subscription: BLS Polymers — 29.26x
+
+*📊 GMP TRACK RECORD · LAST 25 LISTINGS*
+
+📈 Average listing gain: *+16.9%*
+✅ Opened above issue price: *18 of 25*
+🕘 Average first day (open to close): *-1.3%*
+🎯 GMP accuracy: listed within 10 points of GMP in *8 of 14* (average miss 12.3 pts; GMP was too high in 9)
+_Listing gain = issue price to first-day open, from NSE._
+
+📌 _GMP = Grey Market Premium_
+📈 _GMP % calculated on upper price band_
+🔥 _Flag = GMP above 25%_
+👥 _▲/▼ on subscription = change since our previous update._
+⚠️ _GMP is unofficial and can change before listing._
+Source: IPOWatch
+🕒 Subscription data: 28 Oct, 15:41
+
+ℹ️ Data notes:
+• SFC Environmental: incomplete IPO dates on IPOWatch
+• Minimum investment not available for: SFC Environmental (not found on IPOWatch, or did not equal shares x cap price)
+• GMP trend not updated for: SFC Environmental, Bombay Coated and Special Steels (IPOWatch page could not be read)

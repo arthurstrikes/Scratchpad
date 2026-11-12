@@ -1,0 +1,46 @@
+{
+  "source": "IPOWatch",
+  "source_mode": "live",
+  "run_date": "2026-10-23",
+  "generated_at": "2026-10-23T11:37:00+00:00",
+  "subscription_timestamp": null,
+  "gmp_timestamp": null,
+  "upcoming": [],
+  "recently_closed_internal": [],
+  "excluded_sme": [],
+  "warnings": [],
+  "conflicts": [],
+  "note": "Rebuilt on 28 Oct after the session's saved reports were lost. Holds only the GMP figures published in the 23 Oct report for the two IPOs that closed that day.",
+  "open": [
+    {
+      "name": "Jio Platforms",
+      "board": "Mainboard",
+      "status": "Open",
+      "open_date": "2026-10-21",
+      "close_date": "2026-10-23",
+      "price_min": null,
+      "price_max": "1119",
+      "gmp": "255",
+      "gmp_pct": "22.79",
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [],
+      "listing_date": "2026-10-28"
+    },
+    {
+      "name": "Paras Healthcare",
+      "board": "Mainboard",
+      "status": "Open",
+      "open_date": "2026-10-21",
+      "close_date": "2026-10-23",
+      "price_min": null,
+      "price_max": "693",
+      "gmp": "10",
+      "gmp_pct": "1.44",
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [],
+      "listing_date": "2026-10-28"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "BLS Polymers",
+  "symbol": "BLSPOLY",
+  "series": "EQ",
+  "listing_date": "2026-11-03",
+  "issue_price": "150.00",
+  "open_price": "248.00",
+  "close_price": "268.80",
+  "cap_price": "150",
+  "last_gmp": "70",
+  "last_gmp_pct": "46.67",
+  "last_gmp_date": "2026-11-01",
+  "notes": []
+}

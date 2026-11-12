@@ -1,0 +1,101 @@
+*📊 DAILY MAINBOARD IPO WATCH*
+📅 29 Oct 2026 | 5:00 PM IST
+🔎 5 open (3 close today, 1 closes tomorrow) · none upcoming · 1 above 25% GMP
+
+*🟢 OPEN MAINBOARD IPOs*
+
+*🔥 BLS POLYMERS*
+📅 27 Oct – 29 Oct | ⏰ Closes today
+💰 Price: ₹150 | Min ₹15,000 (100 shares)
+👥 Retail: 112.9x (▲ from 25.98x)
+📊 Total: 225.51x (▲ from 29.26x)
+🟢 GMP: ₹51 | *34%*
+📈 GMP trend: ▲ ₹7 vs yesterday (₹44 → ₹51)
+🗓️ Allotment: 30 Oct | Listing: 03 Nov
+
+*BOMBAY COATED AND SPECIAL STEELS*
+📅 29 Oct – 02 Nov
+💰 Price: ₹82 | Min ₹14,924 (182 shares)
+👥 Retail: 1.1x
+📊 Total: 2.67x
+🟢 GMP: ₹9 | *11%*
+📈 GMP trend: ▬ No change vs yesterday (₹9)
+🗓️ Allotment: 03 Nov | Listing: 05 Nov
+
+*M.K.SONS FINE JEWELS*
+📅 28 Oct – 30 Oct | ⏰ Closes tomorrow
+💰 Price: ₹162 | Min ₹14,742 (91 shares)
+👥 Retail: 0.73x (▲ from 0.19x)
+📊 Total: 1.05x (▲ from 0.58x)
+🟢 GMP: ₹15 | *9.26%*
+📈 GMP trend: ▲ ₹5 vs yesterday (₹10 → ₹15)
+🗓️ Allotment: 02 Nov | Listing: 04 Nov
+
+*SFC ENVIRONMENTAL TECHNOLOGIES*
+📅 27 Oct – 29 Oct | ⏰ Closes today
+💰 Price: ₹330 | Min ₹14,850 (45 shares)
+👥 Retail: Not updated
+📊 Total: Not updated
+🟢 GMP: ₹12 | *3.64%*
+📈 GMP trend: ▼ ₹6 vs yesterday (₹18 → ₹12)
+🗓️ Allotment: 30 Oct | Listing: 03 Nov
+
+*SFC ENVIRONMENTAL*
+📅 Not verified | ⏰ Closes today
+💰 Price: Not updated
+👥 Retail: 1.16x (▲ from 0.31x)
+📊 Total: 6.36x (▲ from 0.23x)
+🟢 GMP: Not updated | *Not updated*
+📈 GMP trend: Not updated
+🗓️ Allotment: 30 Oct | Listing: 03 Nov
+
+*🔵 UPCOMING MAINBOARD IPOs*
+
+No Mainboard IPOs are scheduled yet.
+
+*🏁 RECENTLY LISTED*
+
+*PARAS HEALTHCARE* - listed 28 Oct
+💰 Issue ₹693 → Listed ₹720 | *+3.90%*
+📈 Day 1 close ₹735.60 (+2.17% from open)
+🎯 GMP said ₹10 (1.44%) | Gap +2.46 pts
+
+*JIO PLATFORM* - listed 28 Oct
+💰 Issue ₹1119 → Listed ₹1358 | *+21.36%*
+📈 Day 1 close ₹1,417.50 (+4.38% from open)
+🎯 GMP said ₹255 (22.79%) | Gap -1.43 pts
+
+_Prices from NSE. Gap = actual listing gain minus the GMP % we last reported._
+
+*🏆 CURRENT GMP RANKING*
+
+1. BLS Polymers — *34%* (₹51) 🟢 ▲ ₹7
+2. Bombay Coated and Special Steels — *11%* (₹9) 🟢 ▬ ₹0
+3. M.K.Sons Fine Jewels — *9.26%* (₹15) 🟢 ▲ ₹5
+4. SFC Environmental Technologies — *3.64%* (₹12) 🟢 ▼ ₹6
+5. SFC Environmental — *Not updated* (Not updated) 🟢
+
+🔥 Highest GMP: BLS Polymers — 34%
+👥 Highest Retail Subscription: BLS Polymers — 112.9x
+📊 Highest Total Subscription: BLS Polymers — 225.51x
+
+*📊 GMP TRACK RECORD · LAST 25 LISTINGS*
+
+📈 Average listing gain: *+16.8%*
+✅ Opened above issue price: *19 of 25*
+🕘 Average first day (open to close): *-2.0%*
+🎯 GMP accuracy: listed within 10 points of GMP in *10 of 16* (average miss 11.0 pts; GMP was too high in 10)
+_Listing gain = issue price to first-day open, from NSE._
+
+📌 _GMP = Grey Market Premium_
+📈 _GMP % calculated on upper price band_
+🔥 _Flag = GMP above 25%_
+👥 _▲/▼ on subscription = change since our previous update._
+⚠️ _GMP is unofficial and can change before listing._
+Source: IPOWatch
+🕒 Subscription data: 29 Oct, 15:46
+
+ℹ️ Data notes:
+• SFC Environmental: incomplete IPO dates on IPOWatch
+• Minimum investment not available for: SFC Environmental (not found on IPOWatch, or did not equal shares x cap price)
+• GMP trend not updated for: SFC Environmental (IPOWatch page could not be read)
