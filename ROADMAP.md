@@ -27,6 +27,9 @@ Last updated: 1 Nov 2026. **Fresh session? Read section 0 first.**
   count and both-empty cross-checks). Live test on 11 Nov: both lists empty, so the report says no Mainboard IPOs are open or upcoming.
   Details in CLAUDE.md. Not yet seen with a real Mainboard IPO: check the first live one. The GitHub dry-run streak restarts from 0.
   Daily alerts 8-10 Nov were this change; the 8 Nov weekly wrap carried a stale 1 Nov "coming up" list.
+- **12 Nov 2026: saved reports now persist** (user: "go ahead"): runs restore from / save to the `history` branch automatically (`history.py`);
+  27 files from 28 Oct - 12 Nov were saved. Also: the 5:00 PM routine was blocked by the permission checker again on 12 Nov, so the backup
+  trigger was switched back on; a zero price band is now "Not updated"; first real Mainboard row of the new site seen (Crystal Crop Protection).
 - **Open:** merge rule for names IPOWatch splits across its two pages (second case, "SFC Environmental", 27-29 Oct); user's yes needed.
 
 ---

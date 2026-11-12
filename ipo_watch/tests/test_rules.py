@@ -1356,3 +1356,62 @@ def test_first_real_mainboard_row_of_the_new_site_is_read(tmp_path):
     assert c.board == Board.MAINBOARD and c.price_display == "Not updated"
     assert (c.open_date, c.close_date) == (date(2026, 11, 18), date(2026, 11, 20))
     assert c.gmp_pct is None and "gmp" in c.unverified_fields          # no band, so no GMP %
+
+
+# ------------------------------------------------------------------ saved history
+def _git_ok(*args, cwd):
+    import subprocess
+    r = subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@t", *args], cwd=cwd,
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    return r.stdout
+
+
+def _history_remote(tmp_path):
+    """A local 'origin' with a history branch holding one saved dataset."""
+    seed = tmp_path / "seed"; seed.mkdir()
+    _git_ok("init", "-q", "-b", "history", cwd=str(seed))
+    (seed / "ipo-watch-2026-10-01-dataset.json").write_text('{"run_date": "2026-10-01"}')
+    _git_ok("add", "-A", cwd=str(seed)); _git_ok("commit", "-q", "-m", "seed", cwd=str(seed))
+    bare = tmp_path / "origin.git"
+    _git_ok("clone", "-q", "--bare", str(seed), str(bare), cwd=str(tmp_path))
+    work = tmp_path / "work"
+    _git_ok("clone", "-q", str(bare), str(work), cwd=str(tmp_path))
+    return bare, work
+
+
+def test_history_restores_missing_files_and_never_overwrites(tmp_path):
+    from ipo_watch import history
+    bare, work = _history_remote(tmp_path)
+    out = tmp_path / "out"; out.mkdir()
+    assert history.restore(str(out), repo_dir=str(work)) == 1
+    assert (out / "ipo-watch-2026-10-01-dataset.json").exists()
+    (out / "ipo-watch-2026-10-01-dataset.json").write_text("LOCAL")
+    assert history.restore(str(out), repo_dir=str(work)) == 0
+    assert (out / "ipo-watch-2026-10-01-dataset.json").read_text() == "LOCAL"
+
+
+def test_history_saves_only_figures_and_report_text(tmp_path):
+    from ipo_watch import history
+    bare, work = _history_remote(tmp_path)
+    out = tmp_path / "out"; out.mkdir()
+    (out / "ipo-watch-2026-11-12-dataset.json").write_text('{"run_date": "2026-11-12"}')
+    (out / "ipo-watch-2026-11-12.txt").write_text("report")
+    (out / "ipo-watch-listing-ABC.json").write_text("{}")
+    (out / "ipo-watch-2026-11-12.png").write_bytes(b"png")
+    (out / "snapshots").mkdir(); (out / "snapshots" / "page.html").write_text("<html>")
+    assert history.save(str(out), repo_dir=str(work)) is True
+    names = _git_ok("ls-tree", "-r", "--name-only", "history", cwd=str(bare)).split()
+    assert "ipo-watch-2026-11-12-dataset.json" in names and "ipo-watch-listing-ABC.json" in names
+    assert not any(n.endswith(".png") or "snapshots" in n or n.endswith(".html") for n in names)
+    assert history.save(str(out), repo_dir=str(work)) is False          # nothing new the second time
+
+
+def test_history_failure_is_quiet_and_never_raises(tmp_path):
+    from ipo_watch import history
+    nogit = tmp_path / "nogit"; nogit.mkdir()
+    (nogit / "ipo-watch-2026-11-12-dataset.json").write_text("{}")
+    msgs = []
+    assert history.save(str(nogit), msgs.append, repo_dir=str(nogit)) is False
+    assert history.restore(str(nogit), msgs.append, repo_dir=str(nogit)) == 0
+    assert msgs and all("history ->" in m for m in msgs)
