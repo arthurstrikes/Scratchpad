@@ -1335,3 +1335,24 @@ def test_an_empty_page_that_is_still_loading_is_not_taken_for_empty():
     html = ("<html><body>Tracking 0 open IPOs All Mainboard SME "
             "Loading open IPO subscription tracker...</body></html>")
     assert explicit_empty(html, "subscription") is False
+
+
+def test_a_zero_price_band_is_not_a_price():
+    # 12 Nov 2026: Crystal Crop Protection showed "₹0" before its price was announced and
+    # the report printed "Price: ₹0". Zero is the placeholder, so the price is Not updated.
+    assert parse_price_band("₹0") == (None, None)
+    assert parse_price_band("₹0 - ₹0") == (None, None)
+    assert parse_price_band("₹62 to 66") == (Decimal("62"), Decimal("66"))
+
+
+def test_first_real_mainboard_row_of_the_new_site_is_read(tmp_path):
+    # fixtures/redesign_mainboard/: IPOWatch's pages of 12 Nov 2026 - Crystal Crop Protection,
+    # Type "Mainboard", upcoming 18-20 Nov, price band and GMP not yet published (₹0).
+    from ipo_watch import run
+    base = os.path.join(os.path.dirname(__file__), "..", "fixtures", "redesign_mainboard")
+    ds = run.collect(base, date(2026, 11, 12), None)
+    assert [i.name for i in ds.upcoming_ipos] == ["Crystal Crop Protection"] and not ds.open_ipos
+    c = ds.upcoming_ipos[0]
+    assert c.board == Board.MAINBOARD and c.price_display == "Not updated"
+    assert (c.open_date, c.close_date) == (date(2026, 11, 18), date(2026, 11, 20))
+    assert c.gmp_pct is None and "gmp" in c.unverified_fields          # no band, so no GMP %
