@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (105 at 11 Nov 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (107 at 12 Nov 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -88,7 +88,11 @@ GMP: "Loading GMP data..."), so `fetch.fetch_pages` now renders the page in the 
   found"), never while a "Loading" placeholder is still on screen. That day's report says there are no Mainboard IPOs and adds a
   Data note that IPOWatch lists no IPOs at all.
 - Layout fingerprint re-pinned to these headings (the empty state shows 'no longer seen' notes - harmless, operator-only).
-- **Untested with real Mainboard data** (none was on the site 8-11 Nov). On the first Mainboard IPO, read that day's run log and
+- **First real Mainboard row seen 12 Nov** (Crystal Crop Protection): Type is plain `Mainboard`, status `Upcoming`, price band and
+  GMP `₹0` until announced (a zero band is now treated as "not published", so the price shows Not updated and the GMP % Not
+  verified). Fixture: `fixtures/redesign_mainboard/`. Its detail page `/<slug>-ipo-details/` holds Price Band `TBA`, Lot Size `0`, a
+  timeline and the GMP history table; the old enrichment reads it as "could not be read" - check it once a band is announced.
+- **Open-card reading still untested with a real Mainboard card** (none was open on the site 8-12 Nov). On the first Mainboard IPO, read that day's run log and
   snapshot. The per-IPO links on the GMP page now point at `/<slug>-ipo-details/`, which the trend/lot-size enrichment was not
   written for; it is best-effort and degrades to "Not updated", but check it on the first live IPO.
 

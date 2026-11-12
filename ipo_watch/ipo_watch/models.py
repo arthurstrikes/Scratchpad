@@ -341,8 +341,14 @@ def parse_price_band(text: Optional[str]) -> tuple[Optional[Decimal], Optional[D
         lo, hi = to_decimal(m.group(1)), to_decimal(m.group(2))
         if lo is not None and hi is not None and lo > hi:
             lo, hi = hi, lo
+        # A band of zero is IPOWatch's placeholder before the price is announced
+        # (Crystal Crop Protection, 12 Nov: "₹0", "TBA"), not a price.
+        if hi == 0:
+            return (None, None)
         return (lo, hi)
     single = to_decimal(t)
+    if single == 0:
+        return (None, None)
     return (None, single) if single is not None else (None, None)
 
 
