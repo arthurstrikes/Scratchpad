@@ -97,22 +97,46 @@ def parse_gmp_history(html: str, today: date) -> Optional[list[tuple[date, Optio
         if not rows:
             continue
         head = [_norm_label(c) for c in rows[0]]
-        if "date" not in head or not any(h.startswith("ipo gmp") or h == "gmp" for h in head):
+        di = next((i for i, h in enumerate(head) if h == "date" or h.startswith("date ")), None)
+        gi = next((i for i, h in enumerate(head) if h.startswith("ipo gmp") or h == "gmp"
+                   or h.startswith("gmp ")), None)
+        if di is None or gi is None:
             continue
-        di = head.index("date")
-        gi = next(i for i, h in enumerate(head) if h.startswith("ipo gmp") or h == "gmp")
         out: list[tuple[date, Optional[Decimal]]] = []
+        latest_at: dict[date, str] = {}
         for r in rows[1:]:
             if len(r) <= max(di, gi):
                 continue
-            d = parse_date(r[di], today.year)
+            # '13-Nov-2026 12:12 PM' (the 2026 redesign stamps a time, and several
+            # rows can fall on one day): the day's figure is its latest row.
+            stamp = r[di].strip()
+            d = parse_date(stamp.split(" ")[0], today.year) or parse_date(stamp, today.year)
             if d is None:
                 continue
             if (d - today).days > 1:          # '28 December' read in January
                 d = date(d.year - 1, d.month, d.day)
+            when = _time_key(stamp)
+            if d in latest_at:
+                if when <= latest_at[d]:
+                    continue
+                out = [(dd, gg) for dd, gg in out if dd != d]
+            latest_at[d] = when
             out.append((d, to_decimal(r[gi])))
         return out
     return None
+
+
+def _time_key(stamp: str) -> str:
+    """Sortable 24-hour 'HH:MM' from '13-Nov-2026 12:12 PM' ('' when there is no time)."""
+    m = re.search(r"(\d{1,2}):(\d{2})\s*([AaPp][Mm])?", stamp)
+    if not m:
+        return ""
+    h, mi, ap = int(m.group(1)), m.group(2), (m.group(3) or "").lower()
+    if ap == "pm" and h != 12:
+        h += 12
+    if ap == "am" and h == 12:
+        h = 0
+    return f"{h:02d}:{mi}"
 
 
 def overlay_published(history: list[tuple[date, Optional[Decimal]]],
@@ -153,7 +177,8 @@ def parse_detail_facts(html: str, price_max: Optional[Decimal]) -> dict:
         if not rows:
             continue
         head = [_norm_label(c) for c in rows[0]]
-        if head[:4] == ["application", "lot size", "shares", "amount"]:
+        if head[:4] in (["application", "lot size", "shares", "amount"],
+                        ["application", "lots", "shares", "amount"]):
             for r in rows[1:]:
                 if len(r) >= 4 and "retail" in r[0].lower() and "min" in r[0].lower():
                     shares = to_decimal(r[2])
@@ -174,6 +199,13 @@ def parse_detail_facts(html: str, price_max: Optional[Decimal]) -> dict:
                 facts["allotment_date"] = parse_date(r[1])
             elif label in ("ipo listing date", "listing date") and not facts["listing_date"]:
                 facts["listing_date"] = parse_date(r[1])
+    if not facts["allotment_date"]:
+        # The 2026 page shows the timeline as text, date first: "23 Nov 2026 Basis of
+        # Allotment PENDING". Only that exact shape is read.
+        text = " ".join(BeautifulSoup(html, "lxml").get_text(" ", strip=True).split())
+        m = re.search(r"(\d{1,2} [A-Za-z]{3,9} \d{4}) Basis of Allotment\b", text)
+        if m:
+            facts["allotment_date"] = parse_date(m.group(1))
     return facts
 
 
@@ -220,8 +252,11 @@ def enrich_ipo(ipo: IPO, today: date, get: Fetcher,
     if ipo.trend.status == "unavailable":
         problems["trend"] = True
 
-    detail_url = find_detail_url(gmp_html, ipo.name, ipo.gmp_url) if gmp_html else ""
-    detail_html = get(detail_url) if detail_url else None
+    if gmp_html and urlparse(ipo.gmp_url).path.rstrip("/").endswith("-ipo-details"):
+        detail_html = gmp_html     # 2026 redesign: one page holds the GMP history and the facts
+    else:
+        detail_url = find_detail_url(gmp_html, ipo.name, ipo.gmp_url) if gmp_html else ""
+        detail_html = get(detail_url) if detail_url else None
     if detail_html and page_is_about(detail_html, ipo.name):
         f = parse_detail_facts(detail_html, ipo.price_max)
         ipo.lot_shares, ipo.min_invest = f["lot_shares"], f["min_invest"]

@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (110 at 12 Nov 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (112 at 13 Nov 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -97,8 +97,10 @@ GMP: "Loading GMP data..."), so `fetch.fetch_pages` now renders the page in the 
 - Layout fingerprint re-pinned to these headings (the empty state shows 'no longer seen' notes - harmless, operator-only).
 - **First real Mainboard row seen 12 Nov** (Crystal Crop Protection): Type is plain `Mainboard`, status `Upcoming`, price band and
   GMP `₹0` until announced (a zero band is now treated as "not published", so the price shows Not updated and the GMP % Not
-  verified). Fixture: `fixtures/redesign_mainboard/`. Its detail page `/<slug>-ipo-details/` holds Price Band `TBA`, Lot Size `0`, a
-  timeline and the GMP history table; the old enrichment reads it as "could not be read" - check it once a band is announced.
+  verified). Fixture: `fixtures/redesign_mainboard/`. Its page `/<slug>-ipo-details/` (the link in the GMP table row) is now ONE page holding the facts table (Lot Size, Listing Date),
+  the `Application | Lots | Shares | Amount` table (retail minimum), the timeline as text ("23 Nov 2026 Basis of Allotment PENDING") and the
+  GMP history (`Date & Time | GMP (₹)`, several rows a day, latest row wins). **13 Nov: the band was announced and `enrich.py` was adapted to
+  read all of it from that one page** (min investment, allotment and listing dates, trend); fixture `details_crystal_crop.html`.
 - **Open-card reading still untested with a real Mainboard card** (none was open on the site 8-12 Nov). On the first Mainboard IPO, read that day's run log and
   snapshot. The per-IPO links on the GMP page now point at `/<slug>-ipo-details/`, which the trend/lot-size enrichment was not
   written for; it is best-effort and degrades to "Not updated", but check it on the first live IPO.

@@ -1415,3 +1415,31 @@ def test_history_failure_is_quiet_and_never_raises(tmp_path):
     assert history.save(str(nogit), msgs.append, repo_dir=str(nogit)) is False
     assert history.restore(str(nogit), msgs.append, repo_dir=str(nogit)) == 0
     assert msgs and all("history ->" in m for m in msgs)
+
+
+def test_details_page_of_the_new_site_gives_history_lot_min_and_dates():
+    # fixtures/redesign_mainboard/details_crystal_crop.html: the real page of 13 Nov 2026.
+    from ipo_watch import enrich
+    h = open(os.path.join(os.path.dirname(__file__), "..", "fixtures", "redesign_mainboard",
+                          "details_crystal_crop.html"), encoding="utf-8").read()
+    assert enrich.page_is_about(h, "Crystal Crop Protection")
+    hist = enrich.parse_gmp_history(h, date(2026, 11, 13))
+    assert (date(2026, 11, 13), Decimal("45")) in hist and (date(2026, 11, 12), Decimal("0")) in hist
+    f = enrich.parse_detail_facts(h, Decimal("272"))
+    assert (f["lot_shares"], f["min_invest"]) == (55, Decimal("14960"))
+    assert (f["allotment_date"], f["listing_date"]) == (date(2026, 11, 23), date(2026, 11, 26))
+    # a price band that does not give the printed amount is still never shown
+    assert enrich.parse_detail_facts(h, Decimal("270"))["min_invest"] is None
+
+
+def test_the_ipo_link_may_be_the_details_page_itself():
+    from ipo_watch import enrich
+    h = open(os.path.join(os.path.dirname(__file__), "..", "fixtures", "redesign_mainboard",
+                          "details_crystal_crop.html"), encoding="utf-8").read()
+    ipo = IPO(name="Crystal Crop Protection", board=Board.MAINBOARD, status=Status.UPCOMING,
+              price_max=Decimal("272"), gmp=Decimal("45"),
+              gmp_url="https://ipowatch.in/crystal-crop-protection-ipo-details/")
+    problems = enrich.enrich_ipo(ipo, date(2026, 11, 13), lambda u: h)
+    assert problems == {"trend": False, "detail": False}
+    assert ipo.trend.change == Decimal("45") and ipo.lot_shares == 55
+    assert ipo.listing_date == date(2026, 11, 26) and ipo.allotment_date == date(2026, 11, 23)
