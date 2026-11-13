@@ -1,0 +1,67 @@
+{
+  "run_date": "2026-11-13",
+  "generated_at": "2026-11-13T17:06:42.371170+05:30",
+  "source": "IPOWatch",
+  "source_mode": "live",
+  "subscription_timestamp": null,
+  "gmp_timestamp": "13 Nov 2026",
+  "open": [],
+  "upcoming": [
+    {
+      "name": "Crystal Crop Protection",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-11-18",
+      "close_date": "2026-11-20",
+      "price_min": "259",
+      "price_max": "272",
+      "gmp": "45",
+      "gmp_pct": "16.54",
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/crystal-crop-protection-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-12",
+        "prev_gmp": "0",
+        "change": "45",
+        "series": [
+          "0",
+          "45"
+        ]
+      },
+      "lot_shares": null,
+      "min_invest": null,
+      "allotment_date": null,
+      "listing_date": null,
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    }
+  ],
+  "recently_closed_internal": [],
+  "excluded_sme": [
+    "Watrana Rentals"
+  ],
+  "recent_listings": [],
+  "track_record": {
+    "n": 25,
+    "avg_gain": "17.7",
+    "up": 19,
+    "avg_day1": "-1.9",
+    "n_gmp": 18,
+    "avg_miss": "11.0",
+    "over": 10,
+    "close": 11
+  },
+  "layout_notes": [
+    "subscription page: heading row no longer seen: category | subscription (x) | shares offered | shares bid for | total amount (₹ cr)"
+  ],
+  "awaiting": [],
+  "warnings": [
+    "Lot size and key dates not updated for: Crystal Crop Protection (IPOWatch page could not be read)"
+  ],
+  "conflicts": []
+}
