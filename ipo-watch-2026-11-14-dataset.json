@@ -1,0 +1,104 @@
+{
+  "run_date": "2026-11-14",
+  "generated_at": "2026-11-14T17:06:23.321844+05:30",
+  "source": "IPOWatch",
+  "source_mode": "live",
+  "subscription_timestamp": null,
+  "gmp_timestamp": "14 Nov 2026",
+  "open": [],
+  "upcoming": [
+    {
+      "name": "Crystal Crop Protection",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-11-18",
+      "close_date": "2026-11-20",
+      "price_min": "259",
+      "price_max": "272",
+      "gmp": "28",
+      "gmp_pct": "10.29",
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/crystal-crop-protection-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-13",
+        "prev_gmp": "45",
+        "change": "-17",
+        "series": [
+          "0",
+          "45",
+          "28"
+        ]
+      },
+      "lot_shares": 55,
+      "min_invest": "14960",
+      "allotment_date": "2026-11-23",
+      "listing_date": "2026-11-26",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    },
+    {
+      "name": "Mahanadi Coalfields",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-11-19",
+      "close_date": "2026-11-23",
+      "price_min": null,
+      "price_max": null,
+      "gmp": "13",
+      "gmp_pct": null,
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [
+        "gmp"
+      ],
+      "gmp_url": "https://ipowatch.in/mahanadi-coalfields-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-13",
+        "prev_gmp": "25",
+        "change": "-12",
+        "series": [
+          "25",
+          "13"
+        ]
+      },
+      "lot_shares": null,
+      "min_invest": null,
+      "allotment_date": "2026-11-25",
+      "listing_date": "2026-11-27",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    }
+  ],
+  "recently_closed_internal": [],
+  "excluded_sme": [
+    "Watrana Rentals"
+  ],
+  "recent_listings": [],
+  "track_record": {
+    "n": 25,
+    "avg_gain": "17.7",
+    "up": 19,
+    "avg_day1": "-1.9",
+    "n_gmp": 18,
+    "avg_miss": "11.0",
+    "over": 10,
+    "close": 11
+  },
+  "layout_notes": [
+    "subscription page: heading row no longer seen: category | subscription (x) | shares offered | shares bid for | total amount (₹ cr)"
+  ],
+  "awaiting": [],
+  "warnings": [
+    "Mahanadi Coalfields: GMP present but no upper price band - GMP % not verifiable",
+    "Minimum investment not available for: Mahanadi Coalfields (not found on IPOWatch, or did not equal shares x cap price)"
+  ],
+  "conflicts": []
+}
