@@ -358,28 +358,40 @@ def build_weekly_report(week_end: date, listed: list, ds: Optional[Dataset],
 
 
 CAPTION_LIMIT = 960          # Telegram allows 1024 characters on a photo caption
+WHATSAPP_CAPTION_LIMIT = 1000  # WhatsApp cuts an image caption at 1024 characters
 
 
-def build_caption(ds: Dataset) -> str:
-    """Plain, glanceable summary under the photo in Telegram: one line per IPO,
-    ranked by GMP %, trimmed to fit the caption limit. Plain text on purpose -
-    the user's test (15 Oct) showed the caption does not travel to WhatsApp, so
-    WhatsApp's bold stars would only show as stray asterisks in Telegram."""
+def build_caption(ds: Dataset, whatsapp: bool = False) -> str:
+    """Plain, glanceable summary: one line per IPO, ranked by GMP %, trimmed to
+    fit a caption limit.
+
+    Default (Telegram photo caption): plain text, because the user's test
+    (15 Oct) showed that caption does not travel to WhatsApp, so WhatsApp's bold
+    stars would only show as stray asterisks in Telegram.
+
+    ``whatsapp=True`` (added 17 Nov): the short copy-and-paste caption for the
+    WhatsApp image. Same figures, WhatsApp bold/italic markers, kept under 1,000
+    characters because WhatsApp trims a longer image caption (the full report is
+    1,500+ characters even on a quiet day). Sent as a tap-to-copy block, so the
+    markers paste as formatting."""
     d = ds.run_date.strftime("%d %b") if ds.run_date else ""
-    head = f"📊 IPO Watch · {d}"
-    tail = "Full numbers in the image. GMP is unofficial."
+    b = "*" if whatsapp else ""
+    head = f"{b}📊 IPO Watch · {d}{b}"
+    tail = "_Full numbers in the image. GMP is unofficial._" if whatsapp else "Full numbers in the image. GMP is unofficial."
+    limit = WHATSAPP_CAPTION_LIMIT if whatsapp else CAPTION_LIMIT
     lines = []
     for ipo in rank_by_gmp(ds):
         dot = "🟢" if ipo.status.value == "Open" else "🔵"
         arrow = f" {ipo.trend.text()}" if ipo.trend and ipo.trend.status == "ok" else ""
         label = ipo.closes_label(ds.run_date)
         closing = f" ⏰ {label.lower()}" if label in ("Closes today", "Closes tomorrow") else ""
-        lines.append(f"{dot} {ipo.name} · {ipo.gmp_pct_text} ({ipo.gmp_text}){arrow}{closing}")
+        lines.append(f"{dot} {b}{ipo.name}{b} · {b}{ipo.gmp_pct_text}{b} ({ipo.gmp_text}){arrow}{closing}")
     out = [head, ""]
     used = len(head) + len(tail) + 4
+    more = len("+99 more in the image") + 1
     shown = 0
     for line in lines:
-        if used + len(line) + 1 > CAPTION_LIMIT:
+        if used + len(line) + 1 + more > limit:
             break
         out.append(line)
         used += len(line) + 1
