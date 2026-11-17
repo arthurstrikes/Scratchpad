@@ -42,7 +42,8 @@ def configured() -> bool:
     return bool(os.environ.get("TELEGRAM_BOT_TOKEN") and os.environ.get("TELEGRAM_CHAT_ID"))
 
 
-def send_report(image_path: str, report_text: str, caption: Optional[str] = None) -> None:
+def send_report(image_path: str, report_text: str, caption: Optional[str] = None,
+                copy_caption: Optional[str] = None) -> None:
     """Send the creative as a photo, then the full report as its own message.
 
     The report is sent as a separate message rather than a photo caption
@@ -73,6 +74,16 @@ def send_report(image_path: str, report_text: str, caption: Optional[str] = None
     # WhatsApp already formatted. Plain text would need a fiddly long-press
     # select, and Telegram's own bold would be lost on copy.
     _send_blocks(chat_id, report_text)
+
+    # Short caption for the WhatsApp image (WhatsApp trims captions over 1,024
+    # characters). Last, so it sits at the bottom of the chat, one tap to copy.
+    # Best-effort: the report above is the deliverable, so a failure here is
+    # swallowed rather than reported as a failed delivery.
+    if copy_caption:
+        try:
+            _send_blocks(chat_id, copy_caption)
+        except TelegramError:
+            pass
 
 
 def send_text(report_text: str) -> None:

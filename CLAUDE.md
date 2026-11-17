@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (112 at 13 Nov 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (114 at 17 Nov 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -665,6 +665,12 @@ copied separately** (ROADMAP A4 answered). The caption is therefore only a
 convenience inside Telegram. **Since 20 Oct the caption is plain text** (no WhatsApp
 stars, which only showed as stray asterisks in Telegram): `📊 IPO Watch · 20 Oct`, then
 one line per IPO ranked by GMP %, e.g. `🟢 Tonbo Imaging · 74% (₹520) ▼ ₹5 ⏰ closes today`.
+
+**Short WhatsApp caption (17 Nov 2026, user: "let's go with your recommendations").** WhatsApp cuts an image caption at 1,024
+characters, and the full report is 1,500+ even on a quiet day, so pasting it under the image lost the end of it. `send_report` now
+sends a third message, LAST, as a tap-to-copy block: `report.build_caption(ds, whatsapp=True)`, same figures with WhatsApp bold/italic,
+kept to 1,000 characters (lowest-ranked IPOs drop with a "+N more in the image" line). Its failure never fails the delivery. The full
+report is unchanged; the two-message route (image, then the text as a normal message) also still works.
 
 ## WhatsApp text format
 

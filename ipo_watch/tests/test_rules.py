@@ -875,6 +875,38 @@ def test_photo_caption_is_compact_ranked_and_within_telegram_limit():
     assert "⏰ closes today" in small and "more in the image" not in small
 
 
+def test_whatsapp_caption_stays_under_whatsapps_limit_and_keeps_markup():
+    from ipo_watch.report import build_caption
+    ipos = [mk(f"Company number {i}", Decimal(i), Decimal("100"), o=date(2026, 10, 13), c=date(2026, 10, 16))
+            for i in range(1, 41)]
+    cap = build_caption(build_dataset([], ipos, D), whatsapp=True)
+    assert len(cap) <= 1000 and cap.startswith("*📊 IPO Watch · 15 Oct*")
+    assert "*Company number 40*" in cap and "more in the image" in cap and cap.rstrip().endswith("_")
+    assert cap.index("Company number 40") < cap.index("Company number 39")
+    plain = build_caption(build_dataset([], ipos, D))
+    assert "*" not in plain                       # the Telegram caption stays plain
+    # the figures are the same ones the report shows
+    one = build_dataset([], [mk("Acme", Decimal("5"), Decimal("100"), o=date(2026, 10, 13), c=D)], D)
+    assert "*5.00%*" in build_caption(one, whatsapp=True) and "5.00%" in build_report(one)
+
+
+def test_short_caption_is_sent_last_and_its_failure_does_not_fail_delivery(monkeypatch):
+    from ipo_watch import telegram
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "t"); monkeypatch.setenv("TELEGRAM_CHAT_ID", "1")
+    calls = []
+    def post(method, fields, files=None):
+        calls.append((method, fields.get("text", fields.get("caption", ""))))
+        if method == "sendMessage" and "SHORT" in fields.get("text", ""):
+            raise telegram.TelegramError("boom")
+        return {}
+    monkeypatch.setattr(telegram, "_post", post)
+    import os, tempfile
+    with tempfile.NamedTemporaryFile(suffix=".png") as f:
+        telegram.send_report(f.name, "FULL REPORT", caption="c", copy_caption="SHORT")
+    assert [m for m, _ in calls] == ["sendPhoto", "sendMessage", "sendMessage"]
+    assert "FULL REPORT" in calls[1][1] and "SHORT" in calls[2][1]
+
+
 def test_missing_price_band_has_no_rupee_sign_anywhere():
     import re
     from ipo_watch.creative import build_html

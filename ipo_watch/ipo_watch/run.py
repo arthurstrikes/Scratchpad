@@ -345,7 +345,8 @@ def publish(ds: Dataset, outdir: str) -> dict[str, str]:
     # so failures here are logged plainly and never change the run's exit code.
     if telegram.configured():
         try:
-            telegram.send_report(paths["image"], build_report(ds), caption=build_caption(ds))
+            telegram.send_report(paths["image"], build_report(ds), caption=build_caption(ds),
+                                 copy_caption=build_caption(ds, whatsapp=True))
             TELEGRAM_RESULT["status"] = "delivered"
             _log("telegram  -> delivered")
         except telegram.TelegramError as exc:

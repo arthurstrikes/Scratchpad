@@ -10,6 +10,9 @@ is ever deleted, only marked done.
 
 Last updated: 1 Nov 2026. **Fresh session? Read section 0 first.**
 
+### 17 Nov 2026: short WhatsApp caption added
+The user's WhatsApp trimmed the pasted report under the image (caption limit 1,024; report 1,589). Each daily send now ends with a third, short tap-to-copy message (under 1,000 characters, same figures). Live from the 17 Nov 5:05 PM report; check that it arrived. Full report unchanged.
+
 ### Latest (1 Nov 2026) - read before the older notes below, which are from 18 Oct
 
 - **The 5:00 PM routine (`trig_01RLth6vAxrBZNfhHCXmWNDV`) delivered on its own for the first time since 11 Sep.** The user
