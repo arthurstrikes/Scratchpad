@@ -907,6 +907,18 @@ def test_short_caption_is_sent_last_and_its_failure_does_not_fail_delivery(monke
     assert "FULL REPORT" in calls[1][1] and "SHORT" in calls[2][1]
 
 
+def test_closed_unknown_board_card_is_silent_but_an_open_one_still_warns():
+    # 18 Nov 2026: IPOWatch's open-IPO list also carries long-listed SME cards with no
+    # GMP row. Their board is unknowable and irrelevant (closed, never published), so
+    # no note may name them; an open or upcoming row of unknown board must still warn.
+    old = mk("Old Listed Co", board=Board.UNKNOWN, o=date(2026, 9, 1), c=date(2026, 9, 5))
+    live = mk("Live Mystery Co", board=Board.UNKNOWN, o=D, c=date(2026, 10, 18))
+    ds = build_dataset([], [old, live], D)
+    text = " ".join(ds.warnings)
+    assert "Old Listed Co" not in text and "Old Listed Co" not in build_report(ds)
+    assert "Live Mystery Co: could not confirm Mainboard vs SME - excluded" in ds.warnings
+
+
 def test_missing_price_band_has_no_rupee_sign_anywhere():
     import re
     from ipo_watch.creative import build_html

@@ -166,7 +166,14 @@ def build_dataset(
             ds.excluded_sme.append(ipo.name)
             continue
         if ipo.board == Board.UNKNOWN:
-            ds.warnings.append(f"{ipo.name}: could not confirm Mainboard vs SME - excluded")
+            # A row that has already closed is never published (it is kept only for
+            # validation), so whether it is Mainboard or SME does not matter and a note
+            # about it would only put an unrelated name in front of the reader. Since
+            # 18 Nov IPOWatch's open-IPO list also carries cards of long-listed SME
+            # issues with no GMP row; those must stay silent. Open, upcoming or
+            # undated rows still warn: those could have been published.
+            if ipo.status != Status.CLOSED:
+                ds.warnings.append(f"{ipo.name}: could not confirm Mainboard vs SME - excluded")
             continue
         if ipo.status == Status.OPEN:
             _flag_unverified(ipo, ds)
