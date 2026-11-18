@@ -1,0 +1,116 @@
+{
+  "run_date": "2026-11-18",
+  "generated_at": "2026-11-18T17:06:29.997275+05:30",
+  "source": "IPOWatch",
+  "source_mode": "live",
+  "subscription_timestamp": "18 Nov 2026",
+  "gmp_timestamp": "18 Nov 2026",
+  "open": [
+    {
+      "name": "Crystal Crop Protection",
+      "board": "Mainboard",
+      "status": "Open",
+      "open_date": "2026-11-18",
+      "close_date": "2026-11-20",
+      "price_min": "259",
+      "price_max": "272",
+      "gmp": "19",
+      "gmp_pct": "6.99",
+      "retail_sub": "1.26",
+      "total_sub": "1.40",
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/crystal-crop-protection-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-17",
+        "prev_gmp": "13",
+        "change": "6",
+        "series": [
+          "0",
+          "45",
+          "28",
+          "27",
+          "13",
+          "13",
+          "19"
+        ]
+      },
+      "lot_shares": 55,
+      "min_invest": "14960",
+      "allotment_date": "2026-11-23",
+      "listing_date": "2026-11-26",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    }
+  ],
+  "upcoming": [
+    {
+      "name": "Mahanadi Coalfields",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-11-19",
+      "close_date": "2026-11-23",
+      "price_min": "129",
+      "price_max": "136",
+      "gmp": "3",
+      "gmp_pct": "2.21",
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/mahanadi-coalfields-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-17",
+        "prev_gmp": "4",
+        "change": "-1",
+        "series": [
+          "25",
+          "13",
+          "10",
+          "6",
+          "4",
+          "3"
+        ]
+      },
+      "lot_shares": 110,
+      "min_invest": "14960",
+      "allotment_date": "2026-11-25",
+      "listing_date": "2026-11-27",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    }
+  ],
+  "recently_closed_internal": [],
+  "excluded_sme": [
+    "Watrana Rentals"
+  ],
+  "recent_listings": [],
+  "track_record": {
+    "n": 25,
+    "avg_gain": "17.7",
+    "up": 19,
+    "avg_day1": "-1.9",
+    "n_gmp": 18,
+    "avg_miss": "11.0",
+    "over": 10,
+    "close": 11
+  },
+  "layout_notes": [],
+  "awaiting": [],
+  "warnings": [
+    "Antala Industries: could not confirm Mainboard vs SME - excluded",
+    "Vedant Poly Fabs: could not confirm Mainboard vs SME - excluded",
+    "Maxwell Engineering Solutions: could not confirm Mainboard vs SME - excluded",
+    "HGS (India): could not confirm Mainboard vs SME - excluded",
+    "Vectras Enprocon: could not confirm Mainboard vs SME - excluded",
+    "Johnsoncab Electricals: could not confirm Mainboard vs SME - excluded",
+    "Bombay Coated and Special Steels: could not confirm Mainboard vs SME - excluded",
+    "Ajwa Projects: could not confirm Mainboard vs SME - excluded",
+    "Carver Roboweld: could not confirm Mainboard vs SME - excluded"
+  ],
+  "conflicts": []
+}
