@@ -1,0 +1,107 @@
+{
+  "run_date": "2026-11-19",
+  "generated_at": "2026-11-19T17:06:28.929943+05:30",
+  "source": "IPOWatch",
+  "source_mode": "live",
+  "subscription_timestamp": "19 Nov 2026",
+  "gmp_timestamp": "19 Nov 2026",
+  "open": [
+    {
+      "name": "Crystal Crop Protection",
+      "board": "Mainboard",
+      "status": "Open",
+      "open_date": "2026-11-18",
+      "close_date": "2026-11-20",
+      "price_min": "259",
+      "price_max": "272",
+      "gmp": "17",
+      "gmp_pct": "6.25",
+      "retail_sub": "3.06",
+      "total_sub": "2.89",
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/crystal-crop-protection-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-18",
+        "prev_gmp": "19",
+        "change": "-2",
+        "series": [
+          "45",
+          "28",
+          "27",
+          "13",
+          "13",
+          "19",
+          "17"
+        ]
+      },
+      "lot_shares": 55,
+      "min_invest": "14960",
+      "allotment_date": "2026-11-23",
+      "listing_date": "2026-11-26",
+      "prev_retail": "1.26",
+      "prev_total": "1.40",
+      "prev_retail_date": "2026-11-18",
+      "prev_total_date": "2026-11-18"
+    },
+    {
+      "name": "Mahanadi Coalfields",
+      "board": "Mainboard",
+      "status": "Open",
+      "open_date": "2026-11-19",
+      "close_date": "2026-11-23",
+      "price_min": "129",
+      "price_max": "136",
+      "gmp": "1",
+      "gmp_pct": "0.74",
+      "retail_sub": "0.13",
+      "total_sub": "0.38",
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/mahanadi-coalfields-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-18",
+        "prev_gmp": "3",
+        "change": "-2",
+        "series": [
+          "25",
+          "13",
+          "10",
+          "6",
+          "4",
+          "3",
+          "1"
+        ]
+      },
+      "lot_shares": 110,
+      "min_invest": "14960",
+      "allotment_date": "2026-11-25",
+      "listing_date": "2026-11-27",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    }
+  ],
+  "upcoming": [],
+  "recently_closed_internal": [],
+  "excluded_sme": [
+    "Shree Siddhivinayak Greentech Industries",
+    "Watrana Rentals"
+  ],
+  "recent_listings": [],
+  "track_record": {
+    "n": 25,
+    "avg_gain": "17.7",
+    "up": 19,
+    "avg_day1": "-1.9",
+    "n_gmp": 18,
+    "avg_miss": "11.0",
+    "over": 10,
+    "close": 11
+  },
+  "layout_notes": [],
+  "awaiting": [],
+  "warnings": [],
+  "conflicts": []
+}
