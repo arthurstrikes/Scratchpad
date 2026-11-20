@@ -1,0 +1,71 @@
+*📊 DAILY MAINBOARD IPO WATCH*
+📅 20 Nov 2026 | 5:00 PM IST
+🔎 2 open (1 closes today) · 2 upcoming · none above 25% GMP
+
+*🟢 OPEN MAINBOARD IPOs*
+
+*CRYSTAL CROP PROTECTION*
+📅 18 Nov – 20 Nov | ⏰ Closes today
+💰 Price: ₹259–272 | Min ₹14,960 (55 shares)
+👥 Retail: 8.9x (▲ from 3.06x)
+📊 Total: 16.98x (▲ from 2.89x)
+🟢 GMP: ₹15 | *5.51%*
+📈 GMP trend: ▼ ₹2 vs yesterday (₹17 → ₹15)
+🗓️ Allotment: 23 Nov | Listing: 26 Nov
+
+*MAHANADI COALFIELDS*
+📅 19 Nov – 23 Nov
+💰 Price: ₹129–136 | Min ₹14,960 (110 shares)
+👥 Retail: 0.24x (▲ from 0.13x)
+📊 Total: 0.48x (▲ from 0.38x)
+🟢 GMP: ₹1 | *0.74%*
+📈 GMP trend: ▬ No change vs yesterday (₹1)
+🗓️ Allotment: 25 Nov | Listing: 27 Nov
+
+*🔵 UPCOMING MAINBOARD IPOs*
+
+*MONOMARK ENGINEERING*
+📅 Not verified
+💰 Price: Not updated
+🟢 GMP: ₹0 | *Not verified*
+📈 GMP trend: New (first GMP today)
+
+*FOODLINK F&B HOLDINGS*
+📅 26 Nov – 30 Nov
+💰 Price: Not updated
+🟢 GMP: ₹12 | *Not verified*
+📈 GMP trend: New (first GMP today)
+🗓️ Allotment: 01 Dec | Listing: 03 Dec
+
+*🏆 CURRENT GMP RANKING*
+
+1. Crystal Crop Protection — *5.51%* (₹15) 🟢 ▼ ₹2
+2. Mahanadi Coalfields — *0.74%* (₹1) 🟢 ▬ ₹0
+3. Monomark Engineering — *Not verified* (₹0) 🔵
+4. Foodlink F&B Holdings — *Not verified* (₹12) 🔵
+
+🔥 Highest GMP: Crystal Crop Protection — 5.51%
+👥 Highest Retail Subscription: Crystal Crop Protection — 8.9x
+📊 Highest Total Subscription: Crystal Crop Protection — 16.98x
+
+*📊 GMP TRACK RECORD · LAST 25 LISTINGS*
+
+📈 Average listing gain: *+17.7%*
+✅ Opened above issue price: *19 of 25*
+🕘 Average first day (open to close): *-1.9%*
+🎯 GMP accuracy: listed within 10 points of GMP in *11 of 18* (average miss 11.0 pts; GMP was too high in 10)
+_Listing gain = issue price to first-day open, from NSE._
+
+📌 _GMP = Grey Market Premium_
+📈 _GMP % calculated on upper price band_
+🔥 _Flag = GMP above 25%_
+👥 _▲/▼ on subscription = change since our previous update._
+⚠️ _GMP is unofficial and can change before listing._
+Source: IPOWatch
+🕒 Subscription data: 20 Nov 2026 | GMP data: 20 Nov 2026
+
+ℹ️ Data notes:
+• Monomark Engineering: GMP present but no upper price band - GMP % not verifiable
+• Monomark Engineering: incomplete IPO dates on IPOWatch
+• Foodlink F&B Holdings: GMP present but no upper price band - GMP % not verifiable
+• Minimum investment not available for: Monomark Engineering, Foodlink F&B Holdings (not found on IPOWatch, or did not equal shares x cap price)
