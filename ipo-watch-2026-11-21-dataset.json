@@ -1,0 +1,206 @@
+{
+  "run_date": "2026-11-21",
+  "generated_at": "2026-11-21T17:05:59.014587+05:30",
+  "source": "IPOWatch",
+  "source_mode": "live",
+  "subscription_timestamp": "20 Nov 2026",
+  "gmp_timestamp": "21 Nov 2026",
+  "open": [
+    {
+      "name": "Mahanadi Coalfields",
+      "board": "Mainboard",
+      "status": "Open",
+      "open_date": "2026-11-19",
+      "close_date": "2026-11-23",
+      "price_min": "129",
+      "price_max": "136",
+      "gmp": "0",
+      "gmp_pct": "0.00",
+      "retail_sub": "0.24",
+      "total_sub": "0.48",
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/mahanadi-coalfields-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-20",
+        "prev_gmp": "1",
+        "change": "-1",
+        "series": [
+          "10",
+          "6",
+          "4",
+          "3",
+          "1",
+          "1",
+          "0"
+        ]
+      },
+      "lot_shares": 110,
+      "min_invest": "14960",
+      "allotment_date": "2026-11-25",
+      "listing_date": "2026-11-27",
+      "prev_retail": "0.13",
+      "prev_total": "0.38",
+      "prev_retail_date": "2026-11-19",
+      "prev_total_date": "2026-11-19"
+    }
+  ],
+  "upcoming": [
+    {
+      "name": "Monomark Engineering",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": null,
+      "close_date": null,
+      "price_min": null,
+      "price_max": null,
+      "gmp": "0",
+      "gmp_pct": null,
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [
+        "gmp"
+      ],
+      "gmp_url": "https://ipowatch.in/monomark-engineering-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-20",
+        "prev_gmp": "0",
+        "change": "0",
+        "series": [
+          "0",
+          "0"
+        ]
+      },
+      "lot_shares": null,
+      "min_invest": null,
+      "allotment_date": null,
+      "listing_date": null,
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    },
+    {
+      "name": "Foodlink F&B Holdings",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-11-26",
+      "close_date": "2026-11-30",
+      "price_min": null,
+      "price_max": null,
+      "gmp": "12",
+      "gmp_pct": null,
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [
+        "gmp"
+      ],
+      "gmp_url": "https://ipowatch.in/foodlink-fb-holdings-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-20",
+        "prev_gmp": "12",
+        "change": "0",
+        "series": [
+          "12",
+          "12"
+        ]
+      },
+      "lot_shares": null,
+      "min_invest": null,
+      "allotment_date": "2026-12-01",
+      "listing_date": "2026-12-03",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    },
+    {
+      "name": "Integris Medtech",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-11-27",
+      "close_date": "2026-12-01",
+      "price_min": null,
+      "price_max": null,
+      "gmp": "0",
+      "gmp_pct": null,
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [
+        "gmp"
+      ],
+      "gmp_url": "https://ipowatch.in/integris-medtech-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-20",
+        "prev_gmp": "0",
+        "change": "0",
+        "series": [
+          "0",
+          "0"
+        ]
+      },
+      "lot_shares": null,
+      "min_invest": null,
+      "allotment_date": "2026-12-02",
+      "listing_date": "2026-12-04",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    }
+  ],
+  "recently_closed_internal": [
+    {
+      "name": "Crystal Crop Protection",
+      "board": "Mainboard",
+      "status": "Closed",
+      "open_date": "2026-11-18",
+      "close_date": "2026-11-20",
+      "price_min": "259",
+      "price_max": "272",
+      "gmp": "14",
+      "gmp_pct": "5.15",
+      "retail_sub": "9.26",
+      "total_sub": "17.19",
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/crystal-crop-protection-ipo-details/",
+      "trend": null,
+      "lot_shares": null,
+      "min_invest": null,
+      "allotment_date": null,
+      "listing_date": null,
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    }
+  ],
+  "excluded_sme": [
+    "Watrana Rentals",
+    "Shree Siddhivinayak Greentech Industries"
+  ],
+  "recent_listings": [],
+  "track_record": {
+    "n": 25,
+    "avg_gain": "17.7",
+    "up": 19,
+    "avg_day1": "-1.9",
+    "n_gmp": 18,
+    "avg_miss": "11.0",
+    "over": 10,
+    "close": 11
+  },
+  "layout_notes": [],
+  "awaiting": [],
+  "warnings": [
+    "Monomark Engineering: GMP present but no upper price band - GMP % not verifiable",
+    "Monomark Engineering: incomplete IPO dates on IPOWatch",
+    "Foodlink F&B Holdings: GMP present but no upper price band - GMP % not verifiable",
+    "Integris Medtech: GMP present but no upper price band - GMP % not verifiable",
+    "Minimum investment not available for: Monomark Engineering, Foodlink F&B Holdings, Integris Medtech (not found on IPOWatch, or did not equal shares x cap price)"
+  ],
+  "conflicts": []
+}

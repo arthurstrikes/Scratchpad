@@ -1,0 +1,71 @@
+*📊 DAILY MAINBOARD IPO WATCH*
+📅 21 Nov 2026 | 5:00 PM IST
+🔎 1 open · 3 upcoming · none above 25% GMP
+⏳ Subscription figures are from 20 Nov (IPOWatch has not refreshed since)
+
+*🟢 OPEN MAINBOARD IPOs*
+
+*MAHANADI COALFIELDS*
+📅 19 Nov – 23 Nov
+💰 Price: ₹129–136 | Min ₹14,960 (110 shares)
+👥 Retail: 0.24x (▲ from 0.13x on 19 Nov)
+📊 Total: 0.48x (▲ from 0.38x on 19 Nov)
+🟢 GMP: ₹0 | *0.00%*
+📈 GMP trend: ▼ ₹1 vs yesterday (₹1 → ₹0)
+🗓️ Allotment: 25 Nov | Listing: 27 Nov
+
+*🔵 UPCOMING MAINBOARD IPOs*
+
+*MONOMARK ENGINEERING*
+📅 Not verified
+💰 Price: Not updated
+🟢 GMP: ₹0 | *Not verified*
+📈 GMP trend: ▬ No change vs yesterday (₹0)
+
+*FOODLINK F&B HOLDINGS*
+📅 26 Nov – 30 Nov
+💰 Price: Not updated
+🟢 GMP: ₹12 | *Not verified*
+📈 GMP trend: ▬ No change vs yesterday (₹12)
+🗓️ Allotment: 01 Dec | Listing: 03 Dec
+
+*INTEGRIS MEDTECH*
+📅 27 Nov – 01 Dec
+💰 Price: Not updated
+🟢 GMP: ₹0 | *Not verified*
+📈 GMP trend: ▬ No change vs yesterday (₹0)
+🗓️ Allotment: 02 Dec | Listing: 04 Dec
+
+*🏆 CURRENT GMP RANKING*
+
+1. Mahanadi Coalfields — *0.00%* (₹0) 🟢 ▼ ₹1
+2. Monomark Engineering — *Not verified* (₹0) 🔵 ▬ ₹0
+3. Foodlink F&B Holdings — *Not verified* (₹12) 🔵 ▬ ₹0
+4. Integris Medtech — *Not verified* (₹0) 🔵 ▬ ₹0
+
+🔥 Highest GMP: Mahanadi Coalfields — 0.00%
+👥 Highest Retail Subscription: Mahanadi Coalfields — 0.24x
+📊 Highest Total Subscription: Mahanadi Coalfields — 0.48x
+
+*📊 GMP TRACK RECORD · LAST 25 LISTINGS*
+
+📈 Average listing gain: *+17.7%*
+✅ Opened above issue price: *19 of 25*
+🕘 Average first day (open to close): *-1.9%*
+🎯 GMP accuracy: listed within 10 points of GMP in *11 of 18* (average miss 11.0 pts; GMP was too high in 10)
+_Listing gain = issue price to first-day open, from NSE._
+
+📌 _GMP = Grey Market Premium_
+📈 _GMP % calculated on upper price band_
+🔥 _Flag = GMP above 25%_
+👥 _▲/▼ on subscription = change since our previous update._
+⚠️ _GMP is unofficial and can change before listing._
+Source: IPOWatch
+🕒 Subscription data: 20 Nov 2026 | GMP data: 21 Nov 2026
+
+ℹ️ Data notes:
+• Monomark Engineering: GMP present but no upper price band - GMP % not verifiable
+• Monomark Engineering: incomplete IPO dates on IPOWatch
+• Foodlink F&B Holdings: GMP present but no upper price band - GMP % not verifiable
+• Integris Medtech: GMP present but no upper price band - GMP % not verifiable
+• Minimum investment not available for: Monomark Engineering, Foodlink F&B Holdings, Integris Medtech (not found on IPOWatch, or did not equal shares x cap price)
