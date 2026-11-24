@@ -1333,6 +1333,22 @@ def test_redesign_subscription_cards_give_retail_and_total_only_and_ignore_the_b
     assert not hasattr(a, "qib") and "66.72" not in repr(a)
 
 
+def test_listed_ipos_table_with_list_date_header_is_not_read_as_live_ipos(tmp_path):
+    # 24 Nov 2026 (real pages): the GMP page gained a "Company | List Date | Issue Price |
+    # List Price | List Gain | Returns" table of already-listed IPOs. Its 10 rows used to be
+    # read as live ones (20 GMP rows against "10 IPOs tracked"), which stopped the run.
+    from ipo_watch import run
+    from ipo_watch.parse import parse_page
+    from ipo_watch.config import GMP_URL
+    h = open(os.path.join(os.path.dirname(__file__), "..", "fixtures", "redesign_listed_table",
+                          "gmp_sample.html"), encoding="utf-8").read()
+    names = [r.name for r in parse_page(h, GMP_URL, _date(2026, 11, 24))]
+    assert len(names) == 10 and "Antala Industries" not in names and "Crystal Crop Protection" in names
+    ds = run.collect(_redesign(tmp_path, gmp_from="redesign_listed_table", sub_from="redesign_listed_table"),
+                     _date(2026, 11, 24), None)
+    assert not ds.open_ipos and "Antala Industries" not in build_report(ds)
+
+
 def test_redesign_mainboard_row_is_published_with_subscription_from_its_card(tmp_path):
     from ipo_watch import run
     d = _redesign(tmp_path, gmp_edits=[("BSE SME", "NSE Mainboard"), ("Closed", "Open")])

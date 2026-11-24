@@ -176,6 +176,15 @@ def parse_table(table, source_url: str, today: date) -> list[IPO]:
     if not colmap:
         return []
 
+    # 24 Nov 2026: the GMP page gained a second table of already-listed IPOs with the
+    # header "Company | List Date | Issue Price | List Price | List Gain | Returns". Its
+    # "List Date" matched the dates column and "Issue Price" the price column, so its 10
+    # rows were read as live IPOs (the announced-count check stopped the run). A table
+    # whose headers say "List Date" / "List Gain" is a record of listings, never an IPO list.
+    head_cells = [_norm(_cell_text(c)) for c in rows[hidx].find_all(["th", "td"])]
+    if {"list date", "list gain"} & set(head_cells):
+        return []
+
     # A table with no date and no status column cannot be placed in time -
     # IPOWatch's "Mainboard IPO GMP Performance" table of already-listed IPOs
     # is one of these. Parsing it would inject rows with no status that could
