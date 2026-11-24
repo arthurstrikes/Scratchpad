@@ -16,7 +16,7 @@ cd ipo_watch
 pip install -r requirements.txt          # playwright, bs4, lxml, pytest
 python3 -m ipo_watch.run                 # live -> ipo_watch/output/
 python3 -m ipo_watch.run --fixture-dir fixtures/busy --outdir /tmp/x   # offline
-python3 -m pytest tests/ -q              # rule + behaviour tests (115 at 18 Nov 2026)
+python3 -m pytest tests/ -q              # rule + behaviour tests (116 at 24 Nov 2026)
 ```
 
 `python3 -m ipo_watch.run --mode midday` sends the short **closing-day update**
@@ -105,6 +105,11 @@ GMP: "Loading GMP data..."), so `fetch.fetch_pages` now renders the page in the 
   Total 1.40x, matching the page; "Tracking 10 open IPOs" is now 1 open card plus 9 old, long-listed SME cards labelled "Listed | SME" that have no
   GMP row; they parse fine but their board cannot be confirmed). Their "could not confirm Mainboard vs SME" notes leaked into that day's report; fixed
   the same day in `merge.py` (a closed row of unknown board is silent, an open/upcoming one still warns; PR 71).
+- **24 Nov 2026: the GMP page gained a second table of already-listed IPOs** (`Company | List Date | Issue Price | List Price | List Gain | Returns`,
+  10 rows). "List Date" matched the dates column and "Issue Price" the price column, so the rows were read as live IPOs: 20 GMP rows against
+  "10 IPOs tracked", and the **count check stopped the run** (no report, "could not run" notice sent; this is the safeguard working). Fixed
+  the same day in `parse.parse_table` (a table whose heading row has "List Date" or "List Gain" is never an IPO list); real pages pinned in
+  `fixtures/redesign_listed_table/`; fingerprint re-pinned. The day's report was re-run and sent afterwards (PR 73).
 - ~~Open-card reading still untested with a real Mainboard card~~ (done 18 Nov, see above; original note follows)
   Original note: open-card reading was untested with a real Mainboard card (none was open on the site 8-12 Nov). On the first Mainboard IPO, read that day's run log and
   snapshot. The per-IPO links on the GMP page now point at `/<slug>-ipo-details/`, which the trend/lot-size enrichment was not

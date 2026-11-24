@@ -10,6 +10,9 @@ is ever deleted, only marked done.
 
 Last updated: 1 Nov 2026. **Fresh session? Read section 0 first.**
 
+### 24 Nov 2026: new listed-IPOs table stopped the daily run once
+The GMP page added a recently-listed table whose headings looked like an IPO list, so 10 listed companies were read as live IPOs; the announced-count check aborted the run (nothing wrong was published; the user got the 'could not run' notice, then the real report after the fix, same evening). Fixed and pinned (PR 73). Lesson: IPOWatch keeps adding tables; the count check is what catches it.
+
 ### 18 Nov 2026: first real open Mainboard card read correctly
 Crystal Crop Protection opened; retail 1.26x and total 1.40x matched IPOWatch's card. The page now also lists 9 old listed SME cards (no GMP row); their 'could not confirm board' notes leaked into the report, fixed the same day (closed rows of unknown board stay silent). Telegram's copy of the 18 Nov report carried those 9 notes at the bottom; the chat copy was cleaned.
 

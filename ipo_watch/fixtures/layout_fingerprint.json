@@ -3,7 +3,7 @@
     "category | subscription (x) | shares offered | shares bid for | total amount (₹ cr)"
   ],
   "gmp": [
-    "ipo name | ipo gmp | trend | price band | est. listing | date | type | status | last updated",
-    "ipo name | type | issue price | gmp | listing price"
+    "company | list date | issue price | list price | list gain | returns",
+    "ipo name | ipo gmp | trend | price band | date | type | status | last updated"
   ]
 }
