@@ -1,0 +1,69 @@
+*📊 DAILY MAINBOARD IPO WATCH*
+📅 24 Nov 2026 | 5:00 PM IST
+🔎 none open · 4 upcoming · none above 25% GMP
+
+*🟢 OPEN MAINBOARD IPOs*
+
+No Mainboard IPOs are open today.
+
+*🔵 UPCOMING MAINBOARD IPOs*
+
+*MATANGI RUBBER*
+📅 01 Dec – 03 Dec
+💰 Price: ₹163–172 | Min ₹14,964 (87 shares)
+🟢 GMP: ₹21 | *12%*
+📈 GMP trend: ▲ ₹21 vs yesterday (₹0 → ₹21)
+🗓️ Allotment: 04 Dec | Listing: 08 Dec
+
+*FOODLINK F&B HOLDINGS*
+📅 26 Nov – 30 Nov
+💰 Price: ₹181–191 | Min ₹14,898 (78 shares)
+🟢 GMP: ₹16 | *8.38%*
+📈 GMP trend: ▲ ₹4 vs yesterday (₹12 → ₹16)
+🗓️ Allotment: 01 Dec | Listing: 03 Dec
+
+*INTEGRIS MEDTECH*
+📅 27 Nov – 01 Dec
+💰 Price: Not updated
+🟢 GMP: ₹0 | *Not verified*
+📈 GMP trend: ▬ No change vs yesterday (₹0)
+🗓️ Allotment: 02 Dec | Listing: 04 Dec
+
+*MONOMARK ENGINEERING*
+📅 02 Dec – 04 Dec
+💰 Price: Not updated
+🟢 GMP: ₹23 | *Not verified*
+📈 GMP trend: ▬ No change vs yesterday (₹23)
+🗓️ Allotment: 07 Dec | Listing: 09 Dec
+
+*🏆 CURRENT GMP RANKING*
+
+1. Matangi Rubber — *12%* (₹21) 🔵 ▲ ₹21
+2. Foodlink F&B Holdings — *8.38%* (₹16) 🔵 ▲ ₹4
+3. Integris Medtech — *Not verified* (₹0) 🔵 ▬ ₹0
+4. Monomark Engineering — *Not verified* (₹23) 🔵 ▬ ₹0
+
+🔥 Highest GMP: Matangi Rubber — 12%
+👥 Highest Retail Subscription: no IPO is open today
+📊 Highest Total Subscription: no IPO is open today
+
+*📊 GMP TRACK RECORD · LAST 25 LISTINGS*
+
+📈 Average listing gain: *+17.7%*
+✅ Opened above issue price: *19 of 25*
+🕘 Average first day (open to close): *-1.9%*
+🎯 GMP accuracy: listed within 10 points of GMP in *11 of 18* (average miss 11.0 pts; GMP was too high in 10)
+_Listing gain = issue price to first-day open, from NSE._
+
+📌 _GMP = Grey Market Premium_
+📈 _GMP % calculated on upper price band_
+🔥 _Flag = GMP above 25%_
+👥 _▲/▼ on subscription = change since our previous update._
+⚠️ _GMP is unofficial and can change before listing._
+Source: IPOWatch
+🕒 GMP data: 24 Nov 2026
+
+ℹ️ Data notes:
+• Integris Medtech: GMP present but no upper price band - GMP % not verifiable
+• Monomark Engineering: GMP present but no upper price band - GMP % not verifiable
+• Minimum investment not available for: Integris Medtech, Monomark Engineering (not found on IPOWatch, or did not equal shares x cap price)
