@@ -117,11 +117,40 @@ def fetch_pages(urls: list[str], snapshot_dir: Optional[str] = None,
                     "The page layout may have changed - inspect the snapshot before "
                     "publishing anything.")
 
+        elif _rows_short_of_announced(html):
+            # 25 Nov 2026: the GMP page is served with its table already in the HTML, but
+            # only the first page of it (10 rows) while it says "11 IPOs tracked". The
+            # rest sits behind the page's own Next button, so render it in a browser
+            # and read every page. If that fails the plain page stands and the count
+            # check in the run stops the day, as before.
+            try:
+                rendered = render_pages([url])[url].html
+                if not _rows_short_of_announced(rendered):
+                    html = rendered
+            except Exception:  # noqa: BLE001
+                pass
+
         pg = Page(url=url, html=html, fetched_at=datetime.now(IST))
         pages[url] = pg
         if snapshot_dir:
             _snapshot(pg, snapshot_dir)
     return pages
+
+
+def _rows_short_of_announced(html: str) -> bool:
+    """True when the page announces more IPOs ("N IPO s tracked") than its IPO table holds."""
+    from bs4 import BeautifulSoup
+    from .parse import announced_counts
+    n = announced_counts(html).get("tracked")
+    if not n:
+        return False
+    soup = BeautifulSoup(html, "lxml")
+    have = 0
+    for t in soup.find_all("table"):
+        first = t.find("tr")
+        if first is not None and "ipo name" in first.get_text(" ", strip=True).lower():
+            have += len(t.find_all("tr")) - 1
+    return have < n
 
 
 def _with_browser(urls: list[str], pages: dict[str, Page],
@@ -168,6 +197,7 @@ def render_pages(urls: list[str], snapshot_dir: Optional[str] = None) -> dict[st
                     except Exception:  # noqa: BLE001 - the checks after rendering decide
                         pass
                     page.wait_for_timeout(SETTLE_MS)
+                    _expand_paged_table(page)
                     html = page.content()
                 except Exception as exc:  # noqa: BLE001
                     raise FetchError(f"Could not render {url}: {exc}") from exc
@@ -180,6 +210,56 @@ def render_pages(urls: list[str], snapshot_dir: Optional[str] = None) -> dict[st
         finally:
             browser.close()
     return pages
+
+
+_ROWS_JS = """() => {
+  const t = Array.from(document.querySelectorAll('table')).find(
+    x => /ipo name/i.test((x.querySelector('tr') || {}).innerText || ''));
+  return t ? Array.from(t.querySelectorAll('tbody tr')).map(r => r.outerHTML) : null;
+}"""
+_PUT_ROWS_JS = """(rows) => {
+  const t = Array.from(document.querySelectorAll('table')).find(
+    x => /ipo name/i.test((x.querySelector('tr') || {}).innerText || ''));
+  if (t && t.querySelector('tbody')) t.querySelector('tbody').innerHTML = rows.join('');
+}"""
+MAX_TABLE_PAGES = 20
+
+
+def _expand_paged_table(page) -> None:
+    """IPOWatch's GMP table shows 10 rows a page ("Prev 1 2 Next"). Since 25 Nov, when it
+    tracked 11 IPOs, the second page matters. Click through every page and put all the
+    rows into the table in the page's own DOM so the parser sees the whole list. A page
+    with no enabled Next button, or no IPO table, is left exactly as it is; the announced
+    "N IPOs tracked" count is still checked against the rows read afterwards."""
+    first = page.evaluate(_ROWS_JS)
+    if not first:
+        return
+    nxt = page.locator("button", has_text=re.compile(r"^\s*Next\s*$")).first
+    rows = list(first)
+    shown = list(first)                      # the rows on screen right now
+    for _ in range(MAX_TABLE_PAGES):
+        if nxt.count() == 0 or nxt.is_disabled():
+            break
+        # The button can be on screen before the page's script is wired up, so a click
+        # may do nothing at first: click, watch up to ~4 s for the rows to change, and
+        # click again (three tries) before deciding there is no next page.
+        more = shown
+        for _try in range(3):
+            nxt.click()
+            for _w in range(14):
+                page.wait_for_timeout(300)
+                more = page.evaluate(_ROWS_JS) or []
+                if more and more != shown:
+                    break
+            if more and more != shown:
+                break
+        new = [r for r in more if r not in rows]
+        if not new:
+            break
+        rows.extend(new)
+        shown = more
+    if len(rows) > len(first):
+        page.evaluate(_PUT_ROWS_JS, rows)
 
 
 _ALLOWED_HOST_SUFFIX = "ipowatch.in"

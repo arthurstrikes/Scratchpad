@@ -10,6 +10,9 @@ is ever deleted, only marked done.
 
 Last updated: 1 Nov 2026. **Fresh session? Read section 0 first.**
 
+### 25 Nov 2026: the GMP table became paged and stopped the run again
+IPOWatch tracked 11 IPOs, showing 10 a page; the reader saw 10 and the count check aborted (nothing wrong published, three 'could not run' notices were sent before the fix). Fixed by clicking through every page in the browser (PR 74). Lesson: two IPOWatch layout surprises in two days, both caught by the count check; keep it.
+
 ### 24 Nov 2026: new listed-IPOs table stopped the daily run once
 The GMP page added a recently-listed table whose headings looked like an IPO list, so 10 listed companies were read as live IPOs; the announced-count check aborted the run (nothing wrong was published; the user got the 'could not run' notice, then the real report after the fix, same evening). Fixed and pinned (PR 73). Lesson: IPOWatch keeps adding tables; the count check is what catches it.
 

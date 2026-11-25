@@ -1349,6 +1349,51 @@ def test_listed_ipos_table_with_list_date_header_is_not_read_as_live_ipos(tmp_pa
     assert not ds.open_ipos and "Antala Industries" not in build_report(ds)
 
 
+def test_a_paged_gmp_table_is_read_across_all_its_pages():
+    # 25 Nov 2026: IPOWatch showed 11 IPOs at 10 a page ("Prev 1 2 Next") and the count
+    # check stopped the run. The browser reader now clicks through every page.
+    import os as _os
+    from playwright.sync_api import sync_playwright
+    from ipo_watch import fetch
+    from ipo_watch.config import CHROMIUM_PATH
+    rows = [f"Co {i:02d}" for i in range(11)]
+    html = """<html><body><table><thead><tr><th>IPO NAME</th><th>IPO GMP</th></tr></thead><tbody id=b></tbody></table>
+    <button id=p disabled>Prev</button><button id=n>Next</button>
+    <script>
+      const rows = %s; let pg = 0;
+      function draw(){ document.getElementById('b').innerHTML = rows.slice(pg*10, pg*10+10)
+        .map(r => '<tr><td>'+r+'</td><td>5</td></tr>').join('');
+        document.getElementById('n').disabled = (pg+1)*10 >= rows.length; }
+      document.getElementById('n').onclick = () => { pg++; draw(); }; draw();
+    </script></body></html>""" % rows
+    kw = {"args": ["--no-sandbox"]}
+    if CHROMIUM_PATH and _os.path.exists(CHROMIUM_PATH):
+        kw["executable_path"] = CHROMIUM_PATH
+    with sync_playwright() as p:
+        b = p.chromium.launch(**kw)
+        pg = b.new_page()
+        pg.set_content(html)
+        fetch._expand_paged_table(pg)
+        got = pg.evaluate("() => Array.from(document.querySelectorAll('tbody tr td:first-child')).map(x => x.innerText)")
+        pg2 = b.new_page()
+        pg2.set_content("<html><body><table><tr><th>IPO NAME</th></tr><tr><td>Solo</td></tr></table></body></html>")
+        fetch._expand_paged_table(pg2)           # no Next button: left alone
+        solo = pg2.evaluate("() => document.querySelectorAll('tr').length")
+        b.close()
+    assert got == rows and solo == 2
+
+
+def test_served_gmp_page_short_of_its_announced_count_is_detected():
+    from ipo_watch.fetch import _rows_short_of_announced
+    def page(announced, rows):
+        body = "".join(f"<tr><td>Co {i}</td></tr>" for i in range(rows))
+        return (f"<html><body><table><tr><th>IPO NAME</th></tr>{body}</table>"
+                f"<div>{announced} IPO s tracked</div></body></html>")
+    assert not _rows_short_of_announced(page(10, 10))      # all there
+    assert _rows_short_of_announced(page(11, 10))          # 25 Nov: 11 tracked, first page of 10 served
+    assert not _rows_short_of_announced("<html><body><table><tr><th>IPO NAME</th></tr></table></body></html>")
+
+
 def test_redesign_mainboard_row_is_published_with_subscription_from_its_card(tmp_path):
     from ipo_watch import run
     d = _redesign(tmp_path, gmp_edits=[("BSE SME", "NSE Mainboard"), ("Closed", "Open")])
