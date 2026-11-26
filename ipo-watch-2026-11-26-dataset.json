@@ -1,0 +1,251 @@
+{
+  "run_date": "2026-11-26",
+  "generated_at": "2026-11-26T17:06:45.944306+05:30",
+  "source": "IPOWatch",
+  "source_mode": "live",
+  "subscription_timestamp": "26 Nov 2026",
+  "gmp_timestamp": "26 Nov 2026",
+  "open": [
+    {
+      "name": "Foodlink F&B Holdings",
+      "board": "Mainboard",
+      "status": "Open",
+      "open_date": "2026-11-26",
+      "close_date": "2026-11-30",
+      "price_min": "181",
+      "price_max": "191",
+      "gmp": "14",
+      "gmp_pct": "7.33",
+      "retail_sub": "2.34",
+      "total_sub": "1.08",
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/foodlink-fb-holdings-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-25",
+        "prev_gmp": "27",
+        "change": "-13",
+        "series": [
+          "12",
+          "12",
+          "12",
+          "12",
+          "16",
+          "27",
+          "14"
+        ]
+      },
+      "lot_shares": 78,
+      "min_invest": "14898",
+      "allotment_date": "2026-12-01",
+      "listing_date": "2026-12-03",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    }
+  ],
+  "upcoming": [
+    {
+      "name": "Monomark Engineering",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-12-02",
+      "close_date": "2026-12-04",
+      "price_min": "60",
+      "price_max": "65",
+      "gmp": "21",
+      "gmp_pct": "32.31",
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/monomark-engineering-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-25",
+        "prev_gmp": "21",
+        "change": "0",
+        "series": [
+          "0",
+          "0",
+          "0",
+          "23",
+          "23",
+          "21",
+          "21"
+        ]
+      },
+      "lot_shares": 225,
+      "min_invest": "14625",
+      "allotment_date": "2026-12-07",
+      "listing_date": "2026-12-09",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    },
+    {
+      "name": "Matangi Rubber",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-12-01",
+      "close_date": "2026-12-03",
+      "price_min": "163",
+      "price_max": "172",
+      "gmp": "27",
+      "gmp_pct": "15.70",
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/matangi-rubber-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-25",
+        "prev_gmp": "21",
+        "change": "6",
+        "series": [
+          "0",
+          "21",
+          "21",
+          "27"
+        ]
+      },
+      "lot_shares": 87,
+      "min_invest": "14964",
+      "allotment_date": "2026-12-04",
+      "listing_date": "2026-12-08",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    },
+    {
+      "name": "Integris Medtech",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-11-27",
+      "close_date": "2026-12-01",
+      "price_min": null,
+      "price_max": null,
+      "gmp": "0",
+      "gmp_pct": null,
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [
+        "gmp"
+      ],
+      "gmp_url": "https://ipowatch.in/integris-medtech-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-25",
+        "prev_gmp": "0",
+        "change": "0",
+        "series": [
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      "lot_shares": null,
+      "min_invest": null,
+      "allotment_date": "2026-12-02",
+      "listing_date": "2026-12-04",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    },
+    {
+      "name": "Encube Ethicals",
+      "board": "Mainboard",
+      "status": "Upcoming",
+      "open_date": "2026-12-03",
+      "close_date": "2026-12-07",
+      "price_min": null,
+      "price_max": null,
+      "gmp": "0",
+      "gmp_pct": null,
+      "retail_sub": null,
+      "total_sub": null,
+      "unverified": [
+        "gmp"
+      ],
+      "gmp_url": "https://ipowatch.in/encube-ethicals-ipo-details/",
+      "trend": {
+        "status": "ok",
+        "prev_date": "2026-11-25",
+        "prev_gmp": "0",
+        "change": "0",
+        "series": [
+          "0",
+          "0",
+          "0"
+        ]
+      },
+      "lot_shares": null,
+      "min_invest": null,
+      "allotment_date": "2026-12-08",
+      "listing_date": "2026-12-10",
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    }
+  ],
+  "recently_closed_internal": [
+    {
+      "name": "Mahanadi Coalfields",
+      "board": "Mainboard",
+      "status": "Closed",
+      "open_date": "2026-11-19",
+      "close_date": "2026-11-23",
+      "price_min": "129",
+      "price_max": "136",
+      "gmp": "1",
+      "gmp_pct": "0.74",
+      "retail_sub": "0.46",
+      "total_sub": "1.52",
+      "unverified": [],
+      "gmp_url": "https://ipowatch.in/mahanadi-coalfields-ipo-details/",
+      "trend": null,
+      "lot_shares": null,
+      "min_invest": null,
+      "allotment_date": null,
+      "listing_date": null,
+      "prev_retail": null,
+      "prev_total": null,
+      "prev_retail_date": null,
+      "prev_total_date": null
+    }
+  ],
+  "excluded_sme": [
+    "Watrana Rentals",
+    "Shree Siddhivinayak Greentech Industries",
+    "Airpro Technology",
+    "A J Packaging",
+    "Vishwas Refoils & Consumer"
+  ],
+  "recent_listings": [],
+  "track_record": {
+    "n": 25,
+    "avg_gain": "17.7",
+    "up": 19,
+    "avg_day1": "-1.9",
+    "n_gmp": 18,
+    "avg_miss": "11.0",
+    "over": 10,
+    "close": 11
+  },
+  "layout_notes": [],
+  "awaiting": [],
+  "warnings": [
+    "Integris Medtech: GMP present but no upper price band - GMP % not verifiable",
+    "Encube Ethicals: GMP present but no upper price band - GMP % not verifiable",
+    "Minimum investment not available for: Integris Medtech, Encube Ethicals (not found on IPOWatch, or did not equal shares x cap price)"
+  ],
+  "conflicts": []
+}
