@@ -1,0 +1,11 @@
+*🏁 LISTING DAY SCORECARD*
+📅 27 Nov 2026 | NSE
+
+*MAHANADI COALFIELDS* (NSE: MAHACOAL)
+💰 Issue ₹136 → Listed ₹134 | *-1.47%*
+📈 Day 1: Open ₹134 → Close ₹132.50 | *-1.12%*
+📊 Close vs issue: -2.57%
+🎯 GMP said ₹0 (0.00%) | Gap -1.47 pts
+
+_Issue = NSE base price. Listing gain = issue to first-day open. Day 1 = first-day open to close. Gap = listing gain minus the GMP % we last reported. GMP is unofficial._
+Source: NSE (prices), IPOWatch (GMP shown before listing)
