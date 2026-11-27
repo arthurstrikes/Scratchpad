@@ -1,0 +1,94 @@
+*📊 DAILY MAINBOARD IPO WATCH*
+📅 27 Nov 2026 | 5:00 PM IST
+🔎 1 open · 5 upcoming · 1 above 25% GMP
+
+*🟢 OPEN MAINBOARD IPOs*
+
+*FOODLINK F&B HOLDINGS*
+📅 26 Nov – 30 Nov
+💰 Price: ₹181–191 | Min ₹14,898 (78 shares)
+👥 Retail: 4.07x (▲ from 2.34x)
+📊 Total: 1.49x (▲ from 1.08x)
+🟢 GMP: ₹4 | *2.09%*
+📈 GMP trend: ▼ ₹10 vs yesterday (₹14 → ₹4)
+🗓️ Allotment: 01 Dec | Listing: 03 Dec
+
+*🔵 UPCOMING MAINBOARD IPOs*
+
+*🔥 MONOMARK ENGINEERING*
+📅 02 Dec – 04 Dec
+💰 Price: ₹60–65 | Min ₹14,625 (225 shares)
+🟢 GMP: ₹20 | *31%*
+📈 GMP trend: ▼ ₹1 vs yesterday (₹21 → ₹20)
+🗓️ Allotment: 07 Dec | Listing: 09 Dec
+
+*MATANGI RUBBER*
+📅 01 Dec – 03 Dec
+💰 Price: ₹163–172 | Min ₹14,964 (87 shares)
+🟢 GMP: ₹31 | *18%*
+📈 GMP trend: ▲ ₹4 vs yesterday (₹27 → ₹31)
+🗓️ Allotment: 04 Dec | Listing: 08 Dec
+
+*SWARA BABY PRODUCTS*
+📅 02 Dec – 04 Dec
+💰 Price: ₹105–111
+🟢 GMP: ₹3 | *2.70%*
+📈 GMP trend: ▲ ₹3 vs yesterday (₹0 → ₹3)
+🗓️ Allotment: 07 Dec | Listing: 09 Dec
+
+*INTEGRIS MEDTECH*
+📅 Not verified
+💰 Price: Not updated
+🟢 GMP: ₹0 | *Not verified*
+📈 GMP trend: ▬ No change vs yesterday (₹0)
+
+*ENCUBE ETHICALS*
+📅 03 Dec – 07 Dec
+💰 Price: Not updated
+🟢 GMP: ₹0 | *Not verified*
+📈 GMP trend: ▬ No change vs yesterday (₹0)
+🗓️ Allotment: 08 Dec | Listing: 10 Dec
+
+*🏁 RECENTLY LISTED*
+
+*CRYSTAL CROP PROTECTION* - listed 26 Nov
+💰 Issue ₹272 → Listed ₹278 | *+2.21%*
+📈 Day 1 close ₹277.85 (-0.05% from open)
+🎯 GMP said ₹15 (5.51%) | Gap -3.30 pts
+
+_Prices from NSE. Gap = actual listing gain minus the GMP % we last reported._
+
+*🏆 CURRENT GMP RANKING*
+
+1. Monomark Engineering — *31%* (₹20) 🔵 ▼ ₹1
+2. Matangi Rubber — *18%* (₹31) 🔵 ▲ ₹4
+3. Swara Baby Products — *2.70%* (₹3) 🔵 ▲ ₹3
+4. Foodlink F&B Holdings — *2.09%* (₹4) 🟢 ▼ ₹10
+5. Integris Medtech — *Not verified* (₹0) 🔵 ▬ ₹0
+6. Encube Ethicals — *Not verified* (₹0) 🔵 ▬ ₹0
+
+🔥 Highest GMP: Monomark Engineering — 31%
+👥 Highest Retail Subscription: Foodlink F&B Holdings — 4.07x
+📊 Highest Total Subscription: Foodlink F&B Holdings — 1.49x
+
+*📊 GMP TRACK RECORD · LAST 25 LISTINGS*
+
+📈 Average listing gain: *+17.6%*
+✅ Opened above issue price: *19 of 25*
+🕘 Average first day (open to close): *-1.8%*
+🎯 GMP accuracy: listed within 10 points of GMP in *12 of 19* (average miss 10.6 pts; GMP was too high in 11)
+_Listing gain = issue price to first-day open, from NSE._
+
+📌 _GMP = Grey Market Premium_
+📈 _GMP % calculated on upper price band_
+🔥 _Flag = GMP above 25%_
+👥 _▲/▼ on subscription = change since our previous update._
+⚠️ _GMP is unofficial and can change before listing._
+Source: IPOWatch
+🕒 Subscription data: 27 Nov 2026 | GMP data: 27 Nov 2026
+
+ℹ️ Data notes:
+• Integris Medtech: GMP present but no upper price band - GMP % not verifiable
+• Integris Medtech: incomplete IPO dates on IPOWatch
+• Encube Ethicals: GMP present but no upper price band - GMP % not verifiable
+• Minimum investment not available for: Swara Baby Products, Integris Medtech, Encube Ethicals (not found on IPOWatch, or did not equal shares x cap price)
